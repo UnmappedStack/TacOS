@@ -18,6 +18,7 @@ void init_serial() {
         return;
     }
     outb(COM1 + 4, 0x0F);
+    write_serial("Serial output initialised.\n");
 }
 
 static int is_transmit_empty() {
