@@ -48,7 +48,7 @@ override KCFLAGS += \
 
 # Internal C preprocessor flags that should not be changed by the user.
 override KCPPFLAGS := \
-    -I src \
+    -I include \
     $(KCPPFLAGS) \
     -MMD \
     -MP
