@@ -1,0 +1,6 @@
+*.iso
+bin/
+obj/
+*.o
+limine/
+sysroot/
