@@ -2,6 +2,8 @@
 #include <stdint.h>
 #include <kernel.h>
 
+extern void reload_gdt();
+
 static uint64_t create_gdt_entry(uint64_t base, uint64_t limit, uint64_t access, uint64_t flags) {
     uint64_t base1  = base & 0xFFFF;
     uint64_t base2  = (base >> 16) & 0xFF;
@@ -32,15 +34,5 @@ void init_GDT() {
     };
     // inline assembly because when has that ever been a dumb idea :P
     asm("lgdt (%0)" : : "r" (&kernel.gdtr));  
-    asm volatile("push $0x08; \
-              lea .reload_CS(%%rip), %%rax; \
-              push %%rax; \
-              retfq; \
-              .reload_CS: \
-              mov $0x10, %%ax; \
-              mov %%ax, %%ds; \
-              mov %%ax, %%es; \
-              mov %%ax, %%fs; \
-              mov %%ax, %%gs; \
-              mov %%ax, %%ss" : : : "eax", "rax");
+    reload_gdt();
 }
