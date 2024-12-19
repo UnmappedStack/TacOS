@@ -46,7 +46,7 @@ void slab_grow(Cache *cache) {
         .data = data_addr,
         .data_end = (void*) ((uint64_t) data_addr + (cache->obj_per_slab * cache->obj_size)),
     };
-    list_insert(&new_slab->list, &cache->free_nodes);
+    list_insert(&cache->free_nodes, &new_slab->list);
     // this loop is a little messy, sorry. 
     size_t data_element = 0;
     for (size_t stack_element = (uint64_t) new_slab + sizeof(Slab); stack_element < (uint64_t) data_addr; stack_element += 8) {
