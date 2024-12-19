@@ -7,6 +7,7 @@
 #include <printf.h>
 #include <bootutils.h>
 #include <mem/paging.h>
+#include <panic.h>
 
 Kernel kernel = {0};
 
@@ -15,8 +16,10 @@ void _start() {
     init_serial();
     init_GDT();
     init_IDT();
+    init_exceptions();
     init_pmm();
     init_paging();
     switch_page_structures();
+    asm volatile("int $0");
     for (;;);
 }
