@@ -33,7 +33,8 @@ void exception_handler(IDTEFrame registers) {
     else
         printf("Exception type: %i\n", registers.type);
     
-    printf("Error code: %i\n", registers.code);
+    printf("Error code: 0b%b\n", registers.code);
+    printf("CR2: 0x%p\n", registers.cr2);
     stack_trace(registers.rbp, registers.rip);
     printf(BWHT "\nFreezing the computer now. Please reboot your machine with the physical power button.\n" WHT);
     HALT_DEVICE();
