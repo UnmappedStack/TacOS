@@ -1,4 +1,5 @@
 #include <mem/pmm.h>
+#include <cpu.h>
 #include <stddef.h>
 #include <kernel.h>
 #include <serial.h>
@@ -20,5 +21,5 @@ void _start() {
     init_pmm();
     init_paging();
     switch_page_structures();
-    for (;;);
+    HALT_DEVICE();
 }
