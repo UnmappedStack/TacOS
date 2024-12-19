@@ -10,7 +10,7 @@ override OUTPUT := tacos
 override USER_VARIABLE = $(if $(filter $(origin $(1)),default undefined),$(eval override $(1) := $(2)))
 
 # User controllable C compiler command.
-$(call USER_VARIABLE,KCC,cc)
+$(call USER_VARIABLE,KCC,clang)
 
 # User controllable linker command.
 $(call USER_VARIABLE,KLD,ld)

@@ -3,7 +3,8 @@
 #include <kernel.h>
 
 __attribute__((interrupt))
-void test_interrupt(void*) {
+void test_interrupt(void* unnamed) {
+    (void) unnamed;
     write_serial("Oh gee golly I got an interrupt, how amazing\n");
 }
 
