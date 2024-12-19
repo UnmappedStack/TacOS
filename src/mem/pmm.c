@@ -58,6 +58,7 @@ uintptr_t kmalloc(size_t num_pages) {
     return 0;
 }
 
-
-
-
+void kfree(uintptr_t addr, size_t num_pages) {
+    list_insert(kernel.pmm_chunklist, (struct list*) addr);
+    init_chunk((Chunk*) addr, num_pages + 1);
+}

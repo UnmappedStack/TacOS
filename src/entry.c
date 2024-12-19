@@ -15,8 +15,5 @@ void _start() {
     init_GDT();
     init_IDT();
     init_pmm();
-    for (size_t i = 0; i < 20; i++) {
-        printf("Allocated address: 0x%p\n", kmalloc(i));
-    }
     for (;;);
 }
