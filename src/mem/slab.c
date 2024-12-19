@@ -88,7 +88,6 @@ Slab *slab_find_addr(Cache *cache, void *ptr) {
             return (Slab*) iter;
         }
     }
-    
     // if it's not in the full list, keep looking in the partial list
     for (struct list *iter = &cache->partial_nodes; iter != iter->next;) {
         if (((Slab*) iter)->data < ptr &&
@@ -96,7 +95,6 @@ Slab *slab_find_addr(Cache *cache, void *ptr) {
             return (Slab*) iter;
         }
     }
-    
     // if it's *still* not found, look in the free list
     for (struct list *iter = &cache->free_nodes; iter != iter->next;) {
         if (((Slab*) iter)->data < ptr &&
@@ -104,7 +102,6 @@ Slab *slab_find_addr(Cache *cache, void *ptr) {
             return (Slab*) iter;
         }
     }
-    // could I just return NULL directly? Yeah but this is to please the compiler warnings xD
     return NULL;
 }
 
