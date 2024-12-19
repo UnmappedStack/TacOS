@@ -82,7 +82,6 @@ void push_vmem(uint64_t *pml4_addr, uint64_t rsp, char *data, size_t len) {
 }
 
 void map_pages(uint64_t pml4_addr[], uint64_t virt_addr, uint64_t phys_addr, uint64_t num_pages, uint64_t flags) {
-    bool done_first_alloc = false;
     virt_addr &= ~TOPBITS;
     uint64_t pml1 = (virt_addr >> 12) & 511;
     uint64_t pml2 = (virt_addr >> (12 + 9)) & 511;
@@ -124,7 +123,6 @@ void map_pages(uint64_t pml4_addr[], uint64_t virt_addr, uint64_t phys_addr, uin
                     pml1_addr[pml1] = phys_addr | flags;
                     num_pages--;
                     phys_addr += 4096;
-                    done_first_alloc = true;
                     if (num_pages == 0) return;
                 }
                 pml1 = 0;

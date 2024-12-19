@@ -7,6 +7,17 @@
 #include <stddef.h>
 #include <list.h>
 
+const char *mem_types[] = {
+    "Usable                ",
+    "Reserved              ",
+    "ACPI Reclaimable      ",
+    "ACPI NVS              ",
+    "Bad Memory            ",
+    "Bootloader Reclaimable",
+    "Executable and Modules",
+    "Framebuffer           ",
+};
+
 void init_chunk(void *addr, size_t len) {
     Chunk *chunk  = (Chunk*) addr;
     chunk->length = PAGE_ALIGN_DOWN(len) / 4096;

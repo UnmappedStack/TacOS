@@ -31,6 +31,7 @@ $(call USER_VARIABLE,KLDFLAGS,)
 override KCFLAGS += \
     -Wall \
     -Wextra \
+	-Werror \
     -std=gnu11 \
     -ffreestanding \
     -fno-stack-protector \
