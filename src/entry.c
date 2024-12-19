@@ -20,6 +20,5 @@ void _start() {
     init_pmm();
     init_paging();
     switch_page_structures();
-    asm volatile("int $0");
     for (;;);
 }

@@ -22,7 +22,7 @@ void stack_trace(uint64_t rbp, uint64_t rip) {
 void exception_handler(IDTEFrame registers) {
     (void) registers;
     DISABLE_INTERRUPTS();
-    printf(BYEL "                         ### KERNEL PANIC ###.\n"
+    printf(BYEL "                         ### KERNEL PANIC! ###\n"
            BRED "  Something went seriously wrong and the system cannot continue.\n\n"
            BWHT  " === Debug information: ===\n" WHT);
 
@@ -35,6 +35,7 @@ void exception_handler(IDTEFrame registers) {
     
     printf("Error code: %i\n", registers.code);
     stack_trace(registers.rbp, registers.rip);
+    printf(BWHT "\nFreezing the computer now. Please reboot your machine with the physical power button.\n" WHT);
     HALT_DEVICE();
 }
 
