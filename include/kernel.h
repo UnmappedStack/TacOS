@@ -18,6 +18,7 @@ typedef struct {
     size_t       memmap_entry_count;
     struct list *pmm_chunklist;
     uintptr_t    cr3;
+    struct list *slab_caches;
 } Kernel;
 
 extern Kernel kernel;

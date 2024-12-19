@@ -20,6 +20,7 @@
 
 #define PAGE_ALIGN_DOWN(addr) ((addr / 4096) * 4096) // works cos of integer division
 #define PAGE_ALIGN_UP(x) ((((x) + 4095) / 4096) * 4096)
+#define bytes_to_pages(x)  (((x) + (PAGE_SIZE - 1)) / PAGE_SIZE)
 
 #define KERNEL_SWITCH_PAGE_TREE(TREE_ADDRESS) \
     __asm__ volatile (\

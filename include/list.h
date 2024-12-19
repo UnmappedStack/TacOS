@@ -58,11 +58,9 @@ list_remove(struct list *link)
 #define list_tail(list, type, member)		\
 	list_entry((list)->prev, type, member)
 
-#define list_next(elm, member)					\
-	list_entry((elm)->member.next, typeof(*elm), member)
+#define list_next(element) (element->next)
 
 #define list_for_each_entry(pos, list, member)			\
 	for (pos = list_head(list, typeof(*pos), member);	\
 	     &pos->member != (list);				\
 	     pos = list_next(pos, member))
-
