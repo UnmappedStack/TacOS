@@ -3,10 +3,6 @@
 #include <list.h>
 #include <stddef.h>
 
-// TODO: Move this into a different file like paging.h
-#define PAGE_SIZE 4096
-#define PAGE_ALIGN_DOWN(x) (((x) / PAGE_SIZE) * PAGE_SIZE)
-
 static const char *mem_types[] = {
     "Usable                ",
     "Reserved              ",

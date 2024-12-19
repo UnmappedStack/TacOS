@@ -6,6 +6,7 @@
 #include <cpu/idt.h>
 #include <printf.h>
 #include <bootutils.h>
+#include <mem/paging.h>
 
 Kernel kernel = {0};
 
@@ -15,5 +16,7 @@ void _start() {
     init_GDT();
     init_IDT();
     init_pmm();
+    init_paging();
+    switch_page_structures();
     for (;;);
 }

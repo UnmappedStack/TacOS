@@ -1,4 +1,7 @@
+#include <string.h>
+#include <cpu.h>
 #include <mem/pmm.h>
+#include <mem/paging.h>
 #include <kernel.h>
 #include <printf.h>
 #include <stddef.h>
@@ -22,18 +25,17 @@ void init_pmm() {
         if (kernel.memmap[i].type != 0) continue; // must be marked usable
         list_len++;
         if (!kernel.pmm_chunklist) {
-            kernel.pmm_chunklist = (struct list*) kernel.memmap[i].base;
+            kernel.pmm_chunklist = (struct list*) PAGE_ALIGN_UP(kernel.memmap[i].base + kernel.hhdm);
             list_init(kernel.pmm_chunklist);
         } else {
-            list_insert(kernel.pmm_chunklist, (struct list*) kernel.memmap[i].base);
+            list_insert(kernel.pmm_chunklist, (struct list*) PAGE_ALIGN_UP(kernel.memmap[i].base + kernel.hhdm));
         }
-        init_chunk((void*) kernel.memmap[i].base, kernel.memmap[i].length);
+        init_chunk((void*) PAGE_ALIGN_UP(kernel.memmap[i].base), kernel.memmap[i].length);
     }
     printf("|==================|==================|======================|\n");
     if (!list_len) {
         printf("Failed to initialise physical memory allocator, cannot continue.\n");
-        asm volatile("cli"); // TODO: move to a seperate kpanicf function
-        for (;;) asm volatile("hlt");
+        HALT_DEVICE();
     }
     printf("Successfully initiated %i physical allocator chunks.\n", list_len);
 }
@@ -50,15 +52,16 @@ uintptr_t kmalloc(size_t num_pages) {
         }
         if (!i) kernel.pmm_chunklist = kernel.pmm_chunklist->next;
         list_remove(&chunk->list);
-        Chunk *new_chunk = (Chunk*)((uint64_t) chunk + num_pages * PAGE_SIZE + 1);
+        Chunk *new_chunk = (Chunk*) PAGE_ALIGN_UP((uint64_t) chunk + num_pages * PAGE_SIZE + 1);
         list_insert(kernel.pmm_chunklist, &new_chunk->list);
         init_chunk(new_chunk, (chunk->length - (num_pages + 1)) * PAGE_SIZE);
-        return (uintptr_t) chunk;
+        memset(chunk, 0, PAGE_SIZE);
+        return (uintptr_t) chunk - kernel.hhdm;
     }
     return 0;
 }
 
 void kfree(uintptr_t addr, size_t num_pages) {
-    list_insert(kernel.pmm_chunklist, (struct list*) addr);
+    list_insert(kernel.pmm_chunklist, (struct list*) (addr + kernel.hhdm));
     init_chunk((Chunk*) addr, num_pages + 1);
 }
