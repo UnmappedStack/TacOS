@@ -1,5 +1,5 @@
 /* This is the list.h taken direcly from Linux source:
- * https://github.com/torvalds/linux/blob/b1bc554e009e3aeed7e4cfd2e717c7a34a98c683/tools/firewire/list.h
+ * https://github.com/torvalds/linux/blob/master/tools/firewire/list.h
  * This is under a different license to the rest of the project, as described below. */
 #pragma once
 
