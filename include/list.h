@@ -24,10 +24,10 @@ list_empty(struct list *list)
 static inline void
 list_insert(struct list *link, struct list *new_link)
 {
-	new_link->prev		= link->prev;
-	new_link->next		= link;
-	new_link->prev->next	= new_link;
-	new_link->next->prev	= new_link;
+	new_link->prev		 = link->prev;
+	new_link->next		 = link;
+	new_link->prev->next = new_link;
+	new_link->next->prev = new_link;
 }
 
 static inline void

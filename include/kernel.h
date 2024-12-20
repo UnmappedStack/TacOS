@@ -1,9 +1,11 @@
 #pragma once
+#include <mem/slab.h>
 #include <stddef.h>
 #include <stdint.h>
 #include <limine.h>
 #include <cpu/idt.h>
 #include <cpu/gdt.h>
+#include <fs/tempfs.h>
 
 typedef struct limine_memmap_entry* Memmap;
 
@@ -19,6 +21,8 @@ typedef struct {
     struct list *pmm_chunklist;
     uintptr_t    cr3;
     struct list *slab_caches;
+    Cache       *tempfs_inode_cache;
+    Cache       *tempfs_direntry_cache;
 } Kernel;
 
 extern Kernel kernel;

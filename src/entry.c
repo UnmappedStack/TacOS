@@ -9,6 +9,7 @@
 #include <bootutils.h>
 #include <mem/paging.h>
 #include <panic.h>
+#include <fs/tempfs.h>
 
 Kernel kernel = {0};
 
