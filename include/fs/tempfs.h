@@ -2,53 +2,53 @@
 #include <mem/paging.h>
 
 #define MAX_FILENAME_LEN    20
-#define FILE_DATA_BLOCK_LEN (PAGE_SIZE - sizeof(DirEntry*))
+#define FILE_DATA_BLOCK_LEN (PAGE_SIZE - sizeof(TempfsDirEntry*))
 
-typedef struct FileNode FileNode;
-typedef struct DirEntry DirEntry;
-typedef struct Inode Inode;
+typedef struct TempfsFileNode TempfsFileNode;
+typedef struct TempfsDirEntry TempfsDirEntry;
+typedef struct TempfsInode TempfsInode;
 
 typedef enum {
     RegularFile,
     Directory,
-} InodeType;
+} TempfsInodeType;
 
-struct FileNode {
-    FileNode *next;
+struct TempfsFileNode {
+    TempfsFileNode *next;
     char data[FILE_DATA_BLOCK_LEN];
 };
 
-struct DirEntry {
-    DirEntry *next;
-    Inode *inode;
+struct TempfsDirEntry {
+    TempfsDirEntry *next;
+    TempfsInode *inode;
 };
 
-struct Inode {
+struct TempfsInode {
     char name[MAX_FILENAME_LEN]; // TODO: Allocate dynamically
-    Inode *parent;
-    InodeType type;
+    TempfsInode *parent;
+    TempfsInodeType type;
     union {
-        FileNode *first_file_node;
-        DirEntry *first_dir_entry;
+        TempfsFileNode *first_file_node;
+        TempfsDirEntry *first_dir_entry;
     };
 };
 
 typedef struct {
-    Inode    *inode;
-    DirEntry *current_entry;
-} DirIter;
+    TempfsInode    *inode;
+    TempfsDirEntry *current_entry;
+} TempfsDirIter;
 
-Inode *tempfs_new();
-Inode *tempfs_find_root(Inode *fs);
-Inode *tempfs_create_entry(Inode *dir);
-Inode *tempfs_new_file(Inode *dir, char *name);
-Inode *tempfs_mkdir(Inode *parentdir, char *name);
-Inode *tempfs_open(Inode *file);
-void tempfs_close(Inode *file);
-void tempfs_opendir(DirIter *buf, Inode *dir);
-int tempfs_write(Inode *file, char *buf, size_t len);
-int tempfs_read(Inode *file, char *buf, size_t len);
-Inode *tempfs_diriter(DirIter *iter);
-void tempfs_closedir(Inode *dir);
-Inode *tempfs_rmdir(Inode *dir);
-Inode *tempfs_rmfile(Inode *file);
+TempfsInode *tempfs_new();
+TempfsInode *tempfs_find_root(TempfsInode *fs);
+TempfsInode *tempfs_create_entry(TempfsInode *dir);
+TempfsInode *tempfs_new_file(TempfsInode *dir, char *name);
+TempfsInode *tempfs_mkdir(TempfsInode *parentdir, char *name);
+TempfsInode *tempfs_open(TempfsInode *file);
+void tempfs_close(TempfsInode *file);
+void tempfs_opendir(TempfsDirIter *buf, TempfsInode *dir);
+int tempfs_write(TempfsInode *file, char *buf, size_t len);
+int tempfs_read(TempfsInode *file, char *buf, size_t len);
+TempfsInode *tempfs_diriter(TempfsDirIter *iter);
+void tempfs_closedir(TempfsInode *dir);
+TempfsInode *tempfs_rmdir(TempfsInode *dir);
+TempfsInode *tempfs_rmfile(TempfsInode *file);

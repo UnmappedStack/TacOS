@@ -6,12 +6,12 @@
 #include <string.h>
 #include <stdbool.h>
 
-Inode *tempfs_new() {
+TempfsInode *tempfs_new() {
     if (!kernel.tempfs_inode_cache)
-        kernel.tempfs_inode_cache = init_slab_cache(sizeof(Inode), "TempFS Inodes");
+        kernel.tempfs_inode_cache = init_slab_cache(sizeof(TempfsInode), "TempFS TempfsInodes");
     if (!kernel.tempfs_direntry_cache)
-        kernel.tempfs_direntry_cache = init_slab_cache(sizeof(DirEntry), "TempFS DirEntries");
-    Inode *newfs = slab_alloc(kernel.tempfs_inode_cache);
+        kernel.tempfs_direntry_cache = init_slab_cache(sizeof(TempfsDirEntry), "TempFS DirEntries");
+    TempfsInode *newfs = slab_alloc(kernel.tempfs_inode_cache);
     memcpy(newfs->name, "FSROOT", 7);
     newfs->type = Directory;
     newfs->parent = newfs;
@@ -20,22 +20,22 @@ Inode *tempfs_new() {
 }
 
 // Highly complexicated indeed
-Inode *tempfs_find_root(Inode *fs) {
+TempfsInode *tempfs_find_root(TempfsInode *fs) {
     return fs;
 }
 
-Inode *tempfs_create_entry(Inode *dir) {
+TempfsInode *tempfs_create_entry(TempfsInode *dir) {
     if (dir->type != Directory) {
-        printf("Failed to create TempFS entry: Inode is not a directory.\n");
+        printf("Failed to create TempFS entry: TempfsInode is not a directory.\n");
         return NULL;
     }
-    DirEntry *new_entry;
+    TempfsDirEntry *new_entry;
     if (!dir->first_dir_entry) {
         dir->first_dir_entry = slab_alloc(kernel.tempfs_direntry_cache);
         new_entry = dir->first_dir_entry;
     } else {
         // TODO: Make this wayyy faster cos this sucks a lot. Possibly use `struct list`?
-        DirEntry *last_entry = dir->first_dir_entry;
+        TempfsDirEntry *last_entry = dir->first_dir_entry;
         while (last_entry->next) last_entry = last_entry->next;
         last_entry->next = slab_alloc(kernel.tempfs_direntry_cache);
         new_entry = last_entry->next;
@@ -46,8 +46,8 @@ Inode *tempfs_create_entry(Inode *dir) {
     return new_entry->inode;
 }
 
-Inode *tempfs_new_file(Inode *dir, char *name) {
-    Inode *new_inode;
+TempfsInode *tempfs_new_file(TempfsInode *dir, char *name) {
+    TempfsInode *new_inode;
     if ((new_inode = tempfs_create_entry(dir)) == NULL) return new_inode;
     if (strlen(name) + 1 > MAX_FILENAME_LEN) {
         printf("Filename is longer than %i characters, which is the max length for file system of type TempFS.\n", MAX_FILENAME_LEN);
@@ -58,8 +58,8 @@ Inode *tempfs_new_file(Inode *dir, char *name) {
     return new_inode;
 }
 
-Inode *tempfs_mkdir(Inode *parentdir, char *name) {
-    Inode *new_inode;
+TempfsInode *tempfs_mkdir(TempfsInode *parentdir, char *name) {
+    TempfsInode *new_inode;
     if ((new_inode = tempfs_create_entry(parentdir)) == NULL) return new_inode;
     if (strlen(name) + 1 > MAX_FILENAME_LEN) {
         printf("Directory name is longer than %i characters, which is the max length for file system of type TempFS.\n", MAX_FILENAME_LEN);
@@ -71,21 +71,21 @@ Inode *tempfs_mkdir(Inode *parentdir, char *name) {
    
 }
 
-Inode *tempfs_diriter(DirIter *iter) {
+TempfsInode *tempfs_diriter(TempfsDirIter *iter) {
     if (!iter->current_entry) return NULL;
-    Inode *to_return = iter->current_entry->inode;
+    TempfsInode *to_return = iter->current_entry->inode;
     iter->current_entry = iter->current_entry->next;
     return to_return;
 }
 
-int tempfs_access(Inode *file, char *buf, size_t len, bool write) {
+int tempfs_access(TempfsInode *file, char *buf, size_t len, bool write) {
     if (file->type != RegularFile) return -1;
     if (write) {
-        if (!file->first_file_node) file->first_file_node = (FileNode*) (kmalloc(1) + kernel.hhdm);
+        if (!file->first_file_node) file->first_file_node = (TempfsFileNode*) (kmalloc(1) + kernel.hhdm);
     } else {
         if (!file->first_file_node) return -1;
     }
-    FileNode *this_fnode = file->first_file_node;
+    TempfsFileNode *this_fnode = file->first_file_node;
     size_t len_left = len;
     size_t off = 0;
     while (len_left > 0 && this_fnode) {
@@ -101,37 +101,37 @@ int tempfs_access(Inode *file, char *buf, size_t len, bool write) {
     return 0;
 }
 
-int tempfs_write(Inode *file, char *buf, size_t len) {
+int tempfs_write(TempfsInode *file, char *buf, size_t len) {
     return tempfs_access(file, buf, len, true);
 }
 
-int tempfs_read(Inode *file, char *buf, size_t len) {
+int tempfs_read(TempfsInode *file, char *buf, size_t len) {
     return tempfs_access(file, buf, len, false);
 }
 
-Inode *tempfs_rmdir(Inode *dir) {
+TempfsInode *tempfs_rmdir(TempfsInode *dir) {
     (void) dir;
     printf("TODO: Implement rmdir in tempfs.\n");
     return NULL;
 }
 
-Inode *tempfs_rmfile(Inode *file) {
+TempfsInode *tempfs_rmfile(TempfsInode *file) {
     (void) file;
     printf("TODO: Implement rmfile in tempfs.\n");
     return NULL;
 }
 
 // These functions are *super* complex, *clearly*
-Inode *tempfs_open(Inode *file) {
+TempfsInode *tempfs_open(TempfsInode *file) {
     return file;
 }
-void tempfs_close(Inode *file) {
+void tempfs_close(TempfsInode *file) {
     (void) file;
 }
-void tempfs_opendir(DirIter *buf, Inode *dir) {
+void tempfs_opendir(TempfsDirIter *buf, TempfsInode *dir) {
     buf->inode = dir;
     buf->current_entry = dir->first_dir_entry;
 }
-void tempfs_closedir(Inode *dir) {
+void tempfs_closedir(TempfsInode *dir) {
     (void) dir;
 }
