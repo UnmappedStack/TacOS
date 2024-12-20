@@ -72,7 +72,7 @@ void *slab_alloc(Cache *cache) {
     if (!slab->num_free) {
         list_remove(&slab->list);
         list_insert(&slab->list, &cache->full_nodes);
-    } else if (slab->num_free < cache->obj_per_slab && (struct list*) slab != &cache->partial_nodes) {
+    } else if (slab->num_free < cache->obj_per_slab && (struct list*) slab == &cache->free_nodes) {
         list_remove(&slab->list);
         list_insert(&slab->list, &cache->partial_nodes);
     }
