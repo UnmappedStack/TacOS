@@ -10,6 +10,13 @@ typedef enum {
     fs_tempfs,
 } FsID;
 
+typedef enum {
+    VAT_open,
+    VAT_opendir,
+    VAT_mkfile,
+    VAT_mkdir,
+} VfsAccessType;
+
 #define O_CREAT 64
 
 typedef struct {
@@ -57,5 +64,9 @@ void init_vfs();
 int vfs_mount(char *path, VfsDrive drive);
 VfsDrive *vfs_find_mounted_drive(char *path);
 VfsDrive *vfs_path_to_drive(char *path, size_t *drive_root_idx_buf);
-VfsFile *vfs_open(char *path, int flags);
+VfsFile *vfs_access(char *path, int flags, VfsAccessType type);
 int vfs_identify(VfsFile *file, char *name, bool *is_dir);
+VfsFile *open(char *path, int flags);
+int opendir(VfsDirIter *buf, char *path, int flags);
+int mkfile(char *path);
+int mkdir(char *path);

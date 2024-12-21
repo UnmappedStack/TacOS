@@ -32,7 +32,7 @@ void tempfs_test() {
         HALT_DEVICE();
     }
     printf("Trying to open with O_CREAT...\n");
-    printf("File = %p\n", vfs_open("/dev/path/testfile.txt", O_CREAT));
+    printf("File = %p\n", open("/dev/path/testfile.txt", O_CREAT));
 }
 
 void _start() {

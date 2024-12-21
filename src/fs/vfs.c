@@ -81,9 +81,7 @@ void *find_direntry(VfsDrive *drive, VfsDirIter *dir, char *name) {
     }
 }
 
-
-/// TODO AND WARNING YOU MUST SHORTEN THE PATH TO THE START OF THE MOUNTED THINGY!!!!
-VfsFile *vfs_open(char *path, int flags) {
+VfsFile *vfs_access(char *path, int flags, VfsAccessType type) {
     if (*path != '/') {
         printf("Relative path accessing is not yet supported (TODO).\n");
         return NULL;
@@ -120,8 +118,20 @@ VfsFile *vfs_open(char *path, int flags) {
                 current_dir = cd_temp;
             } else {
                 VfsFile *entry = find_direntry(drive, &cd_iter, path_lag);
-                if (!entry && (flags & O_CREAT)) {
-                    void *new_file = drive->fs.mkfile_fn(current_dir, path_lag);
+                if (!entry && ((flags & O_CREAT) || type == VAT_mkdir || type == VAT_mkfile)) {
+                    if (type == VAT_mkdir || type == VAT_mkfile) {
+                        printf("Cannot create: file or directory already exists.\n");
+                        return NULL;
+                    }
+                    void *new_file = NULL;;
+                    if (type == VAT_mkfile || type == VAT_open)
+                        drive->fs.mkfile_fn(current_dir, path_lag);
+                    else if (type == VAT_mkdir || type == VAT_opendir)
+                        drive->fs.mkdir_fn(current_dir, path_lag);
+                    else {
+                        printf("Unsupported type in vfs_access\n");
+                        return NULL;
+                    }
                     drive->fs.close_fn(current_dir);
                     VfsFile *file_addr = slab_alloc(kernel.vfs_file_cache);
                     *file_addr = (VfsFile) {
@@ -130,7 +140,7 @@ VfsFile *vfs_open(char *path, int flags) {
                     };
                     return file_addr;
                 } else if (!entry) {
-                    printf("Can't open file: doesn't exist and O_CREAT is not in use.\n");
+                    printf("Can't open file/directory: doesn't exist and O_CREAT is not in use.\n");
                     drive->fs.close_fn(current_dir);
                     return NULL;
                 } else {
@@ -140,6 +150,16 @@ VfsFile *vfs_open(char *path, int flags) {
                         .private = drive->fs.open_fn(entry),
                         .drive = *drive,
                     };
+                    vfs_identify(file_addr, path_cpy, &is_dir);
+                    if (is_dir && type == VAT_open) {
+                        printf("Can't open file, is a directory.\n");
+                        drive->fs.close_fn(entry);
+                        return NULL;
+                    } else if (!is_dir && type == VAT_opendir) {
+                        printf("Can't open directory, is a file.\n");
+                        drive->fs.close_fn(entry);
+                        return NULL;
+                    }
                     return file_addr;
                 }
             }
@@ -148,4 +168,40 @@ VfsFile *vfs_open(char *path, int flags) {
         }
     }
     return NULL;
+}
+
+
+VfsFile *open(char *path, int flags) {
+    return vfs_access(path, flags, VAT_open);
+}
+
+int opendir(VfsDirIter *buf, char *path, int flags) {
+    VfsFile *temp = vfs_access(path, flags, VAT_opendir);
+    if (!temp) {
+        return -1;
+    } else {
+        temp->drive.fs.opendir_fn(buf, temp);
+        temp->drive.fs.close_fn(temp);
+        return 0;
+    }
+}
+
+int mkfile(char *path) {
+    VfsFile *temp;
+    if ((temp = vfs_access(path, 0, VAT_mkfile))) {
+        temp->drive.fs.close_fn(temp);
+        return 0;
+    } else {
+        return -1;
+    }
+}
+
+int mkdir(char *path) {
+    VfsFile *temp;
+    if ((temp = vfs_access(path, 0, VAT_mkdir))) {
+        temp->drive.fs.close_fn(temp);
+        return 0;
+    } else {
+        return -1;
+    }
 }
