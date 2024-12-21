@@ -78,6 +78,13 @@ TempfsInode *tempfs_diriter(TempfsDirIter *iter) {
     return to_return;
 }
 
+int tempfs_identify(TempfsInode *inode, char *namebuf, bool *is_dir_buf) {
+    if (!inode) return -1;
+    strcpy(namebuf, inode->name);
+    *is_dir_buf = inode->type == Directory;
+    return 0;
+}
+
 int tempfs_access(TempfsInode *file, char *buf, size_t len, bool write) {
     if (file->type != RegularFile) return -1;
     if (write) {
@@ -109,16 +116,16 @@ int tempfs_read(TempfsInode *file, char *buf, size_t len) {
     return tempfs_access(file, buf, len, false);
 }
 
-TempfsInode *tempfs_rmdir(TempfsInode *dir) {
+int tempfs_rmdir(TempfsInode *dir) {
     (void) dir;
     printf("TODO: Implement rmdir in tempfs.\n");
-    return NULL;
+    return -1;
 }
 
-TempfsInode *tempfs_rmfile(TempfsInode *file) {
+int tempfs_rmfile(TempfsInode *file) {
     (void) file;
     printf("TODO: Implement rmfile in tempfs.\n");
-    return NULL;
+    return -1;
 }
 
 // These functions are *super* complex, *clearly*
@@ -132,6 +139,28 @@ void tempfs_opendir(TempfsDirIter *buf, TempfsInode *dir) {
     buf->inode = dir;
     buf->current_entry = dir->first_dir_entry;
 }
-void tempfs_closedir(TempfsInode *dir) {
+void tempfs_closedir(TempfsDirIter *dir) {
     (void) dir;
 }
+
+void *tempfs_file_from_diriter(TempfsDirIter *iter) {
+    return iter->inode;
+}
+
+FileSystem tempfs = (FileSystem) {
+    .fs_id             = fs_tempfs,
+    .find_root_fn      = (void *(*)(void*))tempfs_find_root,
+    .open_fn           = (void *(*)(void *))tempfs_open,
+    .close_fn          = (void (*)(void *))tempfs_close,
+    .mkfile_fn         = (void *(*)(void *, char *))tempfs_new_file,
+    .mkdir_fn          = (void *(*)(void *, char *))tempfs_mkdir,
+    .opendir_fn        = (void *(*)(void *, void *))tempfs_opendir,
+    .closedir_fn       = (void *(*)(void *))tempfs_closedir,
+    .rmfile_fn         = (int (*)(void *))tempfs_rmfile,
+    .rmdir_fn          = (int (*)(void *))tempfs_rmdir,
+    .diriter_fn        = (void *(*)(void *))tempfs_diriter,
+    .write_fn          = (int (*)(void *, char *, size_t))tempfs_write,
+    .read_fn           = (int (*)(void *, char *, size_t))tempfs_read,
+    .identify_fn       = (int (*)(void *, char *, bool *))tempfs_identify,
+    .file_from_diriter = (void *(*)(void *))tempfs_file_from_diriter,
+};

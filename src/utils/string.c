@@ -24,6 +24,18 @@ char *strcpy(char *dest, const char *src) {
     return dest;
 }
 
+// NON POSIX!!!!
+// If it doesn't match, it always returns 1.
+int strcmp(char *str1, char *str2) {
+    while (*str1) {
+        if (!*str2) return 1;
+        if (*str1 != *str2) return 1;
+        str1++;
+        str2++;
+    }
+    return (*str2);
+}
+
 void *memcpy (void *dest, const void *src, size_t n) {
     asm volatile(
         "rep movsb"

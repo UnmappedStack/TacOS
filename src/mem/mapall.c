@@ -39,6 +39,7 @@ void map_kernel(uint64_t pml4[]) {
     map_pages(pml4, PAGE_ALIGN_DOWN(writeallowed_start), phys_buffer, length_buffer / 4096, KERNEL_PFLAG_PRESENT | KERNEL_PFLAG_WRITE); 
     // map the kernel's stack
     alloc_pages(pml4, KERNEL_STACK_ADDR, KERNEL_STACK_PAGES, KERNEL_PFLAG_PRESENT | KERNEL_PFLAG_WRITE);
+    printf("Map stack from %p to %p\n", KERNEL_STACK_ADDR, KERNEL_STACK_PTR);
 }
 
 void map_all(uint64_t pml4[]) {

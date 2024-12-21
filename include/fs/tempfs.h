@@ -1,7 +1,7 @@
 #pragma once
 #include <mem/paging.h>
+#include <fs/vfs.h>
 
-#define MAX_FILENAME_LEN    20
 #define FILE_DATA_BLOCK_LEN (PAGE_SIZE - sizeof(TempfsDirEntry*))
 
 typedef struct TempfsFileNode TempfsFileNode;
@@ -49,6 +49,9 @@ void tempfs_opendir(TempfsDirIter *buf, TempfsInode *dir);
 int tempfs_write(TempfsInode *file, char *buf, size_t len);
 int tempfs_read(TempfsInode *file, char *buf, size_t len);
 TempfsInode *tempfs_diriter(TempfsDirIter *iter);
-void tempfs_closedir(TempfsInode *dir);
-TempfsInode *tempfs_rmdir(TempfsInode *dir);
-TempfsInode *tempfs_rmfile(TempfsInode *file);
+void tempfs_closedir(TempfsDirIter *dir);
+int tempfs_rmdir(TempfsInode *dir);
+int tempfs_rmfile(TempfsInode *file);
+int tempfs_identify(TempfsInode *inode, char *namebuf, bool *is_dir_buf);
+void *tempfs_file_from_diriter(TempfsDirIter *iter);
+extern FileSystem tempfs;

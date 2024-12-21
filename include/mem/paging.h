@@ -10,7 +10,7 @@
 #define KERNEL_PFLAG_USER    0b100
 
 #define PAGE_SIZE 4096
-#define KERNEL_STACK_PAGES 2LL
+#define KERNEL_STACK_PAGES 10LL
 #define KERNEL_STACK_PTR 0xFFFFFFFFFFFFF000LL
 #define KERNEL_STACK_ADDR KERNEL_STACK_PTR-(KERNEL_STACK_PAGES*PAGE_SIZE)
 
@@ -33,7 +33,6 @@
     __asm__ volatile (\
        "movq %0, %%rsp\n"\
        "movq $0, %%rbp\n"\
-       "push $0"\
        :\
        :  "r" (STACK_PTR)\
     )

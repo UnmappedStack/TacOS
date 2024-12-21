@@ -29,19 +29,22 @@ $(call USER_VARIABLE,KLDFLAGS,)
 
 # Internal C flags that should not be changed by the user.
 override KCFLAGS += \
+	-O0 \
     -Wall \
     -Wextra \
 	-Werror \
     -std=gnu11 \
-    -ffreestanding \
+	-ffreestanding \
     -fno-stack-protector \
     -fno-stack-check \
+	-fno-builtin \
     -fPIE \
     -m64 \
     -march=x86-64 \
     -mno-80387 \
     -mno-mmx \
 	-g \
+    -fno-builtin \
     -mno-sse \
     -mno-sse2 \
 	-fno-omit-frame-pointer \
