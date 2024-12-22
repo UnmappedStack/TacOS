@@ -84,7 +84,8 @@ int tempfs_identify(TempfsInode *inode, char *namebuf, bool *is_dir_buf) {
     return 0;
 }
 
-int tempfs_access(TempfsInode *file, char *buf, size_t len, bool write) {
+int tempfs_access(TempfsInode *file, char *buf, size_t len, size_t offset, bool write) {
+    (void) offset;
     if (file->type != RegularFile) return -1;
     if (write) {
         if (!file->first_file_node) file->first_file_node = (TempfsFileNode*) (kmalloc(1) + kernel.hhdm);
@@ -96,23 +97,27 @@ int tempfs_access(TempfsInode *file, char *buf, size_t len, bool write) {
     size_t off = 0;
     while (len_left > 0 && this_fnode) {
         size_t bytes_to_copy = (len_left > FILE_DATA_BLOCK_LEN) ? FILE_DATA_BLOCK_LEN : len_left;
-        if (write) // accessing as write...
-            memcpy(this_fnode->data, buf + off, bytes_to_copy);
-        else // or acccessing as read?
-            memcpy(buf + off, this_fnode->data, bytes_to_copy);
-        off += bytes_to_copy;
-        len_left -= bytes_to_copy;
-        this_fnode = this_fnode->next;
+        if (offset < FILE_DATA_BLOCK_LEN) {
+            if (write) // accessing as write...
+                memcpy(this_fnode->data, buf + off + offset, bytes_to_copy);
+            else // or acccessing as read?
+                memcpy(buf + off, this_fnode->data + offset, bytes_to_copy);
+            off += bytes_to_copy;
+            len_left -= bytes_to_copy;
+            this_fnode = this_fnode->next;
+            offset = 0;
+        } else
+            offset -= FILE_DATA_BLOCK_LEN;
     }
     return 0;
 }
 
-int tempfs_write(TempfsInode *file, char *buf, size_t len) {
-    return tempfs_access(file, buf, len, true);
+int tempfs_write(TempfsInode *file, char *buf, size_t len, size_t offset) {
+    return tempfs_access(file, buf, len, offset, true);
 }
 
-int tempfs_read(TempfsInode *file, char *buf, size_t len) {
-    return tempfs_access(file, buf, len, false);
+int tempfs_read(TempfsInode *file, char *buf, size_t len, size_t offset) {
+    return tempfs_access(file, buf, len, offset, false);
 }
 
 int tempfs_rmdir(TempfsDirIter *dir) {
@@ -165,8 +170,8 @@ FileSystem tempfs = (FileSystem) {
     .rmfile_fn         = (int (*)(void *))tempfs_rmfile,
     .rmdir_fn          = (int (*)(void *))tempfs_rmdir,
     .diriter_fn        = (void *(*)(void *))tempfs_diriter,
-    .write_fn          = (int (*)(void *, char *, size_t))tempfs_write,
-    .read_fn           = (int (*)(void *, char *, size_t))tempfs_read,
+    .write_fn          = (int (*)(void *, char *, size_t, size_t))tempfs_write,
+    .read_fn           = (int (*)(void *, char *, size_t, size_t))tempfs_read,
     .identify_fn       = (int (*)(void *, char *, bool *))tempfs_identify,
     .file_from_diriter = (void *(*)(void *))tempfs_file_from_diriter,
 };

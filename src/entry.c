@@ -54,13 +54,13 @@ void vfs_test() {
     ls("/testdir");
     printf("Trying to write to /testdir/test.txt...\n");
     VfsFile *f = open("/testdir/test.txt", 0);
-    if (vfs_write(f, "Hello, world!", 14) < 0) {
+    if (vfs_write(f, "Hello, world!", 14, 0) < 0) {
         printf("Failed to write to file.\n");
         HALT_DEVICE();
     }
     char buf[14];
     printf("Trying to read back contents...\n");
-    if (vfs_read(f, buf, 14) < 0) {
+    if (vfs_read(f, buf, 14, 0) < 0) {
         printf("Failed to read from file.\n");
         HALT_DEVICE();
     }

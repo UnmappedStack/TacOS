@@ -252,12 +252,12 @@ int rm_dir(VfsDirIter *dir) {
     return dir->drive.fs.rmdir_fn(dir->private);
 }
 
-int vfs_read(VfsFile *file, char *buffer, size_t len) {
-    return file->drive.fs.read_fn(file->private, buffer, len);
+int vfs_read(VfsFile *file, char *buffer, size_t len, size_t offset) {
+    return file->drive.fs.read_fn(file->private, buffer, len, offset);
 }
 
-int vfs_write(VfsFile *file, char *buffer, size_t len) {
-    return file->drive.fs.write_fn(file->private, buffer, len);
+int vfs_write(VfsFile *file, char *buffer, size_t len, size_t offset) {
+    return file->drive.fs.write_fn(file->private, buffer, len, offset);
 }
 
 /* This is a kinda clunky API, but basically:

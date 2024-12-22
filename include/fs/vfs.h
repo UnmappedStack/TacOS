@@ -31,8 +31,8 @@ typedef struct {
     int     (*rmfile_fn        )(void *file);
     int     (*rmdir_fn         )(void *dir);
     void*   (*diriter_fn       )(void *iter);
-    int     (*write_fn         )(void *file, char *buf, size_t len);
-    int     (*read_fn          )(void *file, char *buf, size_t len);
+    int     (*write_fn         )(void *file, char *buf, size_t len, size_t offset);
+    int     (*read_fn          )(void *file, char *buf, size_t len, size_t offset);
     int     (*identify_fn      )(void *priv, char *buf, bool *is_dir);
     void*   (*file_from_diriter)(void *iter);
 } FileSystem;
@@ -76,5 +76,5 @@ int rm_file(VfsFile *file);
 int rm_dir(VfsDirIter *dir);
 VfsFile *vfs_diriter(VfsDirIter *dir, bool *is_dir);
 VfsDirIter vfs_file_to_diriter(VfsFile *f);
-int vfs_read(VfsFile *file, char *buffer, size_t len);
-int vfs_write(VfsFile *file, char *buffer, size_t len);
+int vfs_read(VfsFile *file, char *buffer, size_t len, size_t offset);
+int vfs_write(VfsFile *file, char *buffer, size_t len, size_t offset);
