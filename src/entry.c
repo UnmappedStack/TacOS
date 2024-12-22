@@ -14,31 +14,44 @@
 
 Kernel kernel = {0};
 
+void ls(char *path) {
+    printf("LS: %s:\n", path);
+    VfsDirIter dir;
+    VfsFile *buf;
+    char fname[MAX_FILENAME_LEN];
+    bool is_dir;
+    if (opendir(&dir, &buf, path, 0) < 0) {
+        printf("Failed to open dir %s\n", path);
+        HALT_DEVICE();
+    }
+    for (;;) {
+        vfs_identify(buf, fname, &is_dir);
+        char *label = (is_dir) ? " - Directory: " : " - File: ";
+        printf("%s%s\n", label, fname);
+        buf = vfs_diriter(&dir, &is_dir);
+        if (!buf) return;
+    }
+}
+
 __attribute__((noinline))
 void tempfs_test() {
     VfsDrive testdrive;
     testdrive.in_memory = true;
     testdrive.fs = tempfs;
     testdrive.private = tempfs_new();
-    printf("Testing mounting drive /dev\n");
+    printf("Mounting drive /...\n");
     if (vfs_mount("/", testdrive)) {
         printf("Failed to mountd drive.\n");
         HALT_DEVICE();
     }
-    if (mkdir("/dev") < 0) {
+    printf("Creating some files & subdirectories...\n");
+    if (mkdir("/testdir") < 0) {
         printf("Failed to create directory\n");
         HALT_DEVICE();
-    } else {
-        printf("Success.\n");
     }
-    if (mkdir("/dev/path") < 0) {
-        printf("Failed to create directory\n");
-        HALT_DEVICE();
-    } else {
-        printf("Success.\n");
-    }
-    printf("Trying to open with O_CREAT...\n");
-    printf("File = %p\n", open("/dev/path/testfile.txt", O_CREAT));
+    mkfile("/testdir/test.txt");
+    mkfile("/testdir/test2.txt");
+    ls("/testdir");
 }
 
 void _start() {

@@ -15,7 +15,6 @@ TempfsInode *tempfs_new() {
     memcpy(newfs->name, "FSROOT", 7);
     newfs->type = Directory;
     newfs->parent = newfs;
-    printf("Created tempfs\n");
     return newfs;
 }
 
@@ -116,7 +115,7 @@ int tempfs_read(TempfsInode *file, char *buf, size_t len) {
     return tempfs_access(file, buf, len, false);
 }
 
-int tempfs_rmdir(TempfsInode *dir) {
+int tempfs_rmdir(TempfsDirIter *dir) {
     (void) dir;
     printf("TODO: Implement rmdir in tempfs.\n");
     return -1;
@@ -133,8 +132,9 @@ TempfsInode *tempfs_open(TempfsInode *file) {
     return file;
 }
 
-void tempfs_close(TempfsInode *file) {
+int tempfs_close(TempfsInode *file) {
     (void) file;
+    return 0;
 }
 
 TempfsDirIter *tempfs_opendir(TempfsInode *dir) {
@@ -144,8 +144,9 @@ TempfsDirIter *tempfs_opendir(TempfsInode *dir) {
     return buf;
 }
 
-void tempfs_closedir(TempfsDirIter *dir) {
+int tempfs_closedir(TempfsDirIter *dir) {
     (void) dir;
+    return 0;
 }
 
 void *tempfs_file_from_diriter(TempfsDirIter *iter) {
@@ -156,11 +157,11 @@ FileSystem tempfs = (FileSystem) {
     .fs_id             = fs_tempfs,
     .find_root_fn      = (void *(*)(void*))tempfs_find_root,
     .open_fn           = (void *(*)(void *))tempfs_open,
-    .close_fn          = (void (*)(void *))tempfs_close,
+    .close_fn          = (int (*)(void *))tempfs_close,
     .mkfile_fn         = (void *(*)(void *, char *))tempfs_new_file,
     .mkdir_fn          = (void *(*)(void *, char *))tempfs_mkdir,
     .opendir_fn        = (void *(*)(void *))tempfs_opendir,
-    .closedir_fn       = (void *(*)(void *))tempfs_closedir,
+    .closedir_fn       = (int (*)(void *))tempfs_closedir,
     .rmfile_fn         = (int (*)(void *))tempfs_rmfile,
     .rmdir_fn          = (int (*)(void *))tempfs_rmdir,
     .diriter_fn        = (void *(*)(void *))tempfs_diriter,

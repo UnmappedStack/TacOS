@@ -23,11 +23,11 @@ typedef struct {
     uint8_t fs_id;
     void*   (*find_root_fn     )(void *fs);
     void*   (*open_fn          )(void *file);
-    void    (*close_fn         )(void *file);
+    int     (*close_fn         )(void *file);
     void*   (*mkfile_fn        )(void *dir, char *name);
     void*   (*mkdir_fn         )(void *parentdir, char *name);
     void*   (*opendir_fn       )(void *dir);
-    void*   (*closedir_fn      )(void *dir);
+    int     (*closedir_fn      )(void *dir);
     int     (*rmfile_fn        )(void *file);
     int     (*rmdir_fn         )(void *dir);
     void*   (*diriter_fn       )(void *iter);
@@ -57,6 +57,7 @@ typedef struct {
 
 typedef struct {
     void *private;
+    VfsDrive drive;
 } VfsDirIter;
 
 void init_vfs();
@@ -66,6 +67,12 @@ VfsDrive *vfs_path_to_drive(char *path, size_t *drive_root_idx_buf);
 VfsFile *vfs_access(char *path, int flags, VfsAccessType type);
 int vfs_identify(VfsFile *file, char *name, bool *is_dir);
 VfsFile *open(char *path, int flags);
-int opendir(VfsDirIter *buf, char *path, int flags);
+int opendir(VfsDirIter *buf, VfsFile **first_entry_buf, char *path, int flags);
 int mkfile(char *path);
 int mkdir(char *path);
+int closedir(VfsDirIter *dir);
+int close(VfsFile *file);
+int rm_file(VfsFile *file);
+int rm_dir(VfsDirIter *dir);
+VfsFile *vfs_diriter(VfsDirIter *dir, bool *is_dir);
+VfsDirIter vfs_file_to_diriter(VfsFile *f);

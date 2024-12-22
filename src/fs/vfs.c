@@ -1,3 +1,9 @@
+/* NOTE: This isn't the complete API which user programs will use! The
+ * syscall layer will abstract it to follow POSIX properly. 
+ * I'm not a huge fan of this VFS overall, both the design is clunky and the implementation is messy,
+ * but for now it works well enough, especially because of the syscall layer's extra abstraction. Then
+ * again, there's already quite a few levels of unnecessary abstraction so maybe that's not a good idea... */
+
 #include <cpu.h>
 #include <fs/vfs.h>
 #include <string.h>
@@ -18,7 +24,6 @@ int vfs_mount(char *path, VfsDrive drive) {
         return -1;
     }
     VfsMountTableEntry *new_entry = slab_alloc(kernel.vfs_mount_table_cache);
-    printf("Created new Drive at 0x%p\n", &new_entry->drive);
     strcpy(new_entry->path, path);
     new_entry->drive = drive;
     list_insert(&kernel.vfs_mount_table_list, &new_entry->list);
@@ -30,7 +35,6 @@ VfsDrive *vfs_find_mounted_drive(char *path) {
     for (struct list *iter = kernel.vfs_mount_table_list.next; iter != &kernel.vfs_mount_table_list; iter = iter->next) {
         this_entry = (VfsMountTableEntry*) iter;
         if (strcmp(this_entry->path, path)) continue;
-        printf("Found matching drive, path = %s, drive addr = 0x%p\n", this_entry->path, &this_entry->drive);
         return &this_entry->drive;
     }
     return NULL;
@@ -64,8 +68,14 @@ VfsDrive *vfs_path_to_drive(char *path, size_t *drive_root_idx_buf) {
     return vfs_find_mounted_drive("/");
 }
 
+// If name is NULL, it won't copy it to the buffer.
 int vfs_identify(VfsFile *file, char *name, bool *is_dir) {
-    return file->drive.fs.identify_fn(file->private, name, is_dir);
+    if (name) {
+        return file->drive.fs.identify_fn(file->private, name, is_dir);
+    } else {
+        char buf[MAX_FILENAME_LEN];
+        return file->drive.fs.identify_fn(file->private, buf, is_dir);
+    }
 }
 
 // Returns the *private*, not an actual VfsFile
@@ -175,13 +185,33 @@ VfsFile *open(char *path, int flags) {
     return vfs_access(path, flags, VAT_open);
 }
 
-int opendir(VfsDirIter *buf, char *path, int flags) {
+int opendir(VfsDirIter *buf, VfsFile **first_entry_buf, char *path, int flags) {
+    if (!strcmp(path, "/")) {
+        size_t new_path_start_idx;
+        VfsDrive *drive = vfs_path_to_drive(path, &new_path_start_idx);
+        void *dir = drive->fs.find_root_fn(drive->private);
+        buf->private = drive->fs.opendir_fn(dir);
+        buf->drive = *drive;
+        if (!buf) return -1;
+        *first_entry_buf = slab_alloc(kernel.vfs_file_cache);
+        **first_entry_buf = (VfsFile) {
+            .private = drive->fs.diriter_fn(buf->private),
+            .drive = *drive,
+        };
+        return 0;
+    }
     VfsFile *temp = vfs_access(path, flags, VAT_opendir);
     if (!temp) {
         return -1;
     } else {
-        buf->private = temp->drive.fs.opendir_fn(temp);
+        buf->private = temp->drive.fs.opendir_fn(temp->private);
+        buf->drive = temp->drive;
         temp->drive.fs.close_fn(temp);
+        *first_entry_buf = slab_alloc(kernel.vfs_file_cache);
+        **first_entry_buf = (VfsFile) {
+            .private = temp->drive.fs.diriter_fn(buf->private),
+            .drive = temp->drive,
+        };
         return 0;
     }
 }
@@ -204,4 +234,45 @@ int mkdir(char *path) {
     } else {
         return -1;
     }
+}
+
+int close(VfsFile *file) {
+    return file->drive.fs.close_fn(file->private);
+}
+
+int closedir(VfsDirIter *dir) {
+    return dir->drive.fs.closedir_fn(dir->private);
+}
+
+int rm_file(VfsFile *file) {
+    return file->drive.fs.rmfile_fn(file->private);
+}
+
+int rm_dir(VfsDirIter *dir) {
+    return dir->drive.fs.rmdir_fn(dir->private);
+}
+
+/* This is a kinda clunky API, but basically:
+ *  - You can get a VfsFile from vfs_diriter
+ *  - If you read that it's a dir, you should use vfs_file_to_diriter to get that new directory as a VfsDirIter
+ */
+VfsFile *vfs_diriter(VfsDirIter *dir, bool *is_dir) {
+    VfsFile *to_return = slab_alloc(kernel.vfs_file_cache);
+    *to_return = (VfsFile) {
+        .drive = dir->drive,
+        .private = dir->drive.fs.diriter_fn(dir->private),
+    };
+    if (!to_return->private) {
+        slab_free(kernel.vfs_file_cache, to_return);
+        return NULL;
+    }
+    vfs_identify(to_return, NULL, is_dir);
+    return to_return;
+}
+
+VfsDirIter vfs_file_to_diriter(VfsFile *f) {
+    return (VfsDirIter) {
+        .drive = f->drive,
+        .private = f->drive.fs.opendir_fn(f),
+    };
 }
