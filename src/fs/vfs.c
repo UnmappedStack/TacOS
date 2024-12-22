@@ -75,7 +75,7 @@ void *find_direntry(VfsDrive *drive, VfsDirIter *dir, char *name) {
     void *this_entry;
     for (;;) {
         if (!dir) return NULL;
-        if (!(this_entry = drive->fs.diriter_fn(dir))) return NULL;;
+        if (!(this_entry = drive->fs.diriter_fn(dir->private))) return NULL;
         if (drive->fs.identify_fn(this_entry, entry_name, &is_dir) < 0) return NULL;
         if (!strcmp(name, entry_name)) return this_entry;
     }
@@ -100,14 +100,14 @@ VfsFile *vfs_access(char *path, int flags, VfsAccessType type) {
     char *path_lag = &path_cpy[1];
     size_t pathlen = strlen(path) + 1;
     void *current_dir = drive->fs.find_root_fn(drive->private);
-    VfsDirIter cd_iter;
+    VfsDirIter cd_iter = {0};
     for (size_t i = 1; i < pathlen; i++) {
         if (path_cpy[i] == '/' || !path_cpy[i]) {
             char original_char = path_cpy[i];
             path_cpy[i] = 0;
             if (*path_lag == '/') path_lag++;
             bool is_dir = original_char == '/';
-            drive->fs.opendir_fn(&cd_iter, current_dir);
+            cd_iter.private = drive->fs.opendir_fn(current_dir);
             if (is_dir) {
                 VfsFile *cd_temp = find_direntry(drive, &cd_iter, path_lag);
                 drive->fs.close_fn(current_dir);
@@ -119,14 +119,10 @@ VfsFile *vfs_access(char *path, int flags, VfsAccessType type) {
             } else {
                 VfsFile *entry = find_direntry(drive, &cd_iter, path_lag);
                 if (!entry && ((flags & O_CREAT) || type == VAT_mkdir || type == VAT_mkfile)) {
-                    if (type == VAT_mkdir || type == VAT_mkfile) {
-                        printf("Cannot create: file or directory already exists.\n");
-                        return NULL;
-                    }
                     void *new_file = NULL;;
-                    if (type == VAT_mkfile || type == VAT_open)
+                    if (type == VAT_mkfile || type == VAT_open) {
                         drive->fs.mkfile_fn(current_dir, path_lag);
-                    else if (type == VAT_mkdir || type == VAT_opendir)
+                    } else if (type == VAT_mkdir || type == VAT_opendir)
                         drive->fs.mkdir_fn(current_dir, path_lag);
                     else {
                         printf("Unsupported type in vfs_access\n");
@@ -144,6 +140,10 @@ VfsFile *vfs_access(char *path, int flags, VfsAccessType type) {
                     drive->fs.close_fn(current_dir);
                     return NULL;
                 } else {
+                    if (type == VAT_mkdir || type == VAT_mkfile) {
+                        printf("Cannot create: file or directory already exists.\n");
+                        return NULL;
+                    }
                     drive->fs.close_fn(current_dir);
                     VfsFile *file_addr = slab_alloc(kernel.vfs_file_cache);
                     *file_addr = (VfsFile) {
@@ -180,7 +180,7 @@ int opendir(VfsDirIter *buf, char *path, int flags) {
     if (!temp) {
         return -1;
     } else {
-        temp->drive.fs.opendir_fn(buf, temp);
+        buf->private = temp->drive.fs.opendir_fn(temp);
         temp->drive.fs.close_fn(temp);
         return 0;
     }

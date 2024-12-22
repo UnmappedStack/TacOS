@@ -132,13 +132,18 @@ int tempfs_rmfile(TempfsInode *file) {
 TempfsInode *tempfs_open(TempfsInode *file) {
     return file;
 }
+
 void tempfs_close(TempfsInode *file) {
     (void) file;
 }
-void tempfs_opendir(TempfsDirIter *buf, TempfsInode *dir) {
+
+TempfsDirIter *tempfs_opendir(TempfsInode *dir) {
+    TempfsDirIter *buf = slab_alloc(kernel.tempfs_direntry_cache);
     buf->inode = dir;
     buf->current_entry = dir->first_dir_entry;
+    return buf;
 }
+
 void tempfs_closedir(TempfsDirIter *dir) {
     (void) dir;
 }
@@ -154,7 +159,7 @@ FileSystem tempfs = (FileSystem) {
     .close_fn          = (void (*)(void *))tempfs_close,
     .mkfile_fn         = (void *(*)(void *, char *))tempfs_new_file,
     .mkdir_fn          = (void *(*)(void *, char *))tempfs_mkdir,
-    .opendir_fn        = (void *(*)(void *, void *))tempfs_opendir,
+    .opendir_fn        = (void *(*)(void *))tempfs_opendir,
     .closedir_fn       = (void *(*)(void *))tempfs_closedir,
     .rmfile_fn         = (int (*)(void *))tempfs_rmfile,
     .rmdir_fn          = (int (*)(void *))tempfs_rmdir,

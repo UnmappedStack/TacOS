@@ -20,16 +20,22 @@ void tempfs_test() {
     testdrive.in_memory = true;
     testdrive.fs = tempfs;
     testdrive.private = tempfs_new();
-    if (!tempfs_mkdir(testdrive.private, "path")) {
+    printf("Testing mounting drive /dev\n");
+    if (vfs_mount("/", testdrive)) {
+        printf("Failed to mountd drive.\n");
+        HALT_DEVICE();
+    }
+    if (mkdir("/dev") < 0) {
         printf("Failed to create directory\n");
         HALT_DEVICE();
     } else {
         printf("Success.\n");
     }
-    printf("Testing mounting drive /dev\n");
-    if (vfs_mount("/dev", testdrive)) {
-        printf("Failed to mountd drive.\n");
+    if (mkdir("/dev/path") < 0) {
+        printf("Failed to create directory\n");
         HALT_DEVICE();
+    } else {
+        printf("Success.\n");
     }
     printf("Trying to open with O_CREAT...\n");
     printf("File = %p\n", open("/dev/path/testfile.txt", O_CREAT));

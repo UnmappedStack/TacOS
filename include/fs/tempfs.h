@@ -45,7 +45,7 @@ TempfsInode *tempfs_new_file(TempfsInode *dir, char *name);
 TempfsInode *tempfs_mkdir(TempfsInode *parentdir, char *name);
 TempfsInode *tempfs_open(TempfsInode *file);
 void tempfs_close(TempfsInode *file);
-void tempfs_opendir(TempfsDirIter *buf, TempfsInode *dir);
+TempfsDirIter *tempfs_opendir(TempfsInode *dir);
 int tempfs_write(TempfsInode *file, char *buf, size_t len);
 int tempfs_read(TempfsInode *file, char *buf, size_t len);
 TempfsInode *tempfs_diriter(TempfsDirIter *iter);

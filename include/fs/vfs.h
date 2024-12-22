@@ -26,7 +26,7 @@ typedef struct {
     void    (*close_fn         )(void *file);
     void*   (*mkfile_fn        )(void *dir, char *name);
     void*   (*mkdir_fn         )(void *parentdir, char *name);
-    void*   (*opendir_fn       )(void *buf, void *dir);
+    void*   (*opendir_fn       )(void *dir);
     void*   (*closedir_fn      )(void *dir);
     int     (*rmfile_fn        )(void *file);
     int     (*rmdir_fn         )(void *dir);
@@ -57,7 +57,6 @@ typedef struct {
 
 typedef struct {
     void *private;
-    uint8_t rsvd[20];
 } VfsDirIter;
 
 void init_vfs();
