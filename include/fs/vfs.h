@@ -76,3 +76,5 @@ int rm_file(VfsFile *file);
 int rm_dir(VfsDirIter *dir);
 VfsFile *vfs_diriter(VfsDirIter *dir, bool *is_dir);
 VfsDirIter vfs_file_to_diriter(VfsFile *f);
+int vfs_read(VfsFile *file, char *buffer, size_t len);
+int vfs_write(VfsFile *file, char *buffer, size_t len);

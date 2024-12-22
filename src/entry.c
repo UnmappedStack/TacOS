@@ -29,12 +29,12 @@ void ls(char *path) {
         char *label = (is_dir) ? " - Directory: " : " - File: ";
         printf("%s%s\n", label, fname);
         buf = vfs_diriter(&dir, &is_dir);
-        if (!buf) return;
+        if (!buf) break;
     }
 }
 
 __attribute__((noinline))
-void tempfs_test() {
+void vfs_test() {
     VfsDrive testdrive;
     testdrive.in_memory = true;
     testdrive.fs = tempfs;
@@ -52,6 +52,19 @@ void tempfs_test() {
     mkfile("/testdir/test.txt");
     mkfile("/testdir/test2.txt");
     ls("/testdir");
+    printf("Trying to write to /testdir/test.txt...\n");
+    VfsFile *f = open("/testdir/test.txt", 0);
+    if (vfs_write(f, "Hello, world!", 14) < 0) {
+        printf("Failed to write to file.\n");
+        HALT_DEVICE();
+    }
+    char buf[14];
+    printf("Trying to read back contents...\n");
+    if (vfs_read(f, buf, 14) < 0) {
+        printf("Failed to read from file.\n");
+        HALT_DEVICE();
+    }
+    printf("Success, contents = %s\n", buf);
 }
 
 void _start() {
@@ -64,6 +77,6 @@ void _start() {
     init_paging();
     init_vfs();
     switch_page_structures();
-    tempfs_test();
+    vfs_test();
     HALT_DEVICE();
 }

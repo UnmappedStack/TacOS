@@ -252,6 +252,14 @@ int rm_dir(VfsDirIter *dir) {
     return dir->drive.fs.rmdir_fn(dir->private);
 }
 
+int vfs_read(VfsFile *file, char *buffer, size_t len) {
+    return file->drive.fs.read_fn(file->private, buffer, len);
+}
+
+int vfs_write(VfsFile *file, char *buffer, size_t len) {
+    return file->drive.fs.write_fn(file->private, buffer, len);
+}
+
 /* This is a kinda clunky API, but basically:
  *  - You can get a VfsFile from vfs_diriter
  *  - If you read that it's a dir, you should use vfs_file_to_diriter to get that new directory as a VfsDirIter
@@ -262,10 +270,7 @@ VfsFile *vfs_diriter(VfsDirIter *dir, bool *is_dir) {
         .drive = dir->drive,
         .private = dir->drive.fs.diriter_fn(dir->private),
     };
-    if (!to_return->private) {
-        slab_free(kernel.vfs_file_cache, to_return);
-        return NULL;
-    }
+    if (!to_return->private) return NULL;
     vfs_identify(to_return, NULL, is_dir);
     return to_return;
 }
