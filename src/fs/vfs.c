@@ -182,8 +182,7 @@ VfsFile *vfs_access(char *path, int flags, VfsAccessType type) {
 
 
 VfsFile *open(char *path, int flags) {
-    VfsFile *ret = vfs_access(path, flags, VAT_open);
-    return ret;
+    return vfs_access(path, flags, VAT_open);
 }
 
 int opendir(VfsDirIter *buf, VfsFile **first_entry_buf, char *path, int flags) {
