@@ -30,7 +30,25 @@ void unpack_initrd() {
         }
         memmove(filename + 1, filename, filename_len + 1);
         *filename = '/';
-        printf("new filename: %s\n", filename);
+        if (is_dir) {
+            filename[filename_len] = 0;
+            if (mkdir(filename) < 0) {
+                printf("Failed to unpack initrd: Cannot create directory: \"%s\"\n", filename);
+                HALT_DEVICE();
+            }
+        } else {
+            VfsFile *f;
+            if (!(f = open(filename, O_CREAT))) {
+                printf("Failed to unpack initrd: Cannot create + open file: \"%s\"\n", filename);
+                HALT_DEVICE();
+            }
+            if (vfs_write(f, at + DATA_OFF, size, 0) < 0) {
+                printf("Failed to unpack initrd: Cannot write to file: \"%s\"\n", filename);
+                HALT_DEVICE();
+            }
+            close(f);
+        }
         at += (((size + 511) / 512) + 1) * 512;
     }
+    printf("Unpacked initial ramdisk.\n");
 }

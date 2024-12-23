@@ -131,9 +131,9 @@ VfsFile *vfs_access(char *path, int flags, VfsAccessType type) {
                 if (!entry && ((flags & O_CREAT) || type == VAT_mkdir || type == VAT_mkfile)) {
                     void *new_file = NULL;;
                     if (type == VAT_mkfile || type == VAT_open) {
-                        drive->fs.mkfile_fn(current_dir, path_lag);
+                        new_file = drive->fs.mkfile_fn(current_dir, path_lag);
                     } else if (type == VAT_mkdir || type == VAT_opendir)
-                        drive->fs.mkdir_fn(current_dir, path_lag);
+                        new_file = drive->fs.mkdir_fn(current_dir, path_lag);
                     else {
                         printf("Unsupported type in vfs_access\n");
                         return NULL;
@@ -182,7 +182,8 @@ VfsFile *vfs_access(char *path, int flags, VfsAccessType type) {
 
 
 VfsFile *open(char *path, int flags) {
-    return vfs_access(path, flags, VAT_open);
+    VfsFile *ret = vfs_access(path, flags, VAT_open);
+    return ret;
 }
 
 int opendir(VfsDirIter *buf, VfsFile **first_entry_buf, char *path, int flags) {

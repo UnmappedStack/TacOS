@@ -85,7 +85,6 @@ int tempfs_identify(TempfsInode *inode, char *namebuf, bool *is_dir_buf) {
 }
 
 int tempfs_access(TempfsInode *file, char *buf, size_t len, size_t offset, bool write) {
-    (void) offset;
     if (file->type != RegularFile) return -1;
     if (write) {
         if (!file->first_file_node) file->first_file_node = (TempfsFileNode*) (kmalloc(1) + kernel.hhdm);

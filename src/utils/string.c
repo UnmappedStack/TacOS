@@ -68,7 +68,6 @@ void *memcpy(void *dest, const void *src, size_t n) {
 }
 
 void *memmove(void *dest, const void *src, size_t n) {
-    printf("memmove with dest = %p, src = %p, n = %i\n", dest, src, n);
     if (dest == src) {
         return dest;
     } else if ((uintptr_t) dest < (uintptr_t) src) {
