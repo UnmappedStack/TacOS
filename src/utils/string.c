@@ -1,4 +1,5 @@
 #include <string.h>
+#include <printf.h>
 
 size_t oct2bin(char *str, int size) {
     int n = 0;
@@ -68,18 +69,18 @@ void *memcpy(void *dest, const void *src, size_t n) {
 }
 
 void *memmove(void *dest, const void *src, size_t n) {
-    if (dest == src)
+    printf("memmove with dest = %p, src = %p, n = %i\n", dest, src, n);
+    if (dest == src) {
         return dest;
-    else if (src + n < dest || dest + n > src || // If there's no overlap or
-         dest < src) {                      // dest < src then it can do a normal memcpy
-       return memcpy(dest, src, n);
+    } else if (dest < src) {
+        return memcpy(dest, src, n);
     } else if (dest > src) {
         // copy in reverse
         asm volatile(
             "std\n"
-            "rep movsb"
+            "rep movsb\n"
             : "=D"(dest), "=S"(src), "=c"(n)
-            : "D"(dest), "S"(src), "c"(n)
+            : "D"(dest + n - 1), "S"(src + n - 1), "c"(n)
             : "memory"
         );
         return dest;
