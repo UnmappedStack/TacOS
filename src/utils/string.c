@@ -1,11 +1,23 @@
 #include <string.h>
 
+size_t oct2bin(char *str, int size) {
+    int n = 0;
+    char *c = str;
+    while (size-- > 0) {
+        n *= 8;
+        n += *c - '0';
+        c++;
+    }
+    return n;
+}
+
 size_t strlen(const char *str) {
     size_t len = 0;
     while (str[len]) len++;
     return len;
 }
-void *memset (void *dest, int x, size_t n) {
+
+void *memset(void *dest, int x, size_t n) {
     asm volatile(
         "rep stosb"
         : "=D"(dest), "=c"(n)
@@ -36,14 +48,45 @@ int strcmp(char *str1, char *str2) {
     return (*str2);
 }
 
-void *memcpy (void *dest, const void *src, size_t n) {
+// NOTE: also non posix, see comment for strcmp above
+int memcmp(char *str1, char *str2, size_t bytes) {
+    for (size_t i = 0; i < bytes; i++) {
+        if (str1[i] != str2[i]) return 1;
+    }
+    return 0;
+}
+
+void *memcpy(void *dest, const void *src, size_t n) {
     asm volatile(
+        "cld\n"
         "rep movsb"
         : "=D"(dest), "=S"(src), "=c"(n)
         : "D"(dest), "S"(src), "c"(n)
         : "memory"
     );
     return dest;
+}
+
+void *memmove(void *dest, const void *src, size_t n) {
+    if (dest == src)
+        return dest;
+    else if (src + n < dest || dest + n > src || // If there's no overlap or
+         dest < src) {                      // dest < src then it can do a normal memcpy
+       return memcpy(dest, src, n);
+    } else if (dest > src) {
+        // copy in reverse
+        asm volatile(
+            "std\n"
+            "rep movsb"
+            : "=D"(dest), "=S"(src), "=c"(n)
+            : "D"(dest), "S"(src), "c"(n)
+            : "memory"
+        );
+        return dest;
+    } else {
+        // unreachable
+        return NULL;
+    }
 }
 
 void reverse(char str[], int length) {
