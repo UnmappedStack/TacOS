@@ -270,7 +270,10 @@ VfsFile *vfs_diriter(VfsDirIter *dir, bool *is_dir) {
         .drive = dir->drive,
         .private = dir->drive.fs.diriter_fn(dir->private),
     };
-    if (!to_return->private) return NULL;
+    if (!to_return->private) {
+        slab_free(kernel.vfs_file_cache, to_return);
+        return NULL;
+    }
     vfs_identify(to_return, NULL, is_dir);
     return to_return;
 }

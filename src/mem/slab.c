@@ -82,21 +82,21 @@ void *slab_alloc(Cache *cache) {
 /* Find the slab in a cache which contains a specific address. Returns a pointer to the slab. */
 Slab *slab_find_addr(Cache *cache, void *ptr) {
     // try finding it in the full list
-    for (struct list *iter = &cache->full_nodes; iter != iter->next;) {
+    for (struct list *iter = cache->full_nodes.next; iter != &cache->full_nodes;) {
         if (((Slab*) iter)->data < ptr &&
             ((Slab*) iter)->data_end > ptr) {
             return (Slab*) iter;
         }
     }
     // if it's not in the full list, keep looking in the partial list
-    for (struct list *iter = &cache->partial_nodes; iter != iter->next;) {
+    for (struct list *iter = cache->partial_nodes.next; iter != &cache->partial_nodes;) {
         if (((Slab*) iter)->data < ptr &&
             ((Slab*) iter)->data_end > ptr) {
             return (Slab*) iter;
         }
     }
-    // if it's *still* not found, look in the free list
-    for (struct list *iter = &cache->free_nodes; iter != iter->next;) {
+    // if all fails, check in the free list
+    for (struct list *iter = cache->free_nodes.next; iter != &cache->free_nodes;) {
         if (((Slab*) iter)->data < ptr &&
             ((Slab*) iter)->data_end > ptr) {
             return (Slab*) iter;
