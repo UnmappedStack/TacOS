@@ -68,6 +68,25 @@ void vfs_test() {
     printf("Success, contents = %s\n", buf);
 }
 
+void cat(char *path) {
+    printf("CAT: %s:\n", path);
+    VfsFile *f;
+    if (!(f = open(path, 0))) {
+        printf("Failed to open \"%s\" (in cat).\n");
+        HALT_DEVICE();
+    }
+    size_t off = 0;
+    char buf[4096];
+    for (;;) {
+        int status = vfs_read(f, buf, 4096, off);
+        if (status == -2) break; // EOF
+        printf("%s", buf);
+        off += 4096;
+    }
+    close(f);
+    printf("\n");
+}
+
 void _start() {
     init_kernel_info();
     init_serial();
@@ -78,7 +97,9 @@ void _start() {
     init_paging();
     init_vfs();
     switch_page_structures();
-    vfs_test();
     unpack_initrd();
+    ls("/");
+    ls("/home");
+    cat("/home/README.txt");
     HALT_DEVICE();
 }
