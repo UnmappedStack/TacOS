@@ -59,7 +59,6 @@ int memcmp(char *str1, char *str2, size_t bytes) {
 
 void *memcpy(void *dest, const void *src, size_t n) {
     asm volatile(
-        "cld\n"
         "rep movsb"
         : "=D"(dest), "=S"(src), "=c"(n)
         : "D"(dest), "S"(src), "c"(n)
@@ -72,13 +71,14 @@ void *memmove(void *dest, const void *src, size_t n) {
     printf("memmove with dest = %p, src = %p, n = %i\n", dest, src, n);
     if (dest == src) {
         return dest;
-    } else if (dest < src) {
+    } else if ((uintptr_t) dest < (uintptr_t) src) {
         return memcpy(dest, src, n);
-    } else if (dest > src) {
+    } else if ((uintptr_t) dest > (uintptr_t) src) {
         // copy in reverse
         asm volatile(
             "std\n"
             "rep movsb\n"
+            "cld\n"
             : "=D"(dest), "=S"(src), "=c"(n)
             : "D"(dest + n - 1), "S"(src + n - 1), "c"(n)
             : "memory"

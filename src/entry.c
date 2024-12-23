@@ -11,6 +11,7 @@
 #include <panic.h>
 #include <fs/vfs.h>
 #include <fs/tempfs.h>
+#include <fs/ustar.h>
 
 Kernel kernel = {0};
 
@@ -78,5 +79,6 @@ void _start() {
     init_vfs();
     switch_page_structures();
     vfs_test();
+    unpack_initrd();
     HALT_DEVICE();
 }

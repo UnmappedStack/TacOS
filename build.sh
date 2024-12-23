@@ -13,7 +13,11 @@ make -C limine
 echo "Building kernel..."
 make
 
+echo "Building initial ramdisk..."
 mkdir -p sysroot/boot
+tar --create --file=sysroot/boot/initrd --format=ustar -C initrd home
+
+echo "Building disk image..."
 cp -v bin/tacos sysroot/boot/
 mkdir -p sysroot/boot/limine
 cp -v limine.conf limine/limine-bios.sys limine/limine-bios-cd.bin \

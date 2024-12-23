@@ -26,6 +26,7 @@ typedef struct {
     Cache       *vfs_mount_table_cache;
     struct list vfs_mount_table_list;
     Cache       *vfs_file_cache;
+    char        *initrd_addr;
 } Kernel;
 
 extern Kernel kernel;
