@@ -109,7 +109,6 @@ VfsFile *vfs_access(char *path, int flags, VfsAccessType type) {
     strcpy(path_cpy, &path[new_path_start_idx]);
     char *path_lag = &path_cpy[1];
     size_t pathlen = strlen(path) + 1;
-    printf("Drive private = %p\n", drive->private);
     void *current_dir = drive->fs.find_root_fn(drive->private);
     VfsDirIter cd_iter = {0};
     for (size_t i = 1; i < pathlen; i++) {

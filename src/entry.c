@@ -34,40 +34,6 @@ void ls(char *path) {
     }
 }
 
-__attribute__((noinline))
-void vfs_test() {
-    VfsDrive testdrive;
-    testdrive.in_memory = true;
-    testdrive.fs = tempfs;
-    testdrive.private = tempfs_new();
-    printf("Mounting drive /...\n");
-    if (vfs_mount("/", testdrive)) {
-        printf("Failed to mountd drive.\n");
-        HALT_DEVICE();
-    }
-    printf("Creating some files & subdirectories...\n");
-    if (mkdir("/testdir") < 0) {
-        printf("Failed to create directory\n");
-        HALT_DEVICE();
-    }
-    mkfile("/testdir/test.txt");
-    mkfile("/testdir/test2.txt");
-    ls("/testdir");
-    printf("Trying to write to /testdir/test.txt...\n");
-    VfsFile *f = open("/testdir/test.txt", 0);
-    if (vfs_write(f, "Hello, world!", 14, 0) < 0) {
-        printf("Failed to write to file.\n");
-        HALT_DEVICE();
-    }
-    char buf[14];
-    printf("Trying to read back contents...\n");
-    if (vfs_read(f, buf, 14, 0) < 0) {
-        printf("Failed to read from file.\n");
-        HALT_DEVICE();
-    }
-    printf("Success, contents = %s\n", buf);
-}
-
 void cat(char *path) {
     printf("CAT: %s:\n", path);
     VfsFile *f;
