@@ -30,6 +30,7 @@ typedef struct {
     Cache         *vfs_file_cache;
     char          *initrd_addr;
     SchedulerQueue scheduler;
+    Cache         *memregion_cache;
 } Kernel;
 
 extern Kernel kernel;

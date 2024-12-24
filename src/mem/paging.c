@@ -75,6 +75,24 @@ void write_vmem(uint64_t *pml4_addr, uint64_t virt_addr, char *data, size_t len)
     }
 }
 
+void read_vmem(uint64_t *pml4_addr, uintptr_t virt_addr, char *buffer, size_t len) {
+    while (len > 0) {
+        // get the address of this virtual address in kernel memory
+        uint64_t kernel_addr = virt_to_phys(pml4_addr, virt_addr);
+        if (!kernel_addr) {
+            printf("read_vmem: virtual address is not mapped! Address: %p\n"
+                   "         Cannot read from vmem. Halting.\n", virt_addr);
+            HALT_DEVICE();
+        }
+        kernel_addr += kernel.hhdm;
+        uint64_t bytes_to_copy = (len < PAGE_SIZE) ? len : PAGE_SIZE;
+        memcpy(buffer, (char*) kernel_addr, bytes_to_copy);
+        len -= bytes_to_copy;
+        virt_addr += bytes_to_copy;
+        buffer += bytes_to_copy;
+    }
+}
+
 // pushes data onto another stack in another virtual memory address tree thingy
 void push_vmem(uint64_t *pml4_addr, uint64_t rsp, char *data, size_t len) {
     rsp -= len;
