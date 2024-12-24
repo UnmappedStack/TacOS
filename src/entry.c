@@ -12,6 +12,7 @@
 #include <fs/vfs.h>
 #include <fs/tempfs.h>
 #include <fs/ustar.h>
+#include <scheduler.h>
 
 Kernel kernel = {0};
 
