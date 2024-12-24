@@ -4,6 +4,8 @@
 #include <kernel.h>
 #include <printf.h>
 
+bool in_panic = false;
+
 struct stackFrame {
     struct stackFrame* rbp;
     uint64_t rip;
@@ -20,8 +22,9 @@ void stack_trace(uint64_t rbp, uint64_t rip) {
 }
 
 void exception_handler(IDTEFrame registers) {
-    (void) registers;
     DISABLE_INTERRUPTS();
+    if (in_panic) HALT_DEVICE();
+    in_panic = true;
     printf(BYEL "                         ### KERNEL PANIC! ###\n"
            BRED "  Something went seriously wrong and the system cannot continue.\n\n"
            BWHT  " === Debug information: ===\n" WHT);

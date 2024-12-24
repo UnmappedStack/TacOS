@@ -71,10 +71,10 @@ void *slab_alloc(Cache *cache) {
     slab->num_free--;
     if (!slab->num_free) {
         list_remove(&slab->list);
-        list_insert(&slab->list, &cache->full_nodes);
+        list_insert(&cache->full_nodes, &slab->list);
     } else if (slab->num_free < cache->obj_per_slab && (struct list*) slab == &cache->free_nodes) {
         list_remove(&slab->list);
-        list_insert(&slab->list, &cache->partial_nodes);
+        list_insert(&cache->partial_nodes, &slab->list);
     }
     return free_stack_element;
 }

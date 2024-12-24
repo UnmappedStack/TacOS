@@ -76,15 +76,14 @@ void cat(char *path) {
         HALT_DEVICE();
     }
     size_t off = 0;
-    char buf[4096];
+    char buf[FILE_DATA_BLOCK_LEN];
     for (;;) {
-        int status = vfs_read(f, buf, 4096, off);
+        int status = vfs_read(f, buf, FILE_DATA_BLOCK_LEN, off);
         if (status == -2) break; // EOF
-        printf("%s", buf);
-        off += 4096;
+        printf(buf);
+        off += FILE_DATA_BLOCK_LEN;
     }
     close(f);
-    printf("\n");
 }
 
 void _start() {

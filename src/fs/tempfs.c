@@ -11,6 +11,8 @@ TempfsInode *tempfs_new() {
         kernel.tempfs_inode_cache = init_slab_cache(sizeof(TempfsInode), "TempFS TempfsInodes");
     if (!kernel.tempfs_direntry_cache)
         kernel.tempfs_direntry_cache = init_slab_cache(sizeof(TempfsDirEntry), "TempFS DirEntries");
+    if (!kernel.tempfs_data_cache)
+        kernel.tempfs_data_cache = init_slab_cache(PAGE_SIZE, "TempFS Data");
     TempfsInode *newfs = slab_alloc(kernel.tempfs_inode_cache);
     memcpy(newfs->name, "FSROOT", 7);
     newfs->type = Directory;
@@ -40,7 +42,7 @@ TempfsInode *tempfs_create_entry(TempfsInode *dir) {
         new_entry = last_entry->next;
     }
     new_entry->next = NULL;
-    new_entry->inode = slab_alloc(kernel.tempfs_inode_cache);
+    new_entry->inode = (TempfsInode*) (kmalloc(1) + kernel.hhdm);
     new_entry->inode->parent = dir;
     return new_entry->inode;
 }
@@ -97,27 +99,25 @@ int tempfs_access(TempfsInode *file, char *buf, size_t len, size_t offset, bool 
     size_t is_first = false;
     while (len_left > 0) {
         size_t bytes_to_copy = (len_left > FILE_DATA_BLOCK_LEN) ? FILE_DATA_BLOCK_LEN : len_left;
-        if (!this_fnode) {
-            // no more of the file is left
-            if (is_first)
-                return -2;
-            else
-                return 0;
-        }
-        if (offset <= FILE_DATA_BLOCK_LEN) {
-            if (write) // accessing as write...
+        if (!this_fnode && !write) return -2; // EOF
+        if (offset < FILE_DATA_BLOCK_LEN) {
+            if (write) // accessing as write?
                 memcpy(this_fnode->data + offset, buf + off, bytes_to_copy);
-            else // or acccessing as read?
+            else // ...or accessing as read?
                 memcpy(buf + off, this_fnode->data + offset, bytes_to_copy);
             len_left -= bytes_to_copy;
             offset = 0;
             is_first = false;
+            off += bytes_to_copy;
         } else {
             offset -= FILE_DATA_BLOCK_LEN;
             if (!is_first && offset <= FILE_DATA_BLOCK_LEN)
                 is_first = true;
         }
-        off += bytes_to_copy;
+        if (write && !this_fnode->next && len_left > 0) {
+            this_fnode->next = (TempfsFileNode*) (kmalloc(1) + kernel.hhdm);
+            this_fnode->next->next = 0;
+        }
         this_fnode = this_fnode->next;
     }
     return 0;
@@ -154,6 +154,11 @@ int tempfs_close(TempfsInode *file) {
 }
 
 TempfsDirIter *tempfs_opendir(TempfsInode *dir) {
+    if (dir->type != Directory) {
+        printf("Cannot open directory because it's not a directory. dir = %p\n", dir);
+        asm volatile("int $0x0");
+        return NULL;
+    }
     TempfsDirIter *buf = slab_alloc(kernel.tempfs_direntry_cache);
     buf->inode = dir;
     buf->current_entry = dir->first_dir_entry;

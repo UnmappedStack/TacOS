@@ -2,7 +2,7 @@
 #include <mem/paging.h>
 #include <fs/vfs.h>
 
-#define FILE_DATA_BLOCK_LEN (PAGE_SIZE - sizeof(TempfsDirEntry*))
+#define FILE_DATA_BLOCK_LEN (PAGE_SIZE - sizeof(TempfsFileNode*))
 
 typedef struct TempfsFileNode TempfsFileNode;
 typedef struct TempfsDirEntry TempfsDirEntry;

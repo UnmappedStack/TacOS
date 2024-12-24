@@ -23,6 +23,7 @@ typedef struct {
     struct list *slab_caches;
     Cache       *tempfs_inode_cache;
     Cache       *tempfs_direntry_cache;
+    Cache       *tempfs_data_cache;
     Cache       *vfs_mount_table_cache;
     struct list vfs_mount_table_list;
     Cache       *vfs_file_cache;
