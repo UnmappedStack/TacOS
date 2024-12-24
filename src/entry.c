@@ -64,6 +64,7 @@ void _start() {
     init_vfs();
     switch_page_structures();
     unpack_initrd();
+    init_scheduler();
     ls("/");
     ls("/home");
     cat("/home/README.txt");
