@@ -23,10 +23,10 @@ struct Task {
 };
 
 typedef struct {
-    struct list list;
-    Task *current_task;
-    Cache *cache;
-    task_id_t tid_upto;
+    struct list *list;
+    Task        *current_task;
+    Cache       *cache;
+    task_id_t    tid_upto;
 } SchedulerQueue;
 
 void init_scheduler();

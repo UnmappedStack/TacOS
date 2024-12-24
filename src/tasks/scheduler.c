@@ -6,7 +6,7 @@
 #include <mem/slab.h>
 
 void init_scheduler() {
-    list_init(&kernel.scheduler.list);
+    kernel.scheduler = (SchedulerQueue) {0};
     kernel.scheduler.cache = init_slab_cache(sizeof(Task), "Scheduler Queue");
     // init the kernel task
     Task *krnl_task   = task_add();
@@ -20,16 +20,19 @@ void init_scheduler() {
 
 Task *task_add() {
     Task *new_task   = slab_alloc(kernel.scheduler.cache);
+    if (kernel.scheduler.list == 0) {
+        list_init(&new_task->list);
+        kernel.scheduler.list = &new_task->list;
+    }
     memset(new_task, 0, sizeof(Task));
     new_task->tid    = kernel.scheduler.tid_upto++;
-    list_insert(&new_task->list, &kernel.scheduler.list);
+    list_insert(&new_task->list, kernel.scheduler.list);
     return new_task;
 }
 
 Task *task_select() {
     kernel.scheduler.current_task = (Task*) kernel.scheduler.current_task->list.next;
-    if (!(kernel.scheduler.current_task->flags & TASK_PRESENT) ||
-        &kernel.scheduler.current_task->list == &kernel.scheduler.list)
+    if (!(kernel.scheduler.current_task->flags & TASK_PRESENT))
             kernel.scheduler.current_task = (Task*) kernel.scheduler.current_task->list.next;
     return (Task*) kernel.scheduler.current_task;
 }
