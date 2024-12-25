@@ -1,4 +1,5 @@
 #pragma once
+#include <mem/memregion.h>
 #include <mem/paging.h>
 #include <mem/slab.h>
 #include <stdint.h>
@@ -19,6 +20,7 @@ struct Task {
     uint64_t      pml4;
     void         *entry;
     Task         *parent;
+    Memregion    *memregion_list;
     task_flags_t  flags;
 };
 

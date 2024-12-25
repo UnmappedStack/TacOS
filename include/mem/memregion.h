@@ -5,7 +5,7 @@
 
 typedef struct {
     struct list list;
-    uint64_t flags;
+    uint64_t    flags;
     uintptr_t   addr;
     size_t      num_pages;
 } Memregion;
