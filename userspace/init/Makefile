@@ -1,5 +1,5 @@
-OUTDIR = ../../initrd/lib/bin
-OUT = ../../initrd/lib/bin/init
+OUTDIR = ../../initrd/usr/bin
+OUT = ../../initrd/usr/bin/init
 OBJDIR = obj
 
 all:

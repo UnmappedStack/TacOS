@@ -18,7 +18,7 @@ make -C userspace/*
 
 echo "Building initial ramdisk..."
 mkdir -p sysroot/boot
-tar --create --file=sysroot/boot/initrd --format=ustar -C initrd home lib
+tar --create --file=sysroot/boot/initrd --format=ustar -C initrd home usr
 
 echo "Building disk image..."
 cp -v bin/tacos sysroot/boot/
