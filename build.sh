@@ -13,9 +13,12 @@ make -C limine
 echo "Building kernel..."
 make
 
+echo "Building userspace components..."
+make -C userspace/*
+
 echo "Building initial ramdisk..."
 mkdir -p sysroot/boot
-tar --create --file=sysroot/boot/initrd --format=ustar -C initrd home
+tar --create --file=sysroot/boot/initrd --format=ustar -C initrd home lib
 
 echo "Building disk image..."
 cp -v bin/tacos sysroot/boot/
