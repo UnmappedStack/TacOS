@@ -14,13 +14,13 @@ void init_scheduler() {
     krnl_task->entry  = &_start;
     krnl_task->parent = krnl_task; // The kernel task is it's own parent
     krnl_task->flags  = 0;
+    krnl_task->memregion_list = 0;
     kernel.scheduler.current_task = krnl_task;
     printf("Initiated scheduler.\n");
 }
 
 Task *task_add() {
     Task *new_task   = slab_alloc(kernel.scheduler.cache);
-    memset(new_task, 0, sizeof(Task));
     new_task->tid    = kernel.scheduler.tid_upto++;
     if (kernel.scheduler.list == 0) {
         list_init(&new_task->list);

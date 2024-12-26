@@ -25,7 +25,7 @@ Memregion *add_memregion(Memregion **list, uintptr_t addr, size_t num_pages, uin
         list_init(&new_memregion->list);
         *list = new_memregion;
     } else {
-        list_insert(&new_memregion->list, &(*list)->list);
+        list_insert(&(*list)->list, &new_memregion->list);
     }
     new_memregion->addr      = addr;
     new_memregion->num_pages = num_pages;

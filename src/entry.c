@@ -1,4 +1,5 @@
 #include <mem/pmm.h>
+#include <exec.h>
 #include <cpu.h>
 #include <stddef.h>
 #include <kernel.h>
@@ -64,9 +65,12 @@ void _start() {
     init_vfs();
     switch_page_structures();
     unpack_initrd();
+    init_memregion();
     init_scheduler();
     ls("/");
     ls("/home");
     cat("/home/README.txt");
+    printf("Executing init.\n");
+    execve("/usr/bin/init");
     HALT_DEVICE();
 }

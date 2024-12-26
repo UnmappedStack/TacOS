@@ -43,8 +43,9 @@ int execve(char *filename) {
         goto elf_generic_err;
     }
     size_t offset = file_header.program_header_offset;
-    elf_program_header program_header;
     for (size_t i = 0; i < file_header.program_header_entry_count; i++) {
+        elf_program_header program_header;
+        printf("f = %p\n", f);
         if (vfs_read(f, (char*) &program_header, sizeof(elf_file_header), offset) < 0)
             goto elf_read_err;
         if (program_header.type == 1) {
@@ -60,7 +61,7 @@ int execve(char *filename) {
         printf("Header with type = %i, num %i, off = %i, size_vmem = %i\n", program_header.type, i, program_header.offset, program_header.size_in_memory);
         offset += file_header.program_header_entry_size;
     }
-    alloc_pages((uint64_t*) (CURRENT_TASK->pml4 + kernel.hhdm), USER_STACK_ADDR, USER_STACK_PAGES, KERNEL_PFLAG_WRITE | KERNEL_PFLAG_USER | KERNEL_PFLAG_PRESENT);
+    alloc_pages((uint64_t*) CURRENT_TASK->pml4, USER_STACK_ADDR, USER_STACK_PAGES, KERNEL_PFLAG_WRITE | KERNEL_PFLAG_USER | KERNEL_PFLAG_PRESENT);
     add_memregion(&CURRENT_TASK->memregion_list, USER_STACK_ADDR, USER_STACK_PAGES, KERNEL_PFLAG_WRITE | KERNEL_PFLAG_USER | KERNEL_PFLAG_PRESENT);
     CURRENT_TASK->entry = (void*) file_header.entry;
     CURRENT_TASK->flags = TASK_FIRST_EXEC | TASK_PRESENT;
