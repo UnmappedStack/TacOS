@@ -55,13 +55,13 @@ int execve(char *filename) {
             if (!(program_header.flags & ELF_FLAG_WRITABLE))
                 flags |= KERNEL_PFLAG_WRITE;
             map_pages((uint64_t*) (CURRENT_TASK->pml4 + kernel.hhdm), program_header.virtual_address, header_data_phys, bytes_to_pages(program_header.size_in_memory), flags);
-            add_memregion(&CURRENT_TASK->memregion_list, program_header.virtual_address, program_header.size_in_memory, flags);
+            add_memregion(&CURRENT_TASK->memregion_list, program_header.virtual_address, program_header.size_in_memory, true, flags);
         }
         printf("Header with type = %i, num %i, off = %i, size_vmem = %i\n", program_header.type, i, program_header.offset, program_header.size_in_memory);
         offset += file_header.program_header_entry_size;
     }
     alloc_pages((uint64_t*) (CURRENT_TASK->pml4 + kernel.hhdm), USER_STACK_ADDR, USER_STACK_PAGES, KERNEL_PFLAG_WRITE | KERNEL_PFLAG_USER | KERNEL_PFLAG_PRESENT);
-    add_memregion(&CURRENT_TASK->memregion_list, USER_STACK_ADDR, USER_STACK_PAGES, KERNEL_PFLAG_WRITE | KERNEL_PFLAG_USER | KERNEL_PFLAG_PRESENT);
+    add_memregion(&CURRENT_TASK->memregion_list, USER_STACK_ADDR, false, USER_STACK_PAGES, KERNEL_PFLAG_WRITE | KERNEL_PFLAG_USER | KERNEL_PFLAG_PRESENT);
     CURRENT_TASK->entry = (void*) file_header.entry;
     CURRENT_TASK->flags = TASK_FIRST_EXEC | TASK_PRESENT;
     close(f);

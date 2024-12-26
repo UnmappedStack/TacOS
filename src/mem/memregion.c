@@ -19,7 +19,7 @@ void init_memregion() {
  * This is because you pass add_memregion a pointer to a Memregion*, and if it's null, then it'll initialise a new list.
  * Otherwise it just adds a new memregion to the list as normal.
  */
-Memregion *add_memregion(Memregion **list, uintptr_t addr, size_t num_pages, uint64_t flags) {
+Memregion *add_memregion(Memregion **list, uintptr_t addr, size_t num_pages, bool is_program_binary, uint64_t flags) {
     Memregion *new_memregion = (Memregion*) slab_alloc(kernel.memregion_cache);
     if (!*list) {
         list_init(&new_memregion->list);
@@ -27,9 +27,10 @@ Memregion *add_memregion(Memregion **list, uintptr_t addr, size_t num_pages, uin
     } else {
         list_insert(&(*list)->list, &new_memregion->list);
     }
-    new_memregion->addr      = addr;
-    new_memregion->num_pages = num_pages;
-    new_memregion->flags     = flags;
+    new_memregion->addr              = addr;
+    new_memregion->num_pages         = num_pages;
+    new_memregion->flags             = flags;
+    new_memregion->is_program_binary = is_program_binary;
     return new_memregion;
 }
 
