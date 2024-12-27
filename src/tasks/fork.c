@@ -4,7 +4,6 @@
 
 pid_t fork() {
     Task *new_task   = task_add();
-    printf("new task pid = %p\n", new_task->pid);
     new_task->entry  = kernel.scheduler.current_task->entry;
     new_task->parent = kernel.scheduler.current_task;
     new_task->flags  = kernel.scheduler.current_task->flags;
