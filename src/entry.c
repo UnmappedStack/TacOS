@@ -14,6 +14,7 @@
 #include <fs/tempfs.h>
 #include <fs/ustar.h>
 #include <scheduler.h>
+#include <fork.h>
 
 Kernel kernel = {0};
 
@@ -71,6 +72,12 @@ void _start() {
     ls("/home");
     cat("/home/README.txt");
     printf("Executing init.\n");
-    execve("/usr/bin/init");
-    HALT_DEVICE();
+    if (!fork()) {
+        // child
+        if (execve("/usr/bin/init") < 0) {
+            printf("Failed to run init program.\n");
+        }
+        HALT_DEVICE();
+    }
+    for (;;);
 }

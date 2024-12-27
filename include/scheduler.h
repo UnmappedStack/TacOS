@@ -10,13 +10,13 @@
 #define TASK_RUNNING    0b010
 #define TASK_FIRST_EXEC 0b100
 
-typedef uint64_t task_id_t;
+typedef uint64_t pid_t;
 typedef uint8_t task_flags_t;
 typedef struct Task Task;
 
 struct Task {
     struct list   list;
-    task_id_t     tid;
+    pid_t         pid;
     uint64_t      pml4;
     void         *entry;
     Task         *parent;
@@ -28,7 +28,7 @@ typedef struct {
     struct list *list;
     Task        *current_task;
     Cache       *cache;
-    task_id_t    tid_upto;
+    pid_t        pid_upto;
 } SchedulerQueue;
 
 void init_scheduler();

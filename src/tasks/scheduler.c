@@ -22,12 +22,12 @@ void init_scheduler() {
 
 Task *task_add() {
     Task *new_task   = slab_alloc(kernel.scheduler.cache);
-    new_task->tid    = kernel.scheduler.tid_upto++;
+    new_task->pid    = kernel.scheduler.pid_upto++;
     if (kernel.scheduler.list == 0) {
         list_init(&new_task->list);
         kernel.scheduler.list = &new_task->list;
     } else
-        list_insert(&new_task->list, kernel.scheduler.list);
+        list_insert(kernel.scheduler.list, &new_task->list);
     return new_task;
 }
 

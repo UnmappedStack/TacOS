@@ -215,14 +215,14 @@ void clear_page_cache(uint64_t addr) {
 uint64_t* init_paging_task() {
     uint64_t pml4_virt = ((uint64_t) kmalloc(1)) + kernel.hhdm;
     memset((uint8_t*) pml4_virt, 0, 4096);
-    map_all((uint64_t*) pml4_virt);
-    return (uint64_t*) pml4_virt;
+    map_all((uint64_t*) pml4_virt, false);
+    return (uint64_t*) (pml4_virt - kernel.hhdm);
 }
 
 void init_paging() {
     printf("Creating page tree...\n");
     uint64_t pml4_virt = kmalloc(1) + kernel.hhdm;
     memset((uint8_t*) pml4_virt, 0, 4096);
-    map_all((uint64_t*) pml4_virt);
+    map_all((uint64_t*) pml4_virt, true);
     kernel.cr3 = pml4_virt - kernel.hhdm;
 }
