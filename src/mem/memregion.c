@@ -1,10 +1,23 @@
 #include <mem/pmm.h>
+#include <mem/mapall.h>
 #include <mem/paging.h>
 #include <mem/memregion.h>
 #include <mem/slab.h>
 #include <kernel.h>
 #include <printf.h>
 #include <cpu.h>
+
+extern uint64_t p_kernel_start[];
+extern uint64_t p_writeallowed_start[];
+extern uint64_t p_kernel_end[];
+
+void memregion_add_kernel(Memregion **list) {
+    uint64_t length_buffer = 0;
+    length_buffer = PAGE_ALIGN_UP((uint64_t) p_writeallowed_start - (uint64_t) p_kernel_start);
+    add_memregion(list, (uint64_t) p_kernel_start, length_buffer / 4096, false, KERNEL_PFLAG_PRESENT);
+    length_buffer = PAGE_ALIGN_UP((uint64_t) p_kernel_end - (uint64_t) p_writeallowed_start);
+    add_memregion(list, (uint64_t) p_writeallowed_start, length_buffer / 4096, false, KERNEL_PFLAG_PRESENT | KERNEL_PFLAG_WRITE);
+}
 
 void init_memregion() {
     kernel.memregion_cache = init_slab_cache(sizeof(Memregion), "Memregion Cache");

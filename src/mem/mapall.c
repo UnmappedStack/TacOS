@@ -1,3 +1,4 @@
+#include <mem/mapall.h>
 #include <printf.h>
 #include <mem/paging.h>
 #include <kernel.h>
