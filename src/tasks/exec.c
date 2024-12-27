@@ -61,7 +61,7 @@ int execve(char *filename) {
         offset += file_header.program_header_entry_size;
     }
     alloc_pages((uint64_t*) (CURRENT_TASK->pml4 + kernel.hhdm), USER_STACK_ADDR, USER_STACK_PAGES, KERNEL_PFLAG_WRITE | KERNEL_PFLAG_USER | KERNEL_PFLAG_PRESENT);
-    add_memregion(&CURRENT_TASK->memregion_list, USER_STACK_ADDR, false, USER_STACK_PAGES, KERNEL_PFLAG_WRITE | KERNEL_PFLAG_USER | KERNEL_PFLAG_PRESENT);
+    add_memregion(&CURRENT_TASK->memregion_list, USER_STACK_ADDR, true, USER_STACK_PAGES, KERNEL_PFLAG_WRITE | KERNEL_PFLAG_USER | KERNEL_PFLAG_PRESENT);
     CURRENT_TASK->entry = (void*) file_header.entry;
     CURRENT_TASK->flags = TASK_FIRST_EXEC | TASK_PRESENT;
     close(f);
