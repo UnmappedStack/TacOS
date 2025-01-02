@@ -1,4 +1,6 @@
 #include <mem/pmm.h>
+#include <pic.h>
+#include <pit.h>
 #include <exec.h>
 #include <cpu.h>
 #include <stddef.h>
@@ -74,6 +76,7 @@ void try_exec_init() {
 }
 
 void _start() {
+    DISABLE_INTERRUPTS();
     init_kernel_info();
     init_serial();
     init_GDT();
@@ -82,12 +85,14 @@ void _start() {
     init_pmm();
     init_paging();
     init_vfs();
+    init_pic();
     switch_page_structures();
     unpack_initrd();
     init_memregion();
     init_scheduler();
+    init_pit();
     ls("/");
     ls("/home");
     try_exec_init();
-    HALT_DEVICE();
+    for (;;);
 }
