@@ -1,6 +1,5 @@
 #include <mem/memregion.h>
 #include <exec.h>
-#include <scheduler.h>
 #include <kernel.h>
 #include <mem/pmm.h>
 #include <mem/paging.h>
@@ -8,8 +7,6 @@
 #include <fs/vfs.h>
 #include <printf.h>
 #include <stddef.h>
-
-#define CURRENT_TASK kernel.scheduler.current_task
 
 int verify_elf(elf_file_header *file_header) {
     if (
@@ -23,8 +20,21 @@ int verify_elf(elf_file_header *file_header) {
     return 0;
 }
 
+Task *task_from_pid(pid_t pid) {
+    bool is_first = true;
+    for (struct list *iter = kernel.scheduler.list;
+         iter != kernel.scheduler.list || is_first;
+         iter = iter->next
+    ) {
+        is_first = false;
+        if (((Task*) iter)->pid == pid)
+            return (Task*) iter;
+    }
+    return NULL; // none found
+}
+
 // TODO: Add argv and envp
-int execve(char *filename) {
+int execve(Task *task, char *filename) {
     VfsFile *f = open(filename, 0);
     if (!f) {
         printf("Failed to open file \"%s\".\n", filename);
@@ -54,16 +64,16 @@ int execve(char *filename) {
             uint64_t flags = KERNEL_PFLAG_USER | KERNEL_PFLAG_PRESENT;
             if (!(program_header.flags & ELF_FLAG_WRITABLE))
                 flags |= KERNEL_PFLAG_WRITE;
-            map_pages((uint64_t*) (CURRENT_TASK->pml4 + kernel.hhdm), program_header.virtual_address, header_data_phys, bytes_to_pages(program_header.size_in_memory), flags);
-            add_memregion(&CURRENT_TASK->memregion_list, program_header.virtual_address, program_header.size_in_memory, true, flags);
+            map_pages((uint64_t*) (task->pml4 + kernel.hhdm), program_header.virtual_address, header_data_phys, bytes_to_pages(program_header.size_in_memory), flags);
+            add_memregion(&task->memregion_list, program_header.virtual_address, program_header.size_in_memory, true, flags);
         }
         printf("Header with type = %i, num %i, off = %i, size_vmem = %i\n", program_header.type, i, program_header.offset, program_header.size_in_memory);
         offset += file_header.program_header_entry_size;
     }
-    alloc_pages((uint64_t*) (CURRENT_TASK->pml4 + kernel.hhdm), USER_STACK_ADDR, USER_STACK_PAGES, KERNEL_PFLAG_WRITE | KERNEL_PFLAG_USER | KERNEL_PFLAG_PRESENT);
-    add_memregion(&CURRENT_TASK->memregion_list, USER_STACK_ADDR, true, USER_STACK_PAGES, KERNEL_PFLAG_WRITE | KERNEL_PFLAG_USER | KERNEL_PFLAG_PRESENT);
-    CURRENT_TASK->entry = (void*) file_header.entry;
-    CURRENT_TASK->flags = TASK_FIRST_EXEC | TASK_PRESENT;
+    alloc_pages((uint64_t*) (task->pml4 + kernel.hhdm), USER_STACK_ADDR, USER_STACK_PAGES, KERNEL_PFLAG_WRITE | KERNEL_PFLAG_USER | KERNEL_PFLAG_PRESENT);
+    add_memregion(&task->memregion_list, USER_STACK_ADDR, true, USER_STACK_PAGES, KERNEL_PFLAG_WRITE | KERNEL_PFLAG_USER | KERNEL_PFLAG_PRESENT);
+    task->entry = (void*) file_header.entry;
+    task->flags = TASK_FIRST_EXEC | TASK_PRESENT;
     close(f);
     return 0;
 }

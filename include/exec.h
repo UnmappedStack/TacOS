@@ -1,4 +1,5 @@
 #pragma once
+#include <scheduler.h>
 #include <stdint.h>
 
 #define ELF_FLAG_WRITABLE 1
@@ -31,4 +32,5 @@ typedef struct {
     uint64_t align;
 } __attribute__((packed)) elf_program_header;
 
-int execve(char *filename);
+int execve(Task *task, char *filename);
+Task *task_from_pid(pid_t pid);
