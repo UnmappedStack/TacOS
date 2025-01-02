@@ -88,7 +88,6 @@ void _start() {
     init_scheduler();
     ls("/");
     ls("/home");
-    cat("/home/README.txt");
     try_exec_init();
     HALT_DEVICE();
 }
