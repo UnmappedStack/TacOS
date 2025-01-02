@@ -55,6 +55,24 @@ void cat(char *path) {
     close(f);
 }
 
+void try_exec_init() {
+    printf("Executing init.\n");
+    pid_t new_task = fork();
+    if (!new_task) {
+        printf("Context switch shouldn't yet be enabled, yet the kernel task is already running in a forked task. Halting device.\n");
+        HALT_DEVICE();
+    }
+    Task *task = task_from_pid(new_task);
+    if (!task) {
+        printf("task_from_pid() failed, couldn't run init program (return NULL)\n");
+        HALT_DEVICE();
+    }
+    if (execve(task, "/usr/bin/init") < 0) {
+        printf("Failed to run init program, halting device (expected init program at /usr/bin/init).\n");
+        HALT_DEVICE();
+    }
+}
+
 void _start() {
     init_kernel_info();
     init_serial();
@@ -71,19 +89,6 @@ void _start() {
     ls("/");
     ls("/home");
     cat("/home/README.txt");
-    printf("Executing init.\n");
-    pid_t new_task = fork();
-    if (!new_task) {
-        printf("Context switch shouldn't yet be enabled, yet the kernel task is already running in a forked task. Halting device.\n");
-        HALT_DEVICE();
-    }
-    Task *task = task_from_pid(new_task);
-    if (!task) {
-        printf("task_from_pid() failed, couldn't run init program (return NULL)\n");
-        HALT_DEVICE();
-    }
-    if (execve(task, "/usr/bin/init") < 0) {
-        printf("Failed to run init program, halting device (expected init program at /usr/bin/init).\n");
-    }
+    try_exec_init();
     HALT_DEVICE();
 }
