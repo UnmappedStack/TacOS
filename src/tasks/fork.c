@@ -8,6 +8,8 @@ pid_t fork() {
     new_task->entry    = kernel.scheduler.current_task->entry;
     new_task->parent   = kernel.scheduler.current_task;
     new_task->pml4     = (uint64_t) init_paging_task();
+    printf("new pml4 = %p\n", new_task->pml4);
+    new_task->rsp      = kernel.scheduler.current_task->rsp;
     bool is_first      = true;
     for (struct list *iter = &kernel.scheduler.current_task->memregion_list->list;
          iter != &kernel.scheduler.current_task->memregion_list->list || is_first;

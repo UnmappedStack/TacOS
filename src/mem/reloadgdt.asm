@@ -6,7 +6,7 @@ section .text
 
 ;; Reloads the GDT
 reload_gdt:
-    sub rsp, 8 ; Alignation
+    push rax
     push 0x08
     push .reload_CS
     retfq

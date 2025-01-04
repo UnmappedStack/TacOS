@@ -14,6 +14,7 @@ void init_scheduler() {
     krnl_task->entry  = &_start;
     krnl_task->parent = krnl_task; // The kernel task is it's own parent
     krnl_task->flags  = 0;
+    krnl_task->rsp    = USER_STACK_PTR;
     krnl_task->memregion_list = 0;
     kernel.scheduler.current_task = krnl_task;
     memregion_add_kernel(&krnl_task->memregion_list);
@@ -34,6 +35,13 @@ Task *task_add() {
 Task *task_select() {
     kernel.scheduler.current_task = (Task*) kernel.scheduler.current_task->list.next;
     if (!(kernel.scheduler.current_task->flags & TASK_PRESENT))
-            kernel.scheduler.current_task = (Task*) kernel.scheduler.current_task->list.next;
+        kernel.scheduler.current_task = (Task*) kernel.scheduler.current_task->list.next;
+    printf("Task select return task with pid = %i\n", ((Task*)kernel.scheduler.current_task)->pid);
+    printf("off = %i\n", offsetof(Task, entry));
     return (Task*) kernel.scheduler.current_task;
+}
+
+// for asm context switch
+Task *get_current_task() {
+    return kernel.scheduler.current_task;
 }

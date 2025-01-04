@@ -94,5 +94,7 @@ void _start() {
     ls("/");
     ls("/home");
     try_exec_init();
+    unlock_pit();
+    ENABLE_INTERRUPTS();
     for (;;);
 }

@@ -52,8 +52,8 @@ int execve(Task *task, char *filename) {
         printf("Invalid ELF file.\n");
         goto elf_generic_err;
     }
-    size_t offset = file_header.program_header_offset;
     elf_program_header program_header;
+    size_t offset = file_header.program_header_offset;
     for (size_t i = 0; i < file_header.program_header_entry_count; i++) {
         if (vfs_read(f, (char*) &program_header, sizeof(elf_file_header), offset) < 0)
             goto elf_read_err;
@@ -67,13 +67,14 @@ int execve(Task *task, char *filename) {
             map_pages((uint64_t*) (task->pml4 + kernel.hhdm), program_header.virtual_address, header_data_phys, bytes_to_pages(program_header.size_in_memory), flags);
             add_memregion(&task->memregion_list, program_header.virtual_address, program_header.size_in_memory, true, flags);
         }
-        printf("Header with type = %i, num %i, off = %i, size_vmem = %i\n", program_header.type, i, program_header.offset, program_header.size_in_memory);
+        printf("Header with type = %i, num %i, vaddr = %p, off = %i, size_vmem = %i\n", program_header.type, i, program_header.virtual_address, program_header.offset, program_header.size_in_memory);
         offset += file_header.program_header_entry_size;
     }
     alloc_pages((uint64_t*) (task->pml4 + kernel.hhdm), USER_STACK_ADDR, USER_STACK_PAGES, KERNEL_PFLAG_WRITE | KERNEL_PFLAG_USER | KERNEL_PFLAG_PRESENT);
     add_memregion(&task->memregion_list, USER_STACK_ADDR, true, USER_STACK_PAGES, KERNEL_PFLAG_WRITE | KERNEL_PFLAG_USER | KERNEL_PFLAG_PRESENT);
     task->entry = (void*) file_header.entry;
     task->flags = TASK_FIRST_EXEC | TASK_PRESENT;
+    task->rsp   = USER_STACK_PTR;
     close(f);
     return 0;
 }
