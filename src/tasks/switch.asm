@@ -91,7 +91,8 @@ context_switch:
     mov rbx, 0x70000000000
     push rbx
     ; rflags = 0x200
-    push 0x200
+    mov rbx, 0x200
+    push rbx
     ; cs = 0x18 | 3
     mov rbx, 0x18
     or rbx, 3
@@ -101,7 +102,7 @@ context_switch:
     push rbx
     ;; clear all general purpose registers, send EOI to interrupt controller, and iretq
     clearall
-    iretq
+    ret
 .previously_executed:
     jmp $
 
