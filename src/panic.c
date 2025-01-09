@@ -44,23 +44,23 @@ void exception_handler(IDTEFrame registers) {
 }
 
 void init_exceptions() {
-    set_IDT_entry(0, &divideException, 0x8E, kernel.IDT);
-    set_IDT_entry(1, &debugException, 0x8E, kernel.IDT);
-    set_IDT_entry(3, &breakpointException, 0x8E, kernel.IDT);
-    set_IDT_entry(4, &overflowException, 0x8E, kernel.IDT);
-    set_IDT_entry(5, &boundRangeExceededException, 0x8E, kernel.IDT);
-    set_IDT_entry(6, &invalidOpcodeException, 0x8E, kernel.IDT);
-    set_IDT_entry(7, &deviceNotAvaliableException, 0x8E, kernel.IDT);
-    set_IDT_entry(8, &doubleFaultException, 0x8E, kernel.IDT);
-    set_IDT_entry(9, &coprocessorSegmentOverrunException, 0x8E, kernel.IDT);
-    set_IDT_entry(10, &invalidTSSException, 0x8E, kernel.IDT);
-    set_IDT_entry(11, &segmentNotPresentException, 0x8E, kernel.IDT);
-    set_IDT_entry(12, &stackSegmentFaultException, 0x8E, kernel.IDT);
-    set_IDT_entry(13, &generalProtectionFaultException, 0x8E, kernel.IDT);
-    set_IDT_entry(14, &pageFaultException, 0x8E, kernel.IDT);
-    set_IDT_entry(16, &floatingPointException, 0x8E, kernel.IDT);
-    set_IDT_entry(17, &alignmentCheckException, 0x8E, kernel.IDT);
-    set_IDT_entry(18, &machineCheckException, 0x8E, kernel.IDT);
-    set_IDT_entry(19, &simdFloatingPointException, 0x8E, kernel.IDT);
-    set_IDT_entry(20, &virtualisationException, 0x8E, kernel.IDT);
+    set_IDT_entry(0, &divideException, 0xEF, kernel.IDT);
+    set_IDT_entry(1, &debugException, 0xEF, kernel.IDT);
+    set_IDT_entry(3, &breakpointException, 0xEF, kernel.IDT);
+    set_IDT_entry(4, &overflowException, 0xEF, kernel.IDT);
+    set_IDT_entry(5, &boundRangeExceededException, 0xEF, kernel.IDT);
+    set_IDT_entry(6, &invalidOpcodeException, 0xEF, kernel.IDT);
+    set_IDT_entry(7, &deviceNotAvaliableException, 0xEF, kernel.IDT);
+    set_IDT_entry(8, &doubleFaultException, 0xEF, kernel.IDT);
+    set_IDT_entry(9, &coprocessorSegmentOverrunException, 0xEF, kernel.IDT);
+    set_IDT_entry(10, &invalidTSSException, 0xEF, kernel.IDT);
+    set_IDT_entry(11, &segmentNotPresentException, 0xEF, kernel.IDT);
+    set_IDT_entry(12, &stackSegmentFaultException, 0xEF, kernel.IDT);
+    set_IDT_entry(13, &generalProtectionFaultException, 0xEF, kernel.IDT);
+    set_IDT_entry(14, &pageFaultException, 0xEF, kernel.IDT);
+    set_IDT_entry(16, &floatingPointException, 0xEF, kernel.IDT);
+    set_IDT_entry(17, &alignmentCheckException, 0xEF, kernel.IDT);
+    set_IDT_entry(18, &machineCheckException, 0xEF, kernel.IDT);
+    set_IDT_entry(19, &simdFloatingPointException, 0xEF, kernel.IDT);
+    set_IDT_entry(20, &virtualisationException, 0xEF, kernel.IDT);
 }
