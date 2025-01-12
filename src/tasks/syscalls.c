@@ -54,6 +54,7 @@ int sys_execve(char *path) {
     return execve(kernel.scheduler.current_task, path);
 }
 
+// TODO: Actually send a signal to the task and do clean up, report to it's parent
 int sys_kill(int pid, int sig) {
     if (pid < 0) {
         printf("Tried to kill process group, but not supported yet.\n");
@@ -68,6 +69,16 @@ int sys_kill(int pid, int sig) {
         printf("Killed task %i with signal %i\n", pid, sig);
         return 0;
     }
+}
+
+int sys_isatty(int fd) {
+    VfsFile *f = kernel.scheduler.current_task->resources[fd];
+    if (!f) return 0;
+    if (f->drive.fs.fs_id == fs_tempfs) {
+        TempfsInode *private = f->private;
+        return private->type == Device && private->devops.is_term;
+    }
+    return 0;
 }
 
 void sys_invalid(int sys) {

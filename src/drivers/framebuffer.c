@@ -143,6 +143,7 @@ void init_framebuffer() {
         .write = &fb_write,
         .open = &fb_open,
         .close = &fb_close,
+        .is_term = true,
     };
     mkdevice("/dev/tty0", ops);
     fill_rect(0, 0, kernel.framebuffer.width, kernel.framebuffer.height, BG_COLOUR);

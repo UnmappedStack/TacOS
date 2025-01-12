@@ -1,4 +1,5 @@
 #pragma once
+#include <stdbool.h>
 #include <fs/vfs.h>
 #include <stddef.h>
 #include <stdint.h>
@@ -8,6 +9,7 @@ typedef struct {
     int (*write)(void *file, char *buffer, size_t len, size_t offset);
     int (*open )(void *file);
     int (*close)(void *file);
+    bool is_term;
 } DeviceOps;
 
 void init_devices();
