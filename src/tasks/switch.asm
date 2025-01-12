@@ -22,6 +22,23 @@ extern printf
     push r14
     push r15
 %endmacro
+%macro popall 0
+    pop rax
+    pop rbx
+    pop rcx
+    pop rdx
+    pop rsi
+    pop rdi
+    pop rbp
+    pop r8
+    pop r9
+    pop r10
+    pop r11
+    pop r12
+    pop r13
+    pop r14
+    pop r15
+%endmacro
 %macro clearall 0
     xor rax, rax
     xor rbx, rbx
@@ -59,8 +76,8 @@ context_switch:
     call task_select ; next Task* is in rax
     mov r15, rax
     ;; TEST: Printing the selected task's PID
-    mov rsi, [rax + TASK_PID_OFF]
-    mov rdi, msg2
+    ;mov rsi, [rax + TASK_PID_OFF]
+    ;mov rdi, msg2
     ;call printf
     ;; Save current rsp of *this* task
     call get_current_task
@@ -75,8 +92,6 @@ context_switch:
     and r11, 0b100
     jz .previously_executed
 .first_exec:
-    mov rdi, msg5
-    call printf
     ;; Disable first exec flag
     mov r11, 0b100
     not r11
@@ -106,9 +121,10 @@ context_switch:
     eoi
     iretq
 .previously_executed:
-    mov rsi, msg4
-    call printf
-    jmp $
+    eoi
+    popall
+    iretq
+    
 
 msg:  db "In context switch :D", 10, 0
 msg2: db "PID to switch to: %i", 10, 0
