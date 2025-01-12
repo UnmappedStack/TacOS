@@ -124,10 +124,17 @@ int tempfs_access(TempfsInode *file, char *buf, size_t len, size_t offset, bool 
 }
 
 int tempfs_write(TempfsInode *file, char *buf, size_t len, size_t offset) {
+    printf("here\n");
+    printf("type = %i\n", file->type);
+    if (file->type == Device) {
+        return file->devops.write(file, buf, len, offset);
+    }
     return tempfs_access(file, buf, len, offset, true);
 }
 
 int tempfs_read(TempfsInode *file, char *buf, size_t len, size_t offset) {
+    if (file->type == Device)
+        return file->devops.read(file, buf, len, offset);
     return tempfs_access(file, buf, len, offset, false);
 }
 
@@ -143,13 +150,16 @@ int tempfs_rmfile(TempfsInode *file) {
     return -1;
 }
 
-// These functions are *super* complex, *clearly*
 TempfsInode *tempfs_open(TempfsInode *file) {
+    if (file->type == Device) {
+        if (file->devops.open(file)) return NULL;
+    }
     return file;
 }
 
 int tempfs_close(TempfsInode *file) {
-    (void) file;
+    if (file->type == Device)
+        return file->devops.close(file);
     return 0;
 }
 

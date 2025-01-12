@@ -1,4 +1,5 @@
 #pragma once
+#include <fs/device.h>
 #include <mem/paging.h>
 #include <fs/vfs.h>
 
@@ -10,6 +11,7 @@ typedef struct TempfsInode TempfsInode;
 
 typedef enum {
     RegularFile,
+    Device,
     Directory,
 } TempfsInodeType;
 
@@ -28,7 +30,10 @@ struct TempfsInode {
     TempfsInode *parent;
     TempfsInodeType type;
     union {
-        TempfsFileNode *first_file_node;
+        union {
+            DeviceOps devops;
+            TempfsFileNode *first_file_node;
+        };
         TempfsDirEntry *first_dir_entry;
     };
 };

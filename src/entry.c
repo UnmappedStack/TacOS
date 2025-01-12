@@ -1,4 +1,5 @@
 #include <mem/pmm.h>
+#include <fs/device.h>
 #include <pic.h>
 #include <pit.h>
 #include <exec.h>
@@ -89,6 +90,8 @@ void _start() {
     init_vfs();
     init_pic();
     unpack_initrd();
+    init_devices();
+    for (;;);
     init_memregion();
     init_scheduler();
     init_pit();
