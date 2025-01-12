@@ -129,6 +129,14 @@ uintptr_t sys_sbrk(intptr_t increment) {
     return previous_break;
 }
 
+/* TODO: Right now, this just deletes a file.
+ * See https://man7.org/linux/man-pages/man2/unlink.2.html for how this should actually work.
+ * This currently isn't posix compliant. */
+int sys_unlink(char *path) {
+    VfsFile *f = open(path, 0);
+    return rm_file(f);
+}
+
 void sys_invalid(int sys) {
     printf("Invalid syscall: %i\n", sys);
 }
