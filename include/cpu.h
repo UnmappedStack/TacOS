@@ -22,3 +22,8 @@
             WAIT_FOR_INTERRUPT(); \
         } \
     } while (0)
+
+#define IO_WAIT() \
+    asm volatile ( \
+        "outb 0, 0x80" \
+    )

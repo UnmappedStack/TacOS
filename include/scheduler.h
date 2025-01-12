@@ -8,9 +8,10 @@
 #include <list.h>
 
 #define MAX_RESOURCES   20 // TODO: Dynamically allocate this.
-#define TASK_PRESENT    0b001
-#define TASK_RUNNING    0b010
-#define TASK_FIRST_EXEC 0b100
+#define TASK_PRESENT    0b0001
+#define TASK_RUNNING    0b0010
+#define TASK_FIRST_EXEC 0b0100
+#define TASK_DEAD       0b1000
 
 typedef uint64_t pid_t;
 typedef uint8_t task_flags_t;

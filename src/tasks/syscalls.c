@@ -39,6 +39,7 @@ void sys_exit(int status) {
     }
     printf("Exited task with status %i\n", status);
     kernel.scheduler.current_task->flags &= ~TASK_PRESENT;
+    kernel.scheduler.current_task->flags |= TASK_DEAD;
     for (;;);
 }
 
@@ -66,6 +67,7 @@ int sys_kill(int pid, int sig) {
     } else {
         Task *to_kill = task_from_pid(pid);
         to_kill->flags &= ~TASK_PRESENT;
+        to_kill->flags |= TASK_DEAD;
         printf("Killed task %i with signal %i\n", pid, sig);
         return 0;
     }
