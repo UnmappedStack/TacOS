@@ -6,7 +6,6 @@ section .text
 
 ;; Reloads the GDT
 reload_gdt:
-    push rax
     push 0x08
     push .reload_CS
     retfq
@@ -19,5 +18,4 @@ reload_gdt:
     xor ax, ax
     mov fs, ax
     mov gs, ax
-    pop rax
     ret

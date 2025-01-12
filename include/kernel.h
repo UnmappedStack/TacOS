@@ -12,8 +12,7 @@
 typedef struct limine_memmap_entry* Memmap;
 
 typedef struct {
-    uint64_t       GDT[7];
-    GDTR           gdtr; // TODO: Put this on the stack (why didn't I??? lmfao)
+    uint64_t      *GDT;
     IDTEntry       IDT[256];
     TSS            tss;
     uintptr_t      kernel_phys_addr;

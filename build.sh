@@ -40,5 +40,4 @@ xorriso -as mkisofs -b boot/limine/limine-bios-cd.bin \
 
 # run in qemu
 
-qemu-system-x86_64 tacos.iso --serial stdio --no-reboot --no-shutdown -accel kvm -monitor telnet:127.0.0.1:8000,server,nowait -d int,cpu_reset -D log.txt
-
+qemu-system-x86_64 tacos.iso -serial stdio -no-shutdown -no-reboot -monitor telnet:127.0.0.1:8000,server,nowait -d int,cpu_reset -D log.txt

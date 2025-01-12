@@ -79,11 +79,11 @@ void _start() {
     DISABLE_INTERRUPTS();
     init_kernel_info();
     init_serial();
+    init_pmm();
     init_TSS();
     init_GDT();
     init_IDT();
     init_exceptions();
-    init_pmm();
     init_paging();
     switch_page_structures();
     init_vfs();
@@ -96,6 +96,8 @@ void _start() {
     ls("/home");
     try_exec_init();
     unlock_pit();
+    printf("GDT real addr:  0x%p\n", kernel.GDT);
+    printf("in gdt 1: %i\n", kernel.GDT[1]);
     ENABLE_INTERRUPTS();
     for (;;);
 }

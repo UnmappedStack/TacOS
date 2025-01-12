@@ -75,7 +75,6 @@ context_switch:
     and r11, 0b100
     jz .previously_executed
 .first_exec:
-    sub rsp, 8 ; To align the stack
     ;; Disable first exec flag
     mov r11, 0b100
     not r11
@@ -102,14 +101,13 @@ context_switch:
     push rbx
     ;; clear all general purpose registers, send EOI to interrupt controller, and iretq
     clearall
-    eoi
-    mov rdi, msg3
-    pop rsi
-    pop rdx
-    pop rcx
-    pop r8
-    pop r9
-    call printf
+;    mov rdi, msg3
+;    pop rsi
+;    pop rdx
+;    pop rcx
+;    pop r8
+;    pop r9
+;    call printf
     iretq
 .previously_executed:
     jmp $
