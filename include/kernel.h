@@ -14,7 +14,7 @@ typedef struct limine_memmap_entry* Memmap;
 typedef struct {
     uint64_t      *GDT;
     IDTEntry      *IDT;
-    TSS            tss;
+    TSS           *tss;
     uintptr_t      kernel_phys_addr;
     uintptr_t      kernel_virt_addr;
     uintptr_t      hhdm;

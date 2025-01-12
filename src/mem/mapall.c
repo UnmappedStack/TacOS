@@ -37,24 +37,25 @@ void map_kernel(uint64_t pml4[], bool verbose) {
     /* map from kernel_start to writeallowed_start with only the present flag */
     length_buffer = PAGE_ALIGN_UP(writeallowed_start - kernel_start) / 4096;
     phys_buffer = kernel.kernel_phys_addr + (kernel_start - kernel.kernel_virt_addr);
-    if (verbose)
+    //if (verbose)
         printf("Map read-only section of kernel from paddr 0x%p to vaddr %p, %i pages.\n",
                 phys_buffer, PAGE_ALIGN_DOWN(kernel_start), length_buffer);
     map_pages(pml4, PAGE_ALIGN_DOWN(kernel_start), phys_buffer, length_buffer, KERNEL_PFLAG_PRESENT);
     /* map from writeallowed_start to kernel_end with `present` and `write` flags */
     length_buffer = PAGE_ALIGN_UP(kernel_end - writeallowed_start) / 4096;
     phys_buffer = kernel.kernel_phys_addr + (writeallowed_start - kernel.kernel_virt_addr);
-    if (verbose)
+    //if (verbose)
         printf("Map writable section of kernel from paddr 0x%p to vaddr %p, %i pages.\n",
                 phys_buffer, PAGE_ALIGN_DOWN(writeallowed_start), length_buffer);
     map_pages(pml4, PAGE_ALIGN_DOWN(writeallowed_start), phys_buffer, length_buffer, KERNEL_PFLAG_PRESENT | KERNEL_PFLAG_WRITE); 
     // map the kernel's stack
     alloc_pages(pml4, KERNEL_STACK_ADDR, KERNEL_STACK_PAGES, KERNEL_PFLAG_PRESENT | KERNEL_PFLAG_WRITE);
-    if (verbose)
+    //if (verbose)
         printf("Map stack from %p to %p\n", KERNEL_STACK_ADDR, KERNEL_STACK_PTR);
+    (void) verbose;
 }
 
 void map_all(uint64_t pml4[], bool verbose) {
-    map_kernel(pml4, verbose);
     map_sections(pml4, verbose);
+    map_kernel(pml4, verbose);
 }

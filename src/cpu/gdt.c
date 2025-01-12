@@ -50,7 +50,7 @@ void init_GDT() {
     kernel.GDT[2] = create_gdt_entry(0, 0, 0x92, 0); // kernel data
     kernel.GDT[3] = create_gdt_entry(0, 0, 0xFA, 0x2); // user code
     kernel.GDT[4] = create_gdt_entry(0, 0, 0xF2, 0); // user data
-    create_system_segment_descriptor(kernel.GDT, 5, (uint64_t) &kernel.tss, sizeof(TSS) - 1, 0x89, 0);
+    create_system_segment_descriptor(kernel.GDT, 5, (uint64_t) kernel.tss, sizeof(TSS) - 1, 0x89, 0);
     gdtr = (GDTR) {
         .size = (sizeof(uint64_t) * 7) - 1,
         .offset = (uint64_t) kernel.GDT
