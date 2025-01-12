@@ -61,7 +61,7 @@ context_switch:
     ;; TEST: Printing the selected task's PID
     mov rsi, [rax + TASK_PID_OFF]
     mov rdi, msg2
-    call printf
+    ;call printf
     ;; Save current rsp of *this* task
     call get_current_task
     mov [rax + TASK_RSP_OFF], rsp
@@ -75,6 +75,8 @@ context_switch:
     and r11, 0b100
     jz .previously_executed
 .first_exec:
+    mov rdi, msg5
+    call printf
     ;; Disable first exec flag
     mov r11, 0b100
     not r11
@@ -104,8 +106,12 @@ context_switch:
     eoi
     iretq
 .previously_executed:
+    mov rsi, msg4
+    call printf
     jmp $
 
 msg:  db "In context switch :D", 10, 0
 msg2: db "PID to switch to: %i", 10, 0
 msg3: db "rip: 0x%p, cs: %i, rflags: 0x%x, rsp = 0x%p, ss = %i", 10, 0
+msg4: db "In previously_executed", 10, 0
+msg5: db "In first exec", 10, 0

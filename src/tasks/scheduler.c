@@ -17,27 +17,30 @@ void init_scheduler() {
     krnl_task->rsp    = USER_STACK_PTR;
     krnl_task->memregion_list = 0;
     kernel.scheduler.current_task = krnl_task;
-    memregion_add_kernel(&krnl_task->memregion_list);
+    //memregion_add_kernel(&krnl_task->memregion_list);
     printf("Initiated scheduler.\n");
 }
 
 Task *task_add() {
-    Task *new_task   = slab_alloc(kernel.scheduler.cache);
-    new_task->pid    = kernel.scheduler.pid_upto++;
+    Task *new_task = slab_alloc(kernel.scheduler.cache);
+    new_task->pid  = kernel.scheduler.pid_upto++;
     if (kernel.scheduler.list == 0) {
         list_init(&new_task->list);
         kernel.scheduler.list = &new_task->list;
     } else
         list_insert(kernel.scheduler.list, &new_task->list);
+    printf("New task = %p\n", new_task);
     return new_task;
 }
 
 Task *task_select() {
+    printf("In task select\n");
+    printf("Current task = %p\n", kernel.scheduler.current_task);
     kernel.scheduler.current_task = (Task*) kernel.scheduler.current_task->list.next;
+    printf("New task = %p\n", kernel.scheduler.current_task);
     if (!(kernel.scheduler.current_task->flags & TASK_PRESENT))
         kernel.scheduler.current_task = (Task*) kernel.scheduler.current_task->list.next;
     printf("Task select return task with pid = %i\n", ((Task*)kernel.scheduler.current_task)->pid);
-    printf("off = %i\n", offsetof(Task, entry));
     return (Task*) kernel.scheduler.current_task;
 }
 
