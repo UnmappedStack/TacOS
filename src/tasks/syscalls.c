@@ -1,3 +1,6 @@
+#include <exec.h>
+#include <fork.h>
+#include <cpu.h>
 #include <kernel.h>
 #include <scheduler.h>
 #include <stdint.h>
@@ -26,6 +29,45 @@ int sys_read(int fd, char *buf, size_t count) {
 int sys_write(int fd, char *buf, size_t count) {
     printf("fd = %i, buf = %s, count = %i\n", fd, buf, count);
     return vfs_write(kernel.scheduler.current_task->resources[fd], buf, count, 0);
+}
+
+void sys_exit(int status) {
+    // TODO: Clean up and report to parent
+    if (kernel.scheduler.current_task->pid <= 1) {
+        printf("Init task exited! Halting device.\n");
+        HALT_DEVICE();
+    }
+    printf("Exited task with status %i\n", status);
+    kernel.scheduler.current_task->flags &= ~TASK_PRESENT;
+    for (;;);
+}
+
+int sys_getpid() {
+    return kernel.scheduler.current_task->pid;
+}
+
+int sys_fork() {
+    return fork();
+}
+
+int sys_execve(char *path) {
+    return execve(kernel.scheduler.current_task, path);
+}
+
+int sys_kill(int pid, int sig) {
+    if (pid < 0) {
+        printf("Tried to kill process group, but not supported yet.\n");
+        return -1;
+    } else if (pid <= 1) {
+        printf("Killed init task! Halting device.\n");
+        HALT_DEVICE();
+        return -1;
+    } else {
+        Task *to_kill = task_from_pid(pid);
+        to_kill->flags &= ~TASK_PRESENT;
+        printf("Killed task %i with signal %i\n", pid, sig);
+        return 0;
+    }
 }
 
 void sys_invalid(int sys) {

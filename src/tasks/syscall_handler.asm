@@ -6,6 +6,11 @@ extern sys_write
 extern sys_open
 extern sys_close
 extern sys_invalid
+extern sys_exit
+extern sys_getpid
+extern sys_fork
+extern sys_execve
+extern sys_kill
 PTR_SIZE equ 8
 
 syscall_lookup:
@@ -13,6 +18,11 @@ syscall_lookup:
     dq sys_write
     dq sys_open
     dq sys_close
+    dq sys_exit
+    dq sys_getpid
+    dq sys_fork
+    dq sys_execve
+    dq sys_kill
 syscall_lookup_end:
 
 global syscall_isr

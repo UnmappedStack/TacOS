@@ -14,9 +14,7 @@ _start:
     mov rsi, msg         ;    msg,
     lea rdx, [end - msg] ;    strlen(msg)
     int 0x80             ; );
-    mov rax, 4 ; exit(
-    mov rdi, 0 ;    0
-    int 0x80   ; );
+    jmp $
 
 section .rodata
 fname: db "/dev/tty0", 0
