@@ -1,9 +1,11 @@
 #include <fork.h>
+#include <scheduler.h>
 #include <printf.h>
 #include <kernel.h>
 
 pid_t fork() {
-    const Task *initial_task = kernel.scheduler.current_task;
+    bool found = false;
+    Task *initial_task = kernel.scheduler.current_task;
     Task *new_task     = task_add();
     memcpy(new_task->resources, initial_task->resources, sizeof(new_task->resources));
     new_task->entry    = kernel.scheduler.current_task->entry;
@@ -27,6 +29,21 @@ pid_t fork() {
         );
     }
     endcopy:
+    for (size_t i = 0; i < MAX_CHILDREN; i++) {
+        if (!initial_task->children[i].pid) {
+            found = true;
+            initial_task->children[i] = (Child) {
+                .pid = new_task->pid,
+                .flags = kernel.scheduler.current_task->flags,
+                .status = 0,
+            };
+            break;
+        }
+    }
+    if (!found) {
+        printf("Couldn't fork, task already has too many children.\n");
+        return 0;
+    }
     new_task->flags = kernel.scheduler.current_task->flags; /* Flags are set last so that it's only 
                                                              * ever run after everything else is set up
                                                              * (because of the TASK_PRESENT flag) */

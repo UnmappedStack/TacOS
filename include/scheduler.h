@@ -8,6 +8,7 @@
 #include <list.h>
 
 #define MAX_RESOURCES   20 // TODO: Dynamically allocate this.
+#define MAX_CHILDREN    20
 #define TASK_PRESENT    0b0001
 #define TASK_RUNNING    0b0010
 #define TASK_FIRST_EXEC 0b0100
@@ -16,6 +17,12 @@
 typedef uint64_t pid_t;
 typedef uint8_t task_flags_t;
 typedef struct Task Task;
+
+typedef struct {
+    pid_t pid;
+    task_flags_t flags;
+    int status;
+} Child;
 
 // WARNING: Be super careful when changing this struct and update any changes accordingly in src/tasks/switch.asm
 // because otherwise things can break in the context switch.
@@ -29,6 +36,7 @@ struct Task {
     Memregion    *memregion_list;
     task_flags_t  flags;
     VfsFile      *resources[MAX_RESOURCES]; // TODO: This needs to also contain offsets etc
+    Child        children[MAX_CHILDREN];
 };
 
 typedef struct {
