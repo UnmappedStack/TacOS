@@ -1,4 +1,5 @@
 #include <mem/pmm.h>
+#include <framebuffer.h>
 #include <fs/device.h>
 #include <pic.h>
 #include <pit.h>
@@ -91,12 +92,13 @@ void _start() {
     init_pic();
     unpack_initrd();
     init_devices();
-    for (;;);
     init_memregion();
     init_scheduler();
     init_pit();
     ls("/");
     ls("/home");
+    init_framebuffer();
+    write_framebuffer_text("Hello from the framebuffer!\n");
     try_exec_init();
     unlock_pit();
     ENABLE_INTERRUPTS();

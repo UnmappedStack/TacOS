@@ -124,8 +124,6 @@ int tempfs_access(TempfsInode *file, char *buf, size_t len, size_t offset, bool 
 }
 
 int tempfs_write(TempfsInode *file, char *buf, size_t len, size_t offset) {
-    printf("here\n");
-    printf("type = %i\n", file->type);
     if (file->type == Device) {
         return file->devops.write(file, buf, len, offset);
     }

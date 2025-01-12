@@ -140,4 +140,4 @@ obj/%.asm.o: src/%.asm
 # Remove object files and the final executable.
 .PHONY: clean
 clean:
-	rm -rf obj
+	rm -rf obj bin

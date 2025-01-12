@@ -1,5 +1,6 @@
 #pragma once
 #include <tss.h>
+#include <framebuffer.h>
 #include <mem/slab.h>
 #include <stddef.h>
 #include <stdint.h>
@@ -32,6 +33,9 @@ typedef struct {
     char          *initrd_addr;
     SchedulerQueue scheduler;
     Cache         *memregion_cache;
+    Framebuffer    framebuffer;
+    uint64_t        char_x;
+    uint64_t       char_y;
 } Kernel;
 
 extern Kernel kernel;
