@@ -20,7 +20,6 @@ typedef struct Task Task;
 
 typedef struct {
     pid_t pid;
-    task_flags_t flags;
     int status;
 } Child;
 

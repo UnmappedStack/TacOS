@@ -34,7 +34,6 @@ pid_t fork() {
             found = true;
             initial_task->children[i] = (Child) {
                 .pid = new_task->pid,
-                .flags = kernel.scheduler.current_task->flags,
                 .status = 0,
             };
             break;

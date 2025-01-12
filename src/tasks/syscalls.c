@@ -6,6 +6,16 @@
 #include <stdint.h>
 #include <printf.h>
 
+int remove_child(Task *parent, pid_t child) {
+    for (size_t i = 0; i < MAX_CHILDREN; i++) {
+        if (parent->children[i].pid == child) {
+            parent->children[i].pid = 0;
+            return 0;
+        }
+    }
+    return -1;
+}
+
 int sys_open(char *filename, int flags, int mode) {
     (void) mode;
     uint64_t file_descriptor = 0;
