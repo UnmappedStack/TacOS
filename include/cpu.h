@@ -25,5 +25,5 @@
 
 #define IO_WAIT() \
     asm volatile ( \
-        "outb 0, 0x80" \
+        "outb %%al, $0x80" : : : "al" \
     )

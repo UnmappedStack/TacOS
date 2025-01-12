@@ -12,6 +12,7 @@ extern sys_fork
 extern sys_execve
 extern sys_kill
 extern sys_isatty
+extern sys_wait
 PTR_SIZE equ 8
 
 syscall_lookup:
@@ -25,6 +26,7 @@ syscall_lookup:
     dq sys_execve
     dq sys_kill
     dq sys_isatty
+    dq sys_wait
 syscall_lookup_end:
 
 global syscall_isr

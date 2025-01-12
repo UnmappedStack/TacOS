@@ -6,10 +6,15 @@
 #include <stdint.h>
 #include <printf.h>
 
-int remove_child(Task *parent, pid_t child) {
+#define CURRENT_TASK kernel.scheduler.current_task
+
+int remove_child(Task *parent, pid_t child, bool in_wait, int status) {
     for (size_t i = 0; i < MAX_CHILDREN; i++) {
         if (parent->children[i].pid == child) {
-            parent->children[i].pid = 0;
+            if (in_wait) // called from wait syscall
+                parent->children[i].pid = 0;
+            else
+                parent->children[i].status = status;
             return 0;
         }
     }
@@ -19,7 +24,7 @@ int remove_child(Task *parent, pid_t child) {
 int sys_open(char *filename, int flags, int mode) {
     (void) mode;
     uint64_t file_descriptor = 0;
-    Task *current_task = kernel.scheduler.current_task;
+    Task *current_task = CURRENT_TASK;
     for (; file_descriptor < MAX_RESOURCES; file_descriptor++) {
         if (current_task->resources[file_descriptor]) continue;
         current_task->resources[file_descriptor] = open((char*) filename, flags);
@@ -29,32 +34,33 @@ int sys_open(char *filename, int flags, int mode) {
 }
 
 int sys_close(int fd) {
-    return close(kernel.scheduler.current_task->resources[fd]);
+    return close(CURRENT_TASK->resources[fd]);
 }
 
 int sys_read(int fd, char *buf, size_t count) {
-    return vfs_read(kernel.scheduler.current_task->resources[fd], buf, count, 0);
+    return vfs_read(CURRENT_TASK->resources[fd], buf, count, 0);
 }
 
 int sys_write(int fd, char *buf, size_t count) {
     printf("fd = %i, buf = %s, count = %i\n", fd, buf, count);
-    return vfs_write(kernel.scheduler.current_task->resources[fd], buf, count, 0);
+    return vfs_write(CURRENT_TASK->resources[fd], buf, count, 0);
 }
 
 void sys_exit(int status) {
     // TODO: Clean up and report to parent
-    if (kernel.scheduler.current_task->pid <= 1) {
+    if (CURRENT_TASK->pid <= 1) {
         printf("Init task exited! Halting device.\n");
         HALT_DEVICE();
     }
     printf("Exited task with status %i\n", status);
-    kernel.scheduler.current_task->flags &= ~TASK_PRESENT;
-    kernel.scheduler.current_task->flags |= TASK_DEAD;
+    remove_child(CURRENT_TASK->parent, CURRENT_TASK->pid, false, status);
+    CURRENT_TASK->flags |= TASK_DEAD;
+    CURRENT_TASK->flags &= ~TASK_PRESENT;
     for (;;);
 }
 
 int sys_getpid() {
-    return kernel.scheduler.current_task->pid;
+    return CURRENT_TASK->pid;
 }
 
 int sys_fork() {
@@ -62,7 +68,7 @@ int sys_fork() {
 }
 
 int sys_execve(char *path) {
-    return execve(kernel.scheduler.current_task, path);
+    return execve(CURRENT_TASK, path);
 }
 
 // TODO: Actually send a signal to the task and do clean up, report to it's parent
@@ -78,19 +84,36 @@ int sys_kill(int pid, int sig) {
         Task *to_kill = task_from_pid(pid);
         to_kill->flags &= ~TASK_PRESENT;
         to_kill->flags |= TASK_DEAD;
+        remove_child(to_kill->parent, to_kill->pid, false, sig);
         printf("Killed task %i with signal %i\n", pid, sig);
         return 0;
     }
 }
 
 int sys_isatty(int fd) {
-    VfsFile *f = kernel.scheduler.current_task->resources[fd];
+    VfsFile *f = CURRENT_TASK->resources[fd];
     if (!f) return 0;
     if (f->drive.fs.fs_id == fs_tempfs) {
         TempfsInode *private = f->private;
         return private->type == Device && private->devops.is_term;
     }
     return 0;
+}
+
+int sys_wait(int *status) {
+    for (;;) {
+        for (size_t i = 0; i < MAX_CHILDREN; i++) {
+            if (CURRENT_TASK->children[i].pid &&
+               (task_from_pid(CURRENT_TASK->children[i].pid)->flags & TASK_DEAD)) {
+                pid_t pid = CURRENT_TASK->children[i].pid;
+                if (status)
+                    *status = CURRENT_TASK->children[i].status;
+                remove_child(CURRENT_TASK->parent, CURRENT_TASK->children[i].pid, true, 0);
+                return (int) pid;
+            }
+        }
+        IO_WAIT();
+    }
 }
 
 void sys_invalid(int sys) {
