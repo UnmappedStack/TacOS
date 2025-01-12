@@ -34,7 +34,7 @@ typedef struct {
     SchedulerQueue scheduler;
     Cache         *memregion_cache;
     Framebuffer    framebuffer;
-    uint64_t        char_x;
+    uint64_t       char_x;
     uint64_t       char_y;
 } Kernel;
 

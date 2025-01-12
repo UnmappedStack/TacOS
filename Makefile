@@ -39,13 +39,17 @@ all: bootloader kernel userspace initrd disk qemu
 bootloader:
 	make -C limine
 
+.PHONY: userspace
 userspace:
+	echo "Building userspace."
 	make -C userspace/*
 
+.PHONY: initrd
 initrd:
 	mkdir -p sysroot/boot
 	tar --create --file=sysroot/boot/initrd --format=ustar -C initrd home usr
 
+.PHONY: disk
 disk:
 	cp -v bin/tacos sysroot/boot/
 	mkdir -p sysroot/boot/limine

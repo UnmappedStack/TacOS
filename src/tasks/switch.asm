@@ -113,7 +113,6 @@ context_switch:
     push rbx
     ;; clear all general purpose registers, send EOI to interrupt controller, and iretq
     clearall
-    eoi
     iretq
 .previously_executed:
     eoi

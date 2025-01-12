@@ -1,4 +1,6 @@
 #pragma once
+#include <fs/vfs.h>
+#include <string.h>
 #include <mem/memregion.h>
 #include <mem/paging.h>
 #include <mem/slab.h>
@@ -25,6 +27,7 @@ struct Task {
     Task         *parent;
     Memregion    *memregion_list;
     task_flags_t  flags;
+    VfsFile      *resources[MAX_RESOURCES]; // TODO: This needs to also contain offsets etc
 };
 
 typedef struct {
