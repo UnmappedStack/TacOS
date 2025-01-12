@@ -1,4 +1,5 @@
 #pragma once
+#include <tss.h>
 #include <mem/slab.h>
 #include <stddef.h>
 #include <stdint.h>
@@ -11,9 +12,9 @@
 typedef struct limine_memmap_entry* Memmap;
 
 typedef struct {
-    uint64_t       GDT[5];
-    GDTR           gdtr; // TODO: Put this on the stack (why didn't I??? lmfao)
-    IDTEntry       IDT[256];
+    uint64_t      *GDT;
+    IDTEntry      *IDT;
+    TSS           *tss;
     uintptr_t      kernel_phys_addr;
     uintptr_t      kernel_virt_addr;
     uintptr_t      hhdm;

@@ -79,14 +79,15 @@ void _start() {
     DISABLE_INTERRUPTS();
     init_kernel_info();
     init_serial();
+    init_pmm();
+    init_TSS();
     init_GDT();
     init_IDT();
     init_exceptions();
-    init_pmm();
     init_paging();
+    switch_page_structures();
     init_vfs();
     init_pic();
-    switch_page_structures();
     unpack_initrd();
     init_memregion();
     init_scheduler();
@@ -94,5 +95,7 @@ void _start() {
     ls("/");
     ls("/home");
     try_exec_init();
+    unlock_pit();
+    ENABLE_INTERRUPTS();
     for (;;);
 }

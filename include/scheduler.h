@@ -14,10 +14,13 @@ typedef uint64_t pid_t;
 typedef uint8_t task_flags_t;
 typedef struct Task Task;
 
+// WARNING: Be super careful when changing this struct and update any changes accordingly in src/tasks/switch.asm
+// because otherwise things can break in the context switch.
 struct Task {
     struct list   list;
     pid_t         pid;
     uint64_t      pml4;
+    uint64_t      rsp;
     void         *entry;
     Task         *parent;
     Memregion    *memregion_list;
@@ -34,3 +37,5 @@ typedef struct {
 void init_scheduler();
 Task *task_add();
 Task *task_select();
+
+

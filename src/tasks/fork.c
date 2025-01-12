@@ -8,7 +8,13 @@ pid_t fork() {
     new_task->entry    = kernel.scheduler.current_task->entry;
     new_task->parent   = kernel.scheduler.current_task;
     new_task->pml4     = (uint64_t) init_paging_task();
+    printf("new pml4 = %p\n", new_task->pml4);
+    new_task->rsp      = kernel.scheduler.current_task->rsp;
     bool is_first      = true;
+    if (!kernel.scheduler.current_task->memregion_list) {
+        printf("Skipped\n");
+        goto endcopy;
+    }
     for (struct list *iter = &kernel.scheduler.current_task->memregion_list->list;
          iter != &kernel.scheduler.current_task->memregion_list->list || is_first;
          iter = iter->next
@@ -19,6 +25,7 @@ pid_t fork() {
                         new_task->pml4 + kernel.hhdm
         );
     }
+    endcopy:
     new_task->flags = kernel.scheduler.current_task->flags; /* Flags are set last so that it's only 
                                                              * ever run after everything else is set up
                                                              * (because of the TASK_PRESENT flag) */
