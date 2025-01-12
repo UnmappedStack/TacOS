@@ -1,4 +1,5 @@
 #include <cpu/idt.h>
+#include <mem/pmm.h>
 #include <serial.h>
 #include <kernel.h>
 
@@ -17,6 +18,7 @@ void set_IDT_entry(uint32_t vector, void *isr, uint8_t flags, IDTEntry *IDT) {
 }
 
 void init_IDT() {
+    kernel.IDT= (IDTEntry*) (kmalloc(1) + kernel.hhdm);
     set_IDT_entry(0x80, &test_interrupt, 0xEF, kernel.IDT);
     IDTR idtr = (IDTR) {
         .size   = (sizeof(IDTEntry) * 256) - 1,
