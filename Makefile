@@ -9,6 +9,13 @@ override OUTPUT := tacos
 # Convenience macro to reliably declare user overridable variables.
 override USER_VARIABLE = $(if $(filter $(origin $(1)),default undefined),$(eval override $(1) := $(2)))
 
+override XORRISO_FLAGS += \
+						  -as mkisofs -b boot/limine/limine-bios-cd.bin \
+						  -no-emul-boot -boot-load-size 4 -boot-info-table \
+						  --efi-boot boot/limine/limine-uefi-cd.bin \
+						  -efi-boot-part --efi-boot-image --protective-msdos-label \
+						  sysroot -o tacos.iso
+
 # User controllable C compiler command.
 $(call USER_VARIABLE,KCC,clang)
 
@@ -26,6 +33,34 @@ $(call USER_VARIABLE,KNASMFLAGS,-F dwarf -g)
 
 # User controllable linker flags. We set none by default.
 $(call USER_VARIABLE,KLDFLAGS,)
+
+all: bootloader kernel userspace initrd disk qemu
+
+bootloader:
+	make -C limine
+
+userspace:
+	make -C userspace/*
+
+initrd:
+	mkdir -p sysroot/boot
+	tar --create --file=sysroot/boot/initrd --format=ustar -C initrd home usr
+
+disk:
+	cp -v bin/tacos sysroot/boot/
+	mkdir -p sysroot/boot/limine
+	cp -v limine.conf limine/limine-bios.sys limine/limine-bios-cd.bin \
+    	limine/limine-uefi-cd.bin sysroot/boot/limine/
+	mkdir -p sysroot/EFI/BOOT
+	cp -v limine/BOOTX64.EFI sysroot/EFI/BOOT/
+	cp -v limine/BOOTIA32.EFI sysroot/EFI/BOOT/
+	xorriso ${XORRISO_FLAGS}
+	./limine/limine bios-install tacos.iso
+
+qemu:
+	qemu-system-x86_64 tacos.iso -serial stdio -no-shutdown -no-reboot -monitor telnet:127.0.0.1:8000,server,nowait -d int,cpu_reset -D log.txt -accel kvm
+
+# everything below here is the kernel
 
 # Internal C flags that should not be changed by the user.
 override KCFLAGS += \
@@ -76,8 +111,8 @@ override OBJ := $(addprefix obj/,$(CFILES:.c=.c.o) $(ASFILES:.S=.S.o) $(NASMFILE
 override HEADER_DEPS := $(addprefix obj/,$(CFILES:.c=.c.d) $(ASFILES:.S=.S.d))
 
 # Default target.
-.PHONY: all
-all: bin/$(OUTPUT)
+.PHONY: kernel
+kernel: bin/$(OUTPUT)
 
 # Link rules for the final executable.
 bin/$(OUTPUT): linker.ld $(OBJ)
