@@ -72,13 +72,8 @@ context_switch:
     cli
     pushall
     mov rdi, msg
-    call printf
     call task_select ; next Task* is in rax
     mov r15, rax
-    ;; TEST: Printing the selected task's PID
-    ;mov rsi, [rax + TASK_PID_OFF]
-    ;mov rdi, msg2
-    ;call printf
     ;; Save current rsp of *this* task
     call get_current_task
     mov [rax + TASK_RSP_OFF], rsp

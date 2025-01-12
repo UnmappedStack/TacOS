@@ -96,8 +96,6 @@ void _start() {
     ls("/home");
     try_exec_init();
     unlock_pit();
-    printf("GDT real addr:  0x%p\n", kernel.GDT);
-    printf("in gdt 1: %i\n", kernel.GDT[1]);
     ENABLE_INTERRUPTS();
     for (;;);
 }

@@ -34,13 +34,9 @@ Task *task_add() {
 }
 
 Task *task_select() {
-    printf("In task select\n");
-    printf("Current task = %p\n", kernel.scheduler.current_task);
     kernel.scheduler.current_task = (Task*) kernel.scheduler.current_task->list.next;
-    printf("New task = %p\n", kernel.scheduler.current_task);
     if (!(kernel.scheduler.current_task->flags & TASK_PRESENT))
         kernel.scheduler.current_task = (Task*) kernel.scheduler.current_task->list.next;
-    printf("Task select return task with pid = %i\n", ((Task*)kernel.scheduler.current_task)->pid);
     return (Task*) kernel.scheduler.current_task;
 }
 
