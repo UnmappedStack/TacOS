@@ -9,6 +9,37 @@
 #define BG_COLOUR 0x22262e
 #define FG_COLOUR 0xd7dae0
 
+int fb_open(void *f) {
+    (void) f;
+    return 0;
+}
+
+int fb_close(void *f) {
+    (void) f;
+    return 0;
+}
+
+int fb_write(void *f, char *buf, size_t len, size_t off) {
+    (void) f;
+    if (!buf) return -1;
+    buf = &buf[off];
+    while (*buf && len) {
+        write_framebuffer_char(*buf);
+        len--;
+        buf++;
+    }
+    return 0;
+}
+
+int fb_read(void *f, char *buf, size_t len, size_t off) {
+    (void) f;
+    (void) buf;
+    (void) len;
+    (void) off;
+    printf("Framebuffer device is write-only!\n");
+    return -1;
+}
+
 static volatile struct limine_framebuffer_request limine_framebuffer_request = {
     .id = LIMINE_FRAMEBUFFER_REQUEST,
     .revision = 0, 
@@ -107,6 +138,13 @@ void write_framebuffer_text(const char *msg) {
 
 void init_framebuffer() {
     kernel.framebuffer = boot_get_framebuffer();
+    DeviceOps ops = (DeviceOps) {
+        .read = &fb_read,
+        .write = &fb_write,
+        .open = &fb_open,
+        .close = &fb_close,
+    };
+    mkdevice("/dev/tty0", ops);
     fill_rect(0, 0, kernel.framebuffer.width, kernel.framebuffer.height, BG_COLOUR);
     printf("Framebuffer initialised.\n");
 }

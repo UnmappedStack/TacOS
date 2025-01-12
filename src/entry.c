@@ -1,4 +1,5 @@
 #include <mem/pmm.h>
+#include <string.h>
 #include <framebuffer.h>
 #include <fs/device.h>
 #include <pic.h>
@@ -98,7 +99,6 @@ void _start() {
     ls("/");
     ls("/home");
     init_framebuffer();
-    write_framebuffer_text("Hello from the framebuffer!\n");
     try_exec_init();
     unlock_pit();
     ENABLE_INTERRUPTS();
