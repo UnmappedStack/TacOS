@@ -54,6 +54,7 @@ int execve(Task *task, char *filename) {
     }
     elf_program_header program_header;
     size_t offset = file_header.program_header_offset;
+    size_t end_of_executable = 0;;
     for (size_t i = 0; i < file_header.program_header_entry_count; i++) {
         if (vfs_read(f, (char*) &program_header, sizeof(elf_file_header), offset) < 0)
             goto elf_read_err;
@@ -62,6 +63,7 @@ int execve(Task *task, char *filename) {
             if (vfs_read(f, (void*) (header_data_phys + kernel.hhdm), program_header.size_in_file, program_header.offset) < 0)
                 goto elf_read_err;
             uint64_t flags = KERNEL_PFLAG_USER | KERNEL_PFLAG_PRESENT;
+            end_of_executable = program_header.virtual_address + program_header.size_in_memory;
             if (!(program_header.flags & ELF_FLAG_WRITABLE))
                 flags |= KERNEL_PFLAG_WRITE;
             map_pages((uint64_t*) (task->pml4 + kernel.hhdm), program_header.virtual_address, header_data_phys, bytes_to_pages(program_header.size_in_memory), flags);
@@ -75,6 +77,10 @@ int execve(Task *task, char *filename) {
     task->entry = (void*) file_header.entry;
     task->flags = TASK_FIRST_EXEC | TASK_PRESENT;
     task->rsp   = USER_STACK_PTR;
+    task->program_break = PAGE_ALIGN_UP(end_of_executable);
+    alloc_pages((uint64_t*) (task->pml4 + kernel.hhdm), task->program_break, 1, KERNEL_PFLAG_WRITE | KERNEL_PFLAG_PRESENT | KERNEL_PFLAG_USER);
+    add_memregion(&task->memregion_list, task->program_break, 1, true, KERNEL_PFLAG_WRITE | KERNEL_PFLAG_PRESENT | KERNEL_PFLAG_USER);
+    task->program_break++;
     close(f);
     return 0;
 }

@@ -116,6 +116,19 @@ int sys_wait(int *status) {
     }
 }
 
+uintptr_t sys_sbrk(intptr_t increment) {
+    if (!increment) return CURRENT_TASK->program_break;
+    uintptr_t previous_break = CURRENT_TASK->program_break;
+    CURRENT_TASK->program_break += increment;
+    if (!(CURRENT_TASK->program_break % PAGE_SIZE) ||
+         (PAGE_ALIGN_DOWN(CURRENT_TASK->program_break) > PAGE_ALIGN_DOWN(previous_break))) {
+        size_t num_new_pages = PAGE_ALIGN_UP(increment) / 4096;
+        alloc_pages((uint64_t*) (CURRENT_TASK->pml4 + kernel.hhdm), CURRENT_TASK->program_break, num_new_pages, KERNEL_PFLAG_WRITE | KERNEL_PFLAG_PRESENT | KERNEL_PFLAG_USER);
+        add_memregion(&CURRENT_TASK->memregion_list, CURRENT_TASK->program_break, num_new_pages, true, KERNEL_PFLAG_WRITE | KERNEL_PFLAG_PRESENT | KERNEL_PFLAG_USER);
+    }
+    return previous_break;
+}
+
 void sys_invalid(int sys) {
     printf("Invalid syscall: %i\n", sys);
 }

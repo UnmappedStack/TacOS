@@ -36,6 +36,7 @@ struct Task {
     task_flags_t  flags;
     VfsFile      *resources[MAX_RESOURCES]; // TODO: This needs to also contain offsets etc
     Child        children[MAX_CHILDREN];
+    uintptr_t    program_break; // used for sbrk
 };
 
 typedef struct {
