@@ -1,3 +1,4 @@
 #pragma once
+#include <stddef.h>
 
-int strlen(char *str);
+size_t strlen(const char *str);
