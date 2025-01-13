@@ -34,7 +34,7 @@ $(call USER_VARIABLE,KNASMFLAGS,-F dwarf -g)
 # User controllable linker flags. We set none by default.
 $(call USER_VARIABLE,KLDFLAGS,)
 
-all: bootloader kernel userspace initrd disk qemu
+all: bootloader kernel libc userspace initrd disk qemu
 
 bootloader:
 	make -C limine
@@ -43,6 +43,10 @@ bootloader:
 userspace:
 	echo "Building userspace."
 	make -C userspace/*
+
+.PHONY: libc
+libc:
+	make -C libc
 
 .PHONY: initrd
 initrd:

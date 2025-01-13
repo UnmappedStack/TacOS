@@ -99,7 +99,7 @@ context_switch:
     or rbx, 3
     push rbx
     ; rsp = 0x70000000000
-    mov rbx, 0x70000000000
+    mov rbx, 0x700000000000
     push rbx
     ; rflags = 0x200
     mov rbx, 0x200
@@ -112,6 +112,7 @@ context_switch:
     mov rbx, [r15 + TASK_ENTRY_OFF]
     push rbx
     ;; clear all general purpose registers, send EOI to interrupt controller, and iretq
+    eoi
     clearall
     iretq
 .previously_executed:

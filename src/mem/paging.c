@@ -165,7 +165,7 @@ void alloc_pages(uint64_t pml4_addr[], uint64_t virt_addr, uint64_t num_pages, u
             pml4_addr[pml4] = (uint64_t)kmalloc(1);
             pml3_addr = (uint64_t*)(pml4_addr[pml4] + kernel.hhdm);
             memset((uint8_t*)pml3_addr, 0, 4096);
-            pml4_addr[pml4] |= flags | KERNEL_PFLAG_PRESENT | KERNEL_PFLAG_WRITE | KERNEL_PFLAG_USER;
+            pml4_addr[pml4] |= KERNEL_PFLAG_PRESENT | KERNEL_PFLAG_WRITE | KERNEL_PFLAG_USER;
         } else {
             pml3_addr = (uint64_t*)(PAGE_ALIGN_DOWN(pml4_addr[pml4]) + kernel.hhdm);
         }
@@ -175,7 +175,7 @@ void alloc_pages(uint64_t pml4_addr[], uint64_t virt_addr, uint64_t num_pages, u
                 pml3_addr[pml3] = (uint64_t)kmalloc(1);
                 pml2_addr = (uint64_t*)(pml3_addr[pml3] + kernel.hhdm);
                 memset((uint8_t*)pml2_addr, 0, 4096);
-                pml3_addr[pml3] |= flags | KERNEL_PFLAG_PRESENT | KERNEL_PFLAG_WRITE | KERNEL_PFLAG_USER;
+                pml3_addr[pml3] |= KERNEL_PFLAG_PRESENT | KERNEL_PFLAG_WRITE | KERNEL_PFLAG_USER;
             } else {
                 pml2_addr = (uint64_t*)(PAGE_ALIGN_DOWN(pml3_addr[pml3]) + kernel.hhdm);
             }
@@ -186,7 +186,7 @@ void alloc_pages(uint64_t pml4_addr[], uint64_t virt_addr, uint64_t num_pages, u
                     pml2_addr[pml2] = (uint64_t)kmalloc(1);
                     pml1_addr = (uint64_t*)(pml2_addr[pml2] + kernel.hhdm);
                     memset((uint8_t*)pml1_addr, 0, 4096);
-                    pml2_addr[pml2] |= flags | KERNEL_PFLAG_PRESENT | KERNEL_PFLAG_WRITE | KERNEL_PFLAG_USER;
+                    pml2_addr[pml2] |= KERNEL_PFLAG_PRESENT | KERNEL_PFLAG_WRITE | KERNEL_PFLAG_USER;
                 } else {
                     pml1_addr = (uint64_t*)(PAGE_ALIGN_DOWN(pml2_addr[pml2]) + kernel.hhdm);
                 }
