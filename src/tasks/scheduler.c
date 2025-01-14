@@ -16,6 +16,8 @@ void init_scheduler() {
     krnl_task->flags  = 0;
     krnl_task->rsp    = USER_STACK_PTR;
     krnl_task->memregion_list = 0;
+    memset(krnl_task->resources, 0, sizeof(krnl_task->resources));
+    memset(krnl_task->children, 0, sizeof(krnl_task->children));
     kernel.scheduler.current_task = krnl_task;
     //memregion_add_kernel(&krnl_task->memregion_list);
     printf("Initiated scheduler.\n");

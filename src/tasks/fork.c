@@ -8,6 +8,7 @@ pid_t fork() {
     Task *initial_task = kernel.scheduler.current_task;
     Task *new_task     = task_add();
     memcpy(new_task->resources, initial_task->resources, sizeof(new_task->resources));
+    memset(new_task->children, 0, sizeof(new_task->children));
     new_task->entry    = kernel.scheduler.current_task->entry;
     new_task->parent   = kernel.scheduler.current_task;
     new_task->pml4     = (uint64_t) init_paging_task();
