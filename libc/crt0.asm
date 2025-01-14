@@ -2,9 +2,10 @@
 global _start
 extern main
 
-%define HEAP_VERIFY_OFF    0
-%define HEAP_NEXT_OFF      1
-%define HEAP_POOL_SIZE_OFF 9
+%define HEAP_VERIFY_OFF        0
+%define HEAP_NEXT_OFF          1
+%define HEAP_POOL_SIZE_OFF     9
+%define HEAP_REQUIRED_SIZE_OFF 17
 
 section .text
 _start:
@@ -27,9 +28,10 @@ init_libc:
     mov rdi, 4096 ;   4096
     int 0x80      ; );
     ; Fill the heap so far with a single pool
-    mov byte  [heap_start + HEAP_VERIFY_OFF   ], 69
-    mov qword [heap_start + HEAP_NEXT_OFF     ], 0
-    mov qword [heap_start + HEAP_POOL_SIZE_OFF], 4096
+    mov byte  [heap_start + HEAP_VERIFY_OFF       ], 69
+    mov qword [heap_start + HEAP_NEXT_OFF         ], 0
+    mov qword [heap_start + HEAP_POOL_SIZE_OFF    ], 4095
+    mov qword [heap_start + HEAP_REQUIRED_SIZE_OFF], 4095
     ret
 
 section .data
