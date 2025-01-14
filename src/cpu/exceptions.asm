@@ -152,5 +152,4 @@ baseHandler:
     pop rbx
     pop rax
     add rsp, 0x10
-    sti
     iretq
