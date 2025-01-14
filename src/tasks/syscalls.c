@@ -41,9 +41,11 @@ int sys_read(int fd, char *buf, size_t count) {
     return vfs_read(CURRENT_TASK->resources[fd], buf, count, 0);
 }
 
-int sys_write(int fd, char *buf, size_t count) {
+size_t sys_write(int fd, char *buf, size_t count) {
     printf("fd = %i, buf = %s, count = %i\n", fd, buf, count);
-    return vfs_write(CURRENT_TASK->resources[fd], buf, count, 0);
+    size_t result = vfs_write(CURRENT_TASK->resources[fd], buf, count, 0);
+    printf("result = %p\n", result);
+    return result;
 }
 
 void sys_exit(int status) {

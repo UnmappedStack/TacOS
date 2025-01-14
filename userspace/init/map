@@ -1,0 +1,444 @@
+Archive member included to satisfy reference by file (symbol)
+
+../../libc/bin/tacoc.a(stdio.o)
+                              obj/main.o (open)
+../../libc/bin/tacoc.a(string.o)
+                              obj/main.o (strlen)
+
+Merging program properties
+
+Removed property 0xc0010001 to merge obj/main.o (0x1) and ../../libc/bin/crt0.o (not found)
+Removed property 0xc0010002 to merge obj/main.o (0x0) and ../../libc/bin/crt0.o (not found)
+Removed property 0xc0010001 to merge obj/main.o (not found) and ../../libc/bin/tacoc.a(stdio.o) (0x1)
+Removed property 0xc0010002 to merge obj/main.o (not found) and ../../libc/bin/tacoc.a(stdio.o) (0x0)
+Removed property 0xc0010001 to merge obj/main.o (not found) and ../../libc/bin/tacoc.a(string.o) (0x1)
+Removed property 0xc0010002 to merge obj/main.o (not found) and ../../libc/bin/tacoc.a(string.o) (0x0)
+
+Discarded input sections
+
+ .note.GNU-stack
+                0x0000000000000000        0x0 obj/main.o
+ .note.gnu.property
+                0x0000000000000000       0x30 obj/main.o
+ .note.GNU-stack
+                0x0000000000000000        0x0 ../../libc/bin/tacoc.a(stdio.o)
+ .note.gnu.property
+                0x0000000000000000       0x30 ../../libc/bin/tacoc.a(stdio.o)
+ .note.GNU-stack
+                0x0000000000000000        0x0 ../../libc/bin/tacoc.a(string.o)
+ .note.gnu.property
+                0x0000000000000000       0x30 ../../libc/bin/tacoc.a(string.o)
+
+Memory Configuration
+
+Name             Origin             Length             Attributes
+*default*        0x0000000000000000 0xffffffffffffffff
+
+Linker script and memory map
+
+LOAD obj/main.o
+LOAD ../../libc/bin/crt0.o
+LOAD ../../libc/bin/tacoc.a
+                [!provide]                        PROVIDE (__executable_start = SEGMENT_START ("text-segment", 0x400000))
+                0x0000000000400120                . = (SEGMENT_START ("text-segment", 0x400000) + SIZEOF_HEADERS)
+
+.interp
+ *(.interp)
+
+.hash
+ *(.hash)
+
+.gnu.hash
+ *(.gnu.hash)
+
+.dynsym
+ *(.dynsym)
+
+.dynstr
+ *(.dynstr)
+
+.gnu.version
+ *(.gnu.version)
+
+.gnu.version_d
+ *(.gnu.version_d)
+
+.gnu.version_r
+ *(.gnu.version_r)
+
+.rela.dyn       0x0000000000400120        0x0
+ *(.rela.init)
+ *(.rela.text .rela.text.* .rela.gnu.linkonce.t.*)
+ *(.rela.fini)
+ *(.rela.rodata .rela.rodata.* .rela.gnu.linkonce.r.*)
+ *(.rela.data .rela.data.* .rela.gnu.linkonce.d.*)
+ *(.rela.tdata .rela.tdata.* .rela.gnu.linkonce.td.*)
+ *(.rela.tbss .rela.tbss.* .rela.gnu.linkonce.tb.*)
+ *(.rela.ctors)
+ *(.rela.dtors)
+ *(.rela.got)
+ .rela.got      0x0000000000400120        0x0 obj/main.o
+ *(.rela.bss .rela.bss.* .rela.gnu.linkonce.b.*)
+ *(.rela.ldata .rela.ldata.* .rela.gnu.linkonce.l.*)
+ *(.rela.lbss .rela.lbss.* .rela.gnu.linkonce.lb.*)
+ *(.rela.lrodata .rela.lrodata.* .rela.gnu.linkonce.lr.*)
+ *(.rela.ifunc)
+
+.rela.plt       0x0000000000400120        0x0
+ *(.rela.plt)
+                [!provide]                        PROVIDE (__rela_iplt_start = .)
+ *(.rela.iplt)
+ .rela.iplt     0x0000000000400120        0x0 obj/main.o
+                [!provide]                        PROVIDE (__rela_iplt_end = .)
+
+.relr.dyn
+ *(.relr.dyn)
+                0x0000000000401000                . = ALIGN (CONSTANT (MAXPAGESIZE))
+
+.init
+ *(SORT_NONE(.init))
+
+.plt            0x0000000000401000        0x0
+ *(.plt)
+ *(.iplt)
+ .iplt          0x0000000000401000        0x0 obj/main.o
+
+.plt.got
+ *(.plt.got)
+
+.plt.sec
+ *(.plt.sec)
+
+.text           0x0000000000401000      0x100
+ *(.text.unlikely .text.*_unlikely .text.unlikely.*)
+ *(.text.exit .text.exit.*)
+ *(.text.startup .text.startup.*)
+ *(.text.hot .text.hot.*)
+ *(SORT_BY_NAME(.text.sorted.*))
+ *(.text .stub .text.* .gnu.linkonce.t.*)
+ .text          0x0000000000401000       0x57 obj/main.o
+                0x0000000000401000                main
+ *fill*         0x0000000000401057        0x9 
+ .text          0x0000000000401060       0x17 ../../libc/bin/crt0.o
+                0x0000000000401060                _start
+ .text          0x0000000000401077       0x5a ../../libc/bin/tacoc.a(stdio.o)
+                0x0000000000401077                open
+                0x00000000004010a3                write
+ .text          0x00000000004010d1       0x2f ../../libc/bin/tacoc.a(string.o)
+                0x00000000004010d1                strlen
+ *(.gnu.warning)
+
+.fini
+ *(SORT_NONE(.fini))
+                [!provide]                        PROVIDE (__etext = .)
+                [!provide]                        PROVIDE (_etext = .)
+                [!provide]                        PROVIDE (etext = .)
+                0x0000000000402000                . = ALIGN (CONSTANT (MAXPAGESIZE))
+                0x0000000000402000                . = SEGMENT_START ("rodata-segment", (ALIGN (CONSTANT (MAXPAGESIZE)) + (. & (CONSTANT (MAXPAGESIZE) - 0x1))))
+
+.rodata         0x0000000000402000       0x54
+ *(.rodata .rodata.* .gnu.linkonce.r.*)
+ .rodata        0x0000000000402000       0x54 obj/main.o
+
+.rodata1
+ *(.rodata1)
+
+.eh_frame_hdr
+ *(.eh_frame_hdr)
+ *(.eh_frame_entry .eh_frame_entry.*)
+
+.eh_frame       0x0000000000402058       0x98
+ *(.eh_frame)
+ .eh_frame      0x0000000000402058       0x38 obj/main.o
+ .eh_frame      0x0000000000402090       0x40 ../../libc/bin/tacoc.a(stdio.o)
+                                         0x58 (size before relaxing)
+ .eh_frame      0x00000000004020d0       0x20 ../../libc/bin/tacoc.a(string.o)
+                                         0x38 (size before relaxing)
+ *(.eh_frame.*)
+
+.sframe
+ *(.sframe)
+ *(.sframe.*)
+
+.gcc_except_table
+ *(.gcc_except_table .gcc_except_table.*)
+
+.gnu_extab
+ *(.gnu_extab*)
+
+.exception_ranges
+ *(.exception_ranges*)
+                0x0000000000403000                . = DATA_SEGMENT_ALIGN (CONSTANT (MAXPAGESIZE), CONSTANT (COMMONPAGESIZE))
+
+.eh_frame
+ *(.eh_frame)
+ *(.eh_frame.*)
+
+.sframe
+ *(.sframe)
+ *(.sframe.*)
+
+.gnu_extab
+ *(.gnu_extab)
+
+.gcc_except_table
+ *(.gcc_except_table .gcc_except_table.*)
+
+.exception_ranges
+ *(.exception_ranges*)
+
+.tdata          0x0000000000403000        0x0
+                [!provide]                        PROVIDE (__tdata_start = .)
+ *(.tdata .tdata.* .gnu.linkonce.td.*)
+
+.tbss
+ *(.tbss .tbss.* .gnu.linkonce.tb.*)
+ *(.tcommon)
+
+.preinit_array  0x0000000000403000        0x0
+                [!provide]                        PROVIDE (__preinit_array_start = .)
+ *(.preinit_array)
+                [!provide]                        PROVIDE (__preinit_array_end = .)
+
+.init_array     0x0000000000403000        0x0
+                [!provide]                        PROVIDE (__init_array_start = .)
+ *(SORT_BY_INIT_PRIORITY(.init_array.*) SORT_BY_INIT_PRIORITY(.ctors.*))
+ *(.init_array EXCLUDE_FILE(*crtend?.o *crtend.o *crtbegin?.o *crtbegin.o) .ctors)
+                [!provide]                        PROVIDE (__init_array_end = .)
+
+.fini_array     0x0000000000403000        0x0
+                [!provide]                        PROVIDE (__fini_array_start = .)
+ *(SORT_BY_INIT_PRIORITY(.fini_array.*) SORT_BY_INIT_PRIORITY(.dtors.*))
+ *(.fini_array EXCLUDE_FILE(*crtend?.o *crtend.o *crtbegin?.o *crtbegin.o) .dtors)
+                [!provide]                        PROVIDE (__fini_array_end = .)
+
+.ctors
+ *crtbegin.o(.ctors)
+ *crtbegin?.o(.ctors)
+ *(EXCLUDE_FILE(*crtend?.o *crtend.o) .ctors)
+ *(SORT_BY_NAME(.ctors.*))
+ *(.ctors)
+
+.dtors
+ *crtbegin.o(.dtors)
+ *crtbegin?.o(.dtors)
+ *(EXCLUDE_FILE(*crtend?.o *crtend.o) .dtors)
+ *(SORT_BY_NAME(.dtors.*))
+ *(.dtors)
+
+.jcr
+ *(.jcr)
+
+.data.rel.ro
+ *(.data.rel.ro.local* .gnu.linkonce.d.rel.ro.local.*)
+ *(.data.rel.ro .data.rel.ro.* .gnu.linkonce.d.rel.ro.*)
+
+.dynamic
+ *(.dynamic)
+
+.got            0x0000000000403000        0x0
+ *(.got)
+ .got           0x0000000000403000        0x0 obj/main.o
+ *(.igot)
+                0x0000000000403000                . = DATA_SEGMENT_RELRO_END (., (SIZEOF (.got.plt) >= 0x18)?0x18:0x0)
+
+.got.plt        0x0000000000403000        0x0
+ *(.got.plt)
+ .got.plt       0x0000000000403000        0x0 obj/main.o
+ *(.igot.plt)
+ .igot.plt      0x0000000000403000        0x0 obj/main.o
+
+.data           0x0000000000403000        0x0
+ *(.data .data.* .gnu.linkonce.d.*)
+ .data          0x0000000000403000        0x0 obj/main.o
+ .data          0x0000000000403000        0x0 ../../libc/bin/tacoc.a(stdio.o)
+ .data          0x0000000000403000        0x0 ../../libc/bin/tacoc.a(string.o)
+
+.data1
+ *(.data1)
+                0x0000000000403000                _edata = .
+                [!provide]                        PROVIDE (edata = .)
+                0x0000000000403000                . = ALIGN (ALIGNOF (NEXT_SECTION))
+                0x0000000000403000                __bss_start = .
+
+.bss            0x0000000000403000        0x0
+ *(.dynbss)
+ *(.bss .bss.* .gnu.linkonce.b.*)
+ .bss           0x0000000000403000        0x0 obj/main.o
+ .bss           0x0000000000403000        0x0 ../../libc/bin/tacoc.a(stdio.o)
+ .bss           0x0000000000403000        0x0 ../../libc/bin/tacoc.a(string.o)
+ *(COMMON)
+                0x0000000000403000                . = ALIGN ((. != 0x0)?0x8:0x1)
+
+.lbss
+ *(.dynlbss)
+ *(.lbss .lbss.* .gnu.linkonce.lb.*)
+ *(LARGE_COMMON)
+                0x0000000000403000                . = ALIGN (0x8)
+                0x0000000000403000                . = SEGMENT_START ("ldata-segment", .)
+
+.lrodata
+ *(.lrodata .lrodata.* .gnu.linkonce.lr.*)
+
+.ldata          0x0000000000403000        0x0
+ *(.ldata .ldata.* .gnu.linkonce.l.*)
+                0x0000000000403000                . = ALIGN ((. != 0x0)?0x8:0x1)
+                0x0000000000403000                . = ALIGN (0x8)
+                0x0000000000403000                _end = .
+                [!provide]                        PROVIDE (end = .)
+                0x0000000000403000                . = DATA_SEGMENT_END (.)
+
+.stab
+ *(.stab)
+
+.stabstr
+ *(.stabstr)
+
+.stab.excl
+ *(.stab.excl)
+
+.stab.exclstr
+ *(.stab.exclstr)
+
+.stab.index
+ *(.stab.index)
+
+.stab.indexstr
+ *(.stab.indexstr)
+
+.comment        0x0000000000000000       0x1b
+ *(.comment)
+ .comment       0x0000000000000000       0x1b obj/main.o
+                                         0x1c (size before relaxing)
+ .comment       0x000000000000001b       0x1c ../../libc/bin/tacoc.a(stdio.o)
+ .comment       0x000000000000001b       0x1c ../../libc/bin/tacoc.a(string.o)
+
+.gnu.build.attributes
+ *(.gnu.build.attributes .gnu.build.attributes.*)
+
+.debug
+ *(.debug)
+
+.line
+ *(.line)
+
+.debug_srcinfo
+ *(.debug_srcinfo)
+
+.debug_sfnames
+ *(.debug_sfnames)
+
+.debug_aranges  0x0000000000000000       0xc0
+ *(.debug_aranges)
+ .debug_aranges
+                0x0000000000000000       0x30 obj/main.o
+ .debug_aranges
+                0x0000000000000030       0x30 ../../libc/bin/crt0.o
+ .debug_aranges
+                0x0000000000000060       0x30 ../../libc/bin/tacoc.a(stdio.o)
+ .debug_aranges
+                0x0000000000000090       0x30 ../../libc/bin/tacoc.a(string.o)
+
+.debug_pubnames
+                0x0000000000000000        0x0
+ *(.debug_pubnames)
+ .debug_pubnames
+                0x0000000000000000        0x0 ../../libc/bin/crt0.o
+
+.debug_info     0x0000000000000000      0x381
+ *(.debug_info .gnu.linkonce.wi.*)
+ .debug_info    0x0000000000000000      0x114 obj/main.o
+ .debug_info    0x0000000000000114       0x6b ../../libc/bin/crt0.o
+ .debug_info    0x000000000000017f      0x151 ../../libc/bin/tacoc.a(stdio.o)
+ .debug_info    0x00000000000002d0       0xb1 ../../libc/bin/tacoc.a(string.o)
+
+.debug_abbrev   0x0000000000000000      0x1ec
+ *(.debug_abbrev)
+ .debug_abbrev  0x0000000000000000       0x9a obj/main.o
+ .debug_abbrev  0x000000000000009a       0x1d ../../libc/bin/crt0.o
+ .debug_abbrev  0x00000000000000b7       0xad ../../libc/bin/tacoc.a(stdio.o)
+ .debug_abbrev  0x0000000000000164       0x88 ../../libc/bin/tacoc.a(string.o)
+
+.debug_line     0x0000000000000000      0x194
+ *(.debug_line .debug_line.* .debug_line_end)
+ .debug_line    0x0000000000000000       0x78 obj/main.o
+ .debug_line    0x0000000000000078       0x40 ../../libc/bin/crt0.o
+ .debug_line    0x00000000000000b8       0x67 ../../libc/bin/tacoc.a(stdio.o)
+ .debug_line    0x000000000000011f       0x75 ../../libc/bin/tacoc.a(string.o)
+
+.debug_frame    0x0000000000000000        0x0
+ *(.debug_frame)
+ .debug_frame   0x0000000000000000        0x0 ../../libc/bin/crt0.o
+
+.debug_str      0x0000000000000000       0xb0
+ *(.debug_str)
+ .debug_str     0x0000000000000000       0xb0 obj/main.o
+                                         0xac (size before relaxing)
+ .debug_str     0x00000000000000b0       0xba ../../libc/bin/tacoc.a(stdio.o)
+ .debug_str     0x00000000000000b0       0x8f ../../libc/bin/tacoc.a(string.o)
+
+.debug_loc      0x0000000000000000        0x0
+ *(.debug_loc)
+ .debug_loc     0x0000000000000000        0x0 ../../libc/bin/crt0.o
+
+.debug_macinfo
+ *(.debug_macinfo)
+
+.debug_weaknames
+ *(.debug_weaknames)
+
+.debug_funcnames
+ *(.debug_funcnames)
+
+.debug_typenames
+ *(.debug_typenames)
+
+.debug_varnames
+ *(.debug_varnames)
+
+.debug_pubtypes
+ *(.debug_pubtypes)
+
+.debug_ranges
+ *(.debug_ranges)
+
+.debug_addr
+ *(.debug_addr)
+
+.debug_line_str
+                0x0000000000000000       0xcb
+ *(.debug_line_str)
+ .debug_line_str
+                0x0000000000000000       0xcb obj/main.o
+                                         0xc6 (size before relaxing)
+ .debug_line_str
+                0x00000000000000cb       0x99 ../../libc/bin/tacoc.a(stdio.o)
+ .debug_line_str
+                0x00000000000000cb       0x9c ../../libc/bin/tacoc.a(string.o)
+
+.debug_loclists
+ *(.debug_loclists)
+
+.debug_macro
+ *(.debug_macro)
+
+.debug_names
+ *(.debug_names)
+
+.debug_rnglists
+ *(.debug_rnglists)
+
+.debug_str_offsets
+ *(.debug_str_offsets)
+
+.debug_sup
+ *(.debug_sup)
+
+.gnu.attributes
+ *(.gnu.attributes)
+
+/DISCARD/
+ *(.note.GNU-stack)
+ *(.gnu_debuglink)
+ *(.gnu.lto_*)
+OUTPUT(a.out elf64-x86-64)

@@ -25,13 +25,14 @@ static __inline long __syscall2(long n, long a1, long a2)
 	return ret;
 }
 
-static __inline long __syscall3(long n, long a1, long a2, long a3)
-{
-	unsigned long ret;
-	__asm__ __volatile__ ("int $0x80" : "=a"(ret) : "a"(n), "D"(a1), "S"(a2),
-						  "d"(a3) : "rcx", "r11", "memory");
-	return ret;
-}
+#define __syscall3(n, a1, a2, a3) ({ \
+    size_t ret; \
+    asm volatile ("int $0x80\n" \
+                  : "=a"(ret) \
+                  : "a"(n), "D"(a1), "S"(a2), "d"(a3) \
+                  : "memory"); \
+    ret; \
+})
 
 static __inline long __syscall4(long n, long a1, long a2, long a3, long a4)
 {

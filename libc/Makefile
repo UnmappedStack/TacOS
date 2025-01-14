@@ -6,7 +6,7 @@ SRCS = $(wildcard $(SRCDIR)/*.c)
 OBJS = $(patsubst $(SRCDIR)/%.c,$(OBJDIR)/%.o,$(SRCS))
 
 .PHONY: all
-all: crt0 $(OBJS) lib
+all: clean crt0 $(OBJS) lib
 
 .PHONY: crt0
 crt0:
@@ -15,7 +15,10 @@ crt0:
 
 $(OBJDIR)/%.o: $(SRCDIR)/%.c
 	@mkdir -p $(OBJDIR)
-	$(CC) $(CFLAGS) -c $< -o $@ -static -ffreestanding -nostdlib
+	gcc $(CFLAGS) -c $< -o $@ -static -ffreestanding -nostdlib -I include -g
 
 lib:
 	ar rcs $(BINDIR)/tacoc.a $(OBJDIR)/*
+
+clean:
+	rm -r $(OBJDIR) $(BINDIR)
