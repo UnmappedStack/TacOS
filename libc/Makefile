@@ -6,7 +6,7 @@ SRCS = $(wildcard $(SRCDIR)/*.c)
 OBJS = $(patsubst $(SRCDIR)/%.c,$(OBJDIR)/%.o,$(SRCS))
 
 .PHONY: all
-all: clean crt0 $(OBJS) lib
+all: crt0 $(OBJS) lib
 
 .PHONY: crt0
 crt0:

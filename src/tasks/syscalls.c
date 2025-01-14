@@ -119,7 +119,10 @@ int sys_wait(int *status) {
 }
 
 uintptr_t sys_sbrk(intptr_t increment) {
-    if (!increment) return CURRENT_TASK->program_break;
+    if (!increment) {
+        printf("sbrk return %p (inc 0)\n", CURRENT_TASK->program_break);
+        return CURRENT_TASK->program_break;
+    }
     uintptr_t previous_break = CURRENT_TASK->program_break;
     CURRENT_TASK->program_break += increment;
     if (!(CURRENT_TASK->program_break % PAGE_SIZE) ||
@@ -128,6 +131,7 @@ uintptr_t sys_sbrk(intptr_t increment) {
         alloc_pages((uint64_t*) (CURRENT_TASK->pml4 + kernel.hhdm), CURRENT_TASK->program_break, num_new_pages, KERNEL_PFLAG_WRITE | KERNEL_PFLAG_PRESENT | KERNEL_PFLAG_USER);
         add_memregion(&CURRENT_TASK->memregion_list, CURRENT_TASK->program_break, num_new_pages, true, KERNEL_PFLAG_WRITE | KERNEL_PFLAG_PRESENT | KERNEL_PFLAG_USER);
     }
+    printf("sbrk return %p\n", previous_break);
     return previous_break;
 }
 
