@@ -12,8 +12,8 @@ static __inline long __syscall0(long n)
 
 static __inline long __syscall1(long n, long a1)
 {
-	unsigned long ret;
-	__asm__ __volatile__ ("int $0x80" : "=a"(ret) : "a"(n), "D"(a1) : "rcx", "r11", "memory");
+	unsigned long long ret;
+	__asm__ __volatile__ ("int $0x80" : "=a"(ret) : "a"(n), "D"(a1) : "memory");
 	return ret;
 }
 
