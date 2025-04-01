@@ -96,23 +96,19 @@ int tempfs_access(TempfsInode *file, char *buf, size_t len, size_t offset, bool 
     TempfsFileNode *this_fnode = file->first_file_node;
     size_t len_left = len;
     size_t off = 0;
-    size_t is_first = false;
     while (len_left > 0) {
-        size_t bytes_to_copy = (len_left > FILE_DATA_BLOCK_LEN) ? FILE_DATA_BLOCK_LEN : len_left;
         if (!this_fnode && !write) return -2; // EOF
         if (offset < FILE_DATA_BLOCK_LEN) {
+            size_t bytes_to_copy = (len_left > (FILE_DATA_BLOCK_LEN-offset)) ? (FILE_DATA_BLOCK_LEN-offset) : len_left;
             if (write) // accessing as write?
                 memcpy(this_fnode->data + offset, buf + off, bytes_to_copy);
             else // ...or accessing as read?
                 memcpy(buf + off, this_fnode->data + offset, bytes_to_copy);
             len_left -= bytes_to_copy;
             offset = 0;
-            is_first = false;
             off += bytes_to_copy;
         } else {
             offset -= FILE_DATA_BLOCK_LEN;
-            if (!is_first && offset <= FILE_DATA_BLOCK_LEN)
-                is_first = true;
         }
         if (write && !this_fnode->next && len_left > 0) {
             this_fnode->next = (TempfsFileNode*) (kmalloc(1) + kernel.hhdm);

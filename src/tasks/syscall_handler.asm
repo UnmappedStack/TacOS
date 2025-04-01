@@ -1,6 +1,8 @@
 ;; The design of how I handle syscalls is inspired by Dcraftbg :D
 [BITS 64]
 
+extern printf
+extern iretq_msg
 extern lock_pit
 extern unlock_pit
 
@@ -38,6 +40,9 @@ syscall_lookup_end:
 global syscall_isr
 
 syscall_isr:
+    cmp rax, (syscall_lookup_end-syscall_lookup) / 8
+    jge invalid_syscall
+    push rbp
     push rbx
     push rcx
     push rdx
@@ -51,8 +56,6 @@ syscall_isr:
     push r13
     push r14
     push r15
-    cmp rax, (syscall_lookup_end-syscall_lookup) / 8
-    jge invalid_syscall
     call [syscall_lookup + rax * 8]
     pop r15
     pop r14
@@ -67,11 +70,36 @@ syscall_isr:
     pop rdx
     pop rcx
     pop rbx
+    pop rbp
     iretq
 
 invalid_syscall:
     push rdi
     mov rdi, rax
     call sys_invalid
-    pop rdi
     iretq
+
+print_iretq_outputs:
+    ; Pop iretq frame for printf
+    pop rsi
+    pop rdx
+    pop rcx
+    pop r8
+    pop r9
+    ; Push it back so it's still able to iretq
+    push r9
+    push r8
+    push rcx
+    push rdx
+    push rsi
+    ; print and return
+    mov rdi, iretq_msg
+    call printf
+    mov rdi, rbp_msg
+    mov rsi, rbp
+    call printf
+    iretq
+
+section .rodata
+in_syscall_msg: db "In syscall %i", 10, 0
+rbp_msg: db "RBP = %p", 10, 0

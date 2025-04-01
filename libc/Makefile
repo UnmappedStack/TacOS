@@ -15,7 +15,7 @@ crt0:
 
 $(OBJDIR)/%.o: $(SRCDIR)/%.c
 	@mkdir -p $(OBJDIR)
-	gcc $(CFLAGS) -c $< -o $@ -static -ffreestanding -nostdlib -I include -g
+	gcc $(CFLAGS) -c $< -o $@ -static -ffreestanding -nostdlib -I include -g -fno-stack-protector -no-pie
 
 lib:
 	ar rcs $(BINDIR)/tacoc.a $(OBJDIR)/*

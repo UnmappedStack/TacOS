@@ -25,13 +25,16 @@ static __inline long __syscall2(long n, long a1, long a2)
 	return ret;
 }
 
-#define __syscall3(n, a1, a2, a3) ({ \
-    size_t ret; \
-    asm volatile ("int $0x80\n" \
-                  : "=a"(ret) \
-                  : "a"(n), "D"(a1), "S"(a2), "d"(a3) \
-                  : "memory"); \
-    ret; \
+#define __syscall3(num, arg1, arg2, arg3) \
+({ \
+    intptr_t __sys_result; \
+    asm volatile ( \
+        "int $0x80" \
+        : "=a" (__sys_result) \
+        : "a" (num), "D" (arg1), "S" (arg2), "d" (arg3)\
+        : "memory" \
+    ); \
+    __sys_result; \
 })
 
 static __inline long __syscall4(long n, long a1, long a2, long a3, long a4)

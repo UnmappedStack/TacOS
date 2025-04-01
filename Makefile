@@ -23,7 +23,7 @@ $(call USER_VARIABLE,KCC,clang)
 $(call USER_VARIABLE,KLD,ld)
 
 # User controllable C flags.
-$(call USER_VARIABLE,KCFLAGS,-g -O2 -pipe)
+$(call USER_VARIABLE,KCFLAGS,-g -pipe)
 
 # User controllable C preprocessor flags. We set none by default.
 $(call USER_VARIABLE,KCPPFLAGS,)
@@ -66,8 +66,7 @@ disk:
 	./limine/limine bios-install tacos.iso
 
 qemu:
-	qemu-system-x86_64 tacos.iso -serial stdio -no-shutdown -no-reboot -monitor telnet:127.0.0.1:8000,server,nowait -d int,cpu_reset,in_asm -D log.txt -accel kvm
-
+	qemu-system-x86_64 tacos.iso -serial stdio -no-shutdown -no-reboot -monitor telnet:127.0.0.1:8000,server,nowait -d int,cpu_reset,in_asm -D log.txt
 # everything below here is the kernel
 
 # Internal C flags that should not be changed by the user.
@@ -88,7 +87,7 @@ override KCFLAGS += \
     -mno-sse \
     -mno-sse2 \
 	-fno-omit-frame-pointer \
-    -mno-red-zone
+    -mno-red-zone \
 
 # Internal C preprocessor flags that should not be changed by the user.
 override KCPPFLAGS := \

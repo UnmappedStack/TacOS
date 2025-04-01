@@ -8,6 +8,9 @@
 #include <printf.h>
 #include <stddef.h>
 
+elf_program_header program_header;
+elf_file_header file_header;
+
 int verify_elf(elf_file_header *file_header) {
     if (
         memcmp(file_header->id, "\x7f" "ELF", 4) || // It's not an elf file
@@ -40,7 +43,6 @@ int execve(Task *task, char *filename) {
         printf("Failed to open file \"%s\".\n", filename);
         return -1;
     }
-    elf_file_header file_header;
     if (vfs_read(f, (char*) &file_header, sizeof(elf_file_header), 0) < 0) {
         elf_read_err:
         printf("Failed to read from file \"%s\".\n", filename);
@@ -52,11 +54,10 @@ int execve(Task *task, char *filename) {
         printf("Invalid ELF file.\n");
         goto elf_generic_err;
     }
-    elf_program_header program_header;
     size_t offset = file_header.program_header_offset;
-    size_t end_of_executable = 0;;
+    size_t end_of_executable = 0;
     for (size_t i = 0; i < file_header.program_header_entry_count; i++) {
-        if (vfs_read(f, (char*) &program_header, sizeof(elf_file_header), offset) < 0)
+        if (vfs_read(f, (char*) &program_header, sizeof(elf_program_header), offset) < 0)
             goto elf_read_err;
         if (program_header.type == 1) {
             uint64_t header_data_phys = kmalloc(bytes_to_pages(PAGE_ALIGN_UP(program_header.size_in_memory)));
@@ -71,9 +72,10 @@ int execve(Task *task, char *filename) {
             map_pages((uint64_t*) (task->pml4 + kernel.hhdm), program_header.virtual_address, header_data_phys, bytes_to_pages(program_header.size_in_memory), flags);
             add_memregion(&task->memregion_list, program_header.virtual_address, program_header.size_in_memory, true, flags);
         }
-        printf("Header with type = %i, num %i, vaddr = %p, off = %i, size_vmem = %i\n", program_header.type, i, program_header.virtual_address, program_header.offset, program_header.size_in_memory);
+        printf("Header with type = %i, num %i, vaddr = %p, off = %i, size_vmem = %i, is writable = %i\n", program_header.type, i, program_header.virtual_address, program_header.offset, program_header.size_in_memory, (uint64_t) (program_header.flags & ELF_FLAG_WRITABLE));
         offset += file_header.program_header_entry_size;
     }
+    printf("eoe = %p\n", end_of_executable);
     alloc_pages((uint64_t*) (task->pml4 + kernel.hhdm), USER_STACK_ADDR, USER_STACK_PAGES, KERNEL_PFLAG_WRITE | KERNEL_PFLAG_USER | KERNEL_PFLAG_PRESENT);
     add_memregion(&task->memregion_list, USER_STACK_ADDR, true, USER_STACK_PAGES, KERNEL_PFLAG_WRITE | KERNEL_PFLAG_USER | KERNEL_PFLAG_PRESENT);
     task->entry = (void*) file_header.entry;
