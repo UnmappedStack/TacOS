@@ -21,3 +21,13 @@ void *memset(void *dest, int x, size_t n) {
     );
     return dest;
 }
+
+void *memcpy(void *dest, const void *src, size_t n) {
+    asm volatile(
+        "rep movsb"
+        : "=D"(dest), "=S"(src), "=c"(n)
+        : "D"(dest), "S"(src), "c"(n)
+        : "memory"
+    );
+    return dest;
+}
