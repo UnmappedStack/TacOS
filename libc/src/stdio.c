@@ -10,3 +10,9 @@ int open(const char *pathname, int flags, mode_t mode) {
 size_t write(int fd, const void *buf, size_t count) {
     return __syscall3(1, (size_t) fd, (size_t) buf, count);
 }
+
+int puts(char *str) {
+    write(0, str, strlen(str));
+    return 0;
+}
+
