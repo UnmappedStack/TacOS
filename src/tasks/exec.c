@@ -56,7 +56,7 @@ int execve(Task *task, char *filename) {
     size_t offset = file_header.program_header_offset;
     size_t end_of_executable = 0;;
     for (size_t i = 0; i < file_header.program_header_entry_count; i++) {
-        if (vfs_read(f, (char*) &program_header, sizeof(elf_file_header), offset) < 0)
+        if (vfs_read(f, (char*) &program_header, sizeof(elf_program_header), offset) < 0)
             goto elf_read_err;
         if (program_header.type == 1) {
             uint64_t header_data_phys = kmalloc(bytes_to_pages(PAGE_ALIGN_UP(program_header.size_in_memory)));
