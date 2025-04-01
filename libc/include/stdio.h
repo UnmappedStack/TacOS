@@ -7,5 +7,6 @@
 int open(const char *pathname, int flags, mode_t mode);
 size_t write(int fd, const void *buf, size_t count);
 int puts(char *str);
+int printf(const char *fmt, ...);
 
 #include <sprintf.h>
