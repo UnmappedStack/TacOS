@@ -36,11 +36,19 @@ void exception_handler(IDTEFrame registers) {
     else
         printf("Exception type: %i\n", registers.type);
     
-    printf("Error code: 0b%b\n", registers.code);
-    printf("CR2: 0x%p\n", registers.cr2);
+    printf("Error code: 0b%b\n\n", registers.code);
+    printf("CR2: 0x%p\n\n", registers.cr2);
+    printf("RSP: 0x%p | RAX: 0x%p\n", registers.rsp, registers.rax);
+    printf("RBP: 0x%p | RBX: 0x%p\n", registers.rbp, registers.rbx);
+    printf("CR2: 0x%p | RCX: 0x%p\n", registers.cr2, registers.rcx);
+    printf("RDI: 0x%p | RDX: 0x%p\n", registers.rdi, registers.rdx);
+    printf("RSI: 0x%p            \n", registers.rsi               );
+    if ((registers.ss & 0b11) != (registers.cs & 0b11)) {
+        printf("SS and CS ring levels do not match up.\n");
+    } else {
+        printf("Exception occurred in ring %i\n", registers.ss & 0b11);
+    }
     stack_trace(registers.rbp, registers.rip);
-    printf("\nRSP: %p\n", registers.rsp);
-    printf("\nRBP: %p\n", registers.rbp);
     printf(BWHT "\nFreezing the computer now. Please reboot your machine with the physical power button.\n" WHT);
     HALT_DEVICE();
 }

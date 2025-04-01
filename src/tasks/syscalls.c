@@ -28,8 +28,10 @@ int sys_open(char *filename, int flags, int mode) {
     for (; file_descriptor < MAX_RESOURCES; file_descriptor++) {
         if (current_task->resources[file_descriptor]) continue;
         current_task->resources[file_descriptor] = open((char*) filename, flags);
+        printf("Opened %s to file descriptor %i\n", filename, file_descriptor);
         return file_descriptor;
     }
+    printf("Couldn't open file %s\n", filename);
     return -1;
 }
 
@@ -42,10 +44,8 @@ int sys_read(int fd, char *buf, size_t count) {
 }
 
 size_t sys_write(int fd, char *buf, size_t count) {
-    printf("fd = %i, buf = %s, count = %i\n", fd, buf, count);
-    size_t result = vfs_write(CURRENT_TASK->resources[fd], buf, count, 0);
-    printf("result = %p\n", result);
-    return result;
+    printf("Args: %i, %p, %i\n", (uint64_t) fd, buf, count); 
+    return vfs_write(CURRENT_TASK->resources[fd], buf, count, 0);
 }
 
 void sys_exit(int status) {

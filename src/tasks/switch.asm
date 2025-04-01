@@ -1,5 +1,6 @@
 [BITS 64]
 
+global iretq_msg
 global context_switch
 extern get_current_task
 extern task_select
@@ -69,9 +70,7 @@ extern printf
 %define TASK_FLAGS_OFF 64
 
 context_switch:
-    cli
     pushall
-    mov rdi, msg
     call task_select ; next Task* is in rax
     mov r15, rax
     ;; Save current rsp of *this* task
@@ -120,9 +119,10 @@ context_switch:
     popall
     iretq
     
+section .rodata
 
 msg:  db "In context switch :D", 10, 0
 msg2: db "PID to switch to: %i", 10, 0
-msg3: db "rip: 0x%p, cs: %i, rflags: 0x%x, rsp = 0x%p, ss = %i", 10, 0
+iretq_msg: db "Iretq frame: rip: 0x%p, cs: %i, rflags: 0x%x, rsp = 0x%p, ss = %i", 10, 0
 msg4: db "In previously_executed", 10, 0
 msg5: db "In first exec", 10, 0

@@ -11,6 +11,9 @@ extern main
 
 section .text
 _start:
+    push 0
+    mov rbp, rsp
+    push rbp
     call init_libc
     call main
     mov rdi, rax
