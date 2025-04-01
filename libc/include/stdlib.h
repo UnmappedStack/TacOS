@@ -15,4 +15,5 @@ struct HeapPool {
 } __attribute__((packed));
 
 void *malloc(size_t size);
+void free(void *addr);
 void exit(int status);
