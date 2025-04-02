@@ -10,3 +10,4 @@ int toupper(char ch);
 int tolower(char ch);
 char* strrchr(char *s, int c);
 char* strchr(char *s, int c);
+char* strstr(char *str, const char *needle);
