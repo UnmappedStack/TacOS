@@ -23,6 +23,11 @@ typedef struct {
     int status;
 } Child;
 
+typedef struct {
+    VfsFile *f;
+    size_t offset;
+} Resource;
+
 // WARNING: Be super careful when changing this struct and update any changes accordingly in src/tasks/switch.asm
 // because otherwise things can break in the context switch.
 struct Task {
@@ -34,7 +39,7 @@ struct Task {
     Task         *parent;
     Memregion    *memregion_list;
     task_flags_t  flags;
-    VfsFile      *resources[MAX_RESOURCES]; // TODO: This needs to also contain offsets, flags etc
+    Resource      resources[MAX_RESOURCES];
     Child         children[MAX_CHILDREN];
     uintptr_t     program_break; // used for sbrk
 };

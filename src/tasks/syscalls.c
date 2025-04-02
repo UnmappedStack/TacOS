@@ -26,8 +26,9 @@ int sys_open(char *filename, int flags, int mode) {
     uint64_t file_descriptor = 0;
     Task *current_task = CURRENT_TASK;
     for (; file_descriptor < MAX_RESOURCES; file_descriptor++) {
-        if (current_task->resources[file_descriptor]) continue;
-        current_task->resources[file_descriptor] = open((char*) filename, flags);
+        if (current_task->resources[file_descriptor].f) continue;
+        current_task->resources[file_descriptor].f = open((char*) filename, flags);
+        current_task->resources[file_descriptor].offset = 0;
         printf("Opened %s to file descriptor %i\n", filename, file_descriptor);
         return file_descriptor;
     }
@@ -36,16 +37,16 @@ int sys_open(char *filename, int flags, int mode) {
 }
 
 int sys_close(int fd) {
-    return close(CURRENT_TASK->resources[fd]);
+    return close(CURRENT_TASK->resources[fd].f);
 }
 
 int sys_read(int fd, char *buf, size_t count) {
-    return vfs_read(CURRENT_TASK->resources[fd], buf, count, 0);
+    return vfs_read(CURRENT_TASK->resources[fd].f, buf, count, 0);
 }
 
 size_t sys_write(int fd, char *buf, size_t count) {
     printf("Args: %i, %p, %i\n", (uint64_t) fd, buf, count); 
-    return vfs_write(CURRENT_TASK->resources[fd], buf, count, 0);
+    return vfs_write(CURRENT_TASK->resources[fd].f, buf, count, 0);
 }
 
 void sys_exit(int status) {
@@ -93,7 +94,7 @@ int sys_kill(int pid, int sig) {
 }
 
 int sys_isatty(int fd) {
-    VfsFile *f = CURRENT_TASK->resources[fd];
+    VfsFile *f = CURRENT_TASK->resources[fd].f;
     if (!f) return 0;
     if (f->drive.fs.fs_id == fs_tempfs) {
         TempfsInode *private = f->private;
