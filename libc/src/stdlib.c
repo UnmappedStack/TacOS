@@ -90,3 +90,23 @@ double atof(const char *nptr) {
     printf("TODO: atof() is not yet implemented because SSE2 is not supported in TacOS.\n");
     exit(1);
 }
+
+int atoi(const char *nptr) {
+    int sign = 0; // set to 1 if negative
+    while (*nptr == ' ' || *nptr == '\t' || *nptr == '\n') nptr++;
+    if (*nptr == '-') sign = 1, nptr++;
+    else if (*nptr == '+') nptr++;
+    else if (*nptr < '0' || *nptr > '9') return 0;
+    int ret = 0;
+    while (*nptr >= '0' && *nptr <= '9') {
+        ret = ret * 10 + (*nptr - '0'); 
+        nptr++;
+    }
+    if (sign) return -ret;
+    else return ret;
+}
+
+
+
+
+

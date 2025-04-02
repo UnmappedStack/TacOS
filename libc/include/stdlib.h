@@ -20,3 +20,4 @@ void exit(int status);
 void *calloc(size_t nmemb, size_t sz);
 void* realloc(void *addr, size_t sz);
 double atof(const char *nptr);
+int atoi(const char *nptr);
