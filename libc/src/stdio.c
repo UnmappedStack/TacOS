@@ -22,6 +22,10 @@ size_t write(int fd, const void *buf, size_t count) {
     return __syscall3(1, (size_t) fd, (size_t) buf, count);
 }
 
+ssize_t read(int fd, void *buf, size_t count) {
+    return __syscall3(0, (size_t) fd, (size_t) buf, count);
+}
+
 int puts(char *str) {
     write(stdout_fd, str, strlen(str));
     return 0;
