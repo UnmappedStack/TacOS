@@ -165,3 +165,7 @@ int setvbuf(FILE *stream, char *buffer, int mode, size_t size) {
     }
     stream->bufmode = mode;
 }
+
+size_t fread(void *ptr, size_t size, size_t nmemb, FILE *stream) {
+    return read(stream->fd, ptr, size * nmemb);
+}

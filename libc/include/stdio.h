@@ -26,6 +26,7 @@ int open(const char *pathname, int flags, mode_t mode);
 int close(int fd);
 size_t write(int fd, const void *buf, size_t count);
 int puts(char *str);
+ssize_t read(int fd, void *buf, size_t count);
 int printf(const char *fmt, ...);
 int vfprintf(FILE *stream, const char *fmt, va_list args);
 int fprintf(FILE *stream, const char *fmt, ...);
@@ -38,3 +39,4 @@ size_t fwrite(const void *restrict ptr, size_t size, size_t nitems,
 int fputs(const char *str, FILE *stream);
 int fflush(FILE *stream);
 int setvbuf(FILE *stream, char *buffer, int mode, size_t size);
+size_t fread(void *ptr, size_t size, size_t nmemb, FILE *stream);
