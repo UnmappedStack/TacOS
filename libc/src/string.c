@@ -65,7 +65,7 @@ int tolower(char ch) {
     return ch;
 }
 
-char* strrchr(const char *s, int c) {
+char* strrchr(char *s, int c) {
     char *ret = NULL;
     for (size_t i = 0; s[i]; i++) {
         if (s[i] == c) ret = &s[i];
@@ -73,9 +73,16 @@ char* strrchr(const char *s, int c) {
     return ret;
 }
 
-char* strchr(const char *s, int c) {
+char* strchr(char *s, int c) {
     for (size_t i = 0; s[i]; i++) {
         if (s[i] == c) return &s[i];
+    }
+    return NULL;
+}
+
+char* strstr(char *str, const char *needle) {
+    while (*str++) {
+        if (!strcmp(needle, str)) return str;
     }
     return NULL;
 }
