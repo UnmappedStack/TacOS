@@ -20,6 +20,7 @@ extern sys_isatty
 extern sys_wait
 extern sys_sbrk
 extern sys_unlink
+extern sys_remove
 
 syscall_lookup:
     dq sys_read   ; 0
@@ -35,6 +36,7 @@ syscall_lookup:
     dq sys_wait   ; 10
     dq sys_sbrk   ; 11
     dq sys_unlink ; 12
+    dq sys_remove ; 13
 syscall_lookup_end:
 
 global syscall_isr

@@ -143,6 +143,19 @@ int sys_unlink(char *path) {
     return rm_file(f);
 }
 
+int sys_remove(char *filename) {
+    VfsFile *f = vfs_access(filename, 0, 0);
+    if (!f) return -1;
+    bool is_dir;
+    if (vfs_identify(f, NULL, &is_dir)) return -1;
+    if (is_dir) {
+        VfsDirIter dir = vfs_file_to_diriter(f);
+        return rm_dir(&dir);
+    } else {
+        return rm_file(f);
+    }
+}
+
 void sys_invalid(int sys) {
     printf("Invalid syscall: %i\n", sys);
 }
