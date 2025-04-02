@@ -1,3 +1,5 @@
+#define STB_SPRINTF_IMPLEMENTATION
+#include <sprintf.h>
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
@@ -22,7 +24,7 @@ int printf(const char *fmt, ...) {
     va_list args, copy;
     va_start(args, fmt);
     va_copy(copy, args);
-    int len = vsnprintf(NULL, 1000, fmt, args);
+    int len = vsnprintf(NULL, 0, fmt, args);
     char *buf = (char*) malloc(len + 1);
     int ret = vsnprintf(buf, len, fmt, copy);
     puts(buf);
