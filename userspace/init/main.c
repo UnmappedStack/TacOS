@@ -9,5 +9,7 @@ int main(void) {
     puts("Hello world from a userspace application loaded from an ELF file, writing to a stdout device!\n");
     printf("Hello, world! The number is %d and %d so yeah\n", atoi("69"), atoi("\t\n  -420abc"));
     FILE *f2 = fopen("/home/README.txt", "rw");
+    fclose(f2);
+    close(f);
     return 0;
 }

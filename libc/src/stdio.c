@@ -12,6 +12,10 @@ int open(const char *pathname, int flags, mode_t mode) {
     return __syscall3(2, (size_t) pathname, (size_t) flags, mode);
 }
 
+int close(int fd) {
+    return __syscall1(3, fd);
+}
+
 size_t write(int fd, const void *buf, size_t count) {
     return __syscall3(1, (size_t) fd, (size_t) buf, count);
 }
@@ -69,4 +73,11 @@ FILE* fopen(const char *restrict pathname, const char *restrict mode) {
     ret->fd = open(pathname, flags, 0);
     ret->buffer = (char*) malloc(4096);
     return ret;
+}
+
+int fclose(FILE *stream) {
+    if (close(stream->fd)) return -1;
+    free(stream->buffer);
+    free(stream);
+    return 0;
 }
