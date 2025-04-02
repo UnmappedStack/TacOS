@@ -1,4 +1,5 @@
 #include <stdlib.h>
+#include <stdio.h>
 #include <string.h>
 #include <unistd.h>
 #include <syscall.h>
@@ -61,7 +62,10 @@ void* malloc(uint64_t size) {
 
 void free(void *addr) {
     HeapPool *this_pool      = (HeapPool*) (((uint64_t)addr) - sizeof(HeapPool));
-    if (this_pool->verify != 69) return;
+    if (this_pool->verify != 69) {
+        printf("Heap corruption detected in free()\n");
+        exit(1);
+    }
     this_pool->free          = true;
     this_pool->required_size = sizeof(HeapPool);
 }
@@ -69,7 +73,10 @@ void free(void *addr) {
 void* realloc(void *addr, size_t sz) {
     void *new = malloc(sz);
     HeapPool *this_pool = (HeapPool*) (((uint64_t)addr) - sizeof(HeapPool));
-    if (this_pool->verify != 69) return NULL;
+    if (this_pool->verify != 69) {
+        printf("Heap corruption detected in realloc()\n");
+        exit(1);
+    }
     memcpy(new, addr, this_pool->size);
     free(addr);
     return new;
@@ -77,4 +84,9 @@ void* realloc(void *addr, size_t sz) {
 
 void *calloc(size_t nmemb, size_t sz) {
     return malloc(sz * nmemb);
+}
+
+double atof(const char *nptr) {
+    printf("TODO: atof() is not yet implemented because SSE2 is not supported in TacOS.\n");
+    exit(1);
 }
