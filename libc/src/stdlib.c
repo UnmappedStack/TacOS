@@ -105,3 +105,9 @@ int atoi(const char *nptr) {
     if (sign) return -ret;
     else return ret;
 }
+
+// TODO: make this actually do signal stuff
+__attribute__((noreturn))
+void abort(void) {
+    exit(1);
+}
