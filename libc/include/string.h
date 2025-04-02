@@ -12,4 +12,5 @@ char* strrchr(char *s, int c);
 char* strchr(char *s, int c);
 char* strstr(char *str, const char *needle);
 char *strcpy(char *restrict dst, const char *restrict src);
+int strncmp(const char *s1, const char *s2, size_t n);
 char* strdup(const char *s);
