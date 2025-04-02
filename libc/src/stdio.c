@@ -10,6 +10,10 @@ FILE *stdout;
 
 #define stdout_fd 0
 
+int remove(char *filename) {
+    return __syscall1(13, (size_t) filename);
+}
+
 int open(const char *pathname, int flags, mode_t mode) {
     return __syscall3(2, (size_t) pathname, (size_t) flags, mode);
 }

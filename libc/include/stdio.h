@@ -23,6 +23,7 @@ extern FILE *stdout;
 
 int putchar(int ch);
 int open(const char *pathname, int flags, mode_t mode);
+int remove(char *filename);
 int close(int fd);
 size_t write(int fd, const void *buf, size_t count);
 int puts(char *str);
