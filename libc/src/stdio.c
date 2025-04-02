@@ -27,16 +27,29 @@ int puts(char *str) {
     return 0;
 }
 
-int printf(const char *fmt, ...) {
-    va_list args, copy;
-    va_start(args, fmt);
+int vfprintf(FILE *stream, const char *fmt, va_list args) {
+    va_list copy;
     va_copy(copy, args);
     int len = vsnprintf(NULL, 0, fmt, args) + 1;
     char *buf = (char*) malloc(len);
     int ret = vsnprintf(buf, len, fmt, copy);
-    fputs(buf, stdout);
+    fputs(buf, stream);
+    return ret;
+}
+
+int printf(const char *fmt, ...) {
+    va_list args;
+    va_start(args, fmt);
+    int ret = vfprintf(stdout, fmt, args);
     va_end(args);
-    va_end(copy);
+    return ret;
+}
+
+int fprintf(FILE *stream, const char *fmt, ...) {
+    va_list args;
+    va_start(args, fmt);
+    int ret = vfprintf(stream, fmt, args);
+    va_end(args);
     return ret;
 }
 

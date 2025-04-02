@@ -27,6 +27,8 @@ int close(int fd);
 size_t write(int fd, const void *buf, size_t count);
 int puts(char *str);
 int printf(const char *fmt, ...);
+int vfprintf(FILE *stream, const char *fmt, va_list args);
+int fprintf(FILE *stream, const char *fmt, ...);
 int putchar(int ch);
 
 FILE* fopen(const char *restrict pathname, const char *restrict mode);
