@@ -30,6 +30,12 @@ void *memset(void *dest, int x, size_t n) {
     return dest;
 }
 
+char *strncpy(char *restrict dst, const char *restrict src, size_t n) {
+    size_t len = strlen(src);
+    size_t sz = (len > n) ? len : n;
+    return memcpy(dst, src, sz);
+}
+
 char *strcpy(char *restrict dst, const char *restrict src) {
     return memcpy(dst, src, strlen(src));
 }
