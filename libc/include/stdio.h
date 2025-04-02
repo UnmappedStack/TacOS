@@ -28,6 +28,7 @@ size_t write(int fd, const void *buf, size_t count);
 int puts(char *str);
 ssize_t read(int fd, void *buf, size_t count);
 int printf(const char *fmt, ...);
+int sscanf(const char *str, const char *format, ...);
 int vfprintf(FILE *stream, const char *fmt, va_list args);
 int fprintf(FILE *stream, const char *fmt, ...);
 int putchar(int ch);

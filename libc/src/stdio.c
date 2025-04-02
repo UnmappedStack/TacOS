@@ -169,3 +169,8 @@ int setvbuf(FILE *stream, char *buffer, int mode, size_t size) {
 size_t fread(void *ptr, size_t size, size_t nmemb, FILE *stream) {
     return read(stream->fd, ptr, size * nmemb);
 }
+
+int sscanf(const char *str, const char *format, ...) {
+    printf("TODO: sscanf is not implemented yet\n");
+    exit(1);
+}
