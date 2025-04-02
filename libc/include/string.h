@@ -7,3 +7,4 @@ void *memset(void *dest, int x, size_t n);
 void *memcpy(void *dest, const void *src, size_t n);
 void *memmove(void *dest, const void *src, size_t n);
 int toupper(char ch);
+int tolower(char ch);
