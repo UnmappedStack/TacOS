@@ -21,6 +21,7 @@ extern sys_wait
 extern sys_sbrk
 extern sys_unlink
 extern sys_remove
+extern sys_mkdir
 
 syscall_lookup:
     dq sys_read   ; 0
@@ -37,6 +38,7 @@ syscall_lookup:
     dq sys_sbrk   ; 11
     dq sys_unlink ; 12
     dq sys_remove ; 13
+    dq sys_mkdir  ; 14
 syscall_lookup_end:
 
 global syscall_isr

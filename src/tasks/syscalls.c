@@ -156,6 +156,11 @@ int sys_remove(char *filename) {
     }
 }
 
+int sys_mkdir(char *filename, size_t mode) {
+    (void) mode;
+    return mkdir(filename);
+}
+
 void sys_invalid(int sys) {
     printf("Invalid syscall: %i\n", sys);
 }
