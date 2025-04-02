@@ -17,3 +17,5 @@ struct HeapPool {
 void *malloc(size_t size);
 void free(void *addr);
 void exit(int status);
+void *calloc(size_t nmemb, size_t sz);
+void* realloc(void *addr, size_t sz);

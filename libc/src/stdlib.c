@@ -1,4 +1,5 @@
 #include <stdlib.h>
+#include <string.h>
 #include <unistd.h>
 #include <syscall.h>
 
@@ -58,9 +59,22 @@ void* malloc(uint64_t size) {
     }
 }
 
-void free(void* addr) {
+void free(void *addr) {
     HeapPool *this_pool      = (HeapPool*) (((uint64_t)addr) - sizeof(HeapPool));
     if (this_pool->verify != 69) return;
     this_pool->free          = true;
     this_pool->required_size = sizeof(HeapPool);
+}
+
+void* realloc(void *addr, size_t sz) {
+    void *new = malloc(sz);
+    HeapPool *this_pool = (HeapPool*) (((uint64_t)addr) - sizeof(HeapPool));
+    if (this_pool->verify != 69) return NULL;
+    memcpy(new, addr, this_pool->size);
+    free(addr);
+    return new;
+}
+
+void *calloc(size_t nmemb, size_t sz) {
+    return malloc(sz * nmemb);
 }
