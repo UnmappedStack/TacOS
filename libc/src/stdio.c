@@ -64,8 +64,9 @@ int str_to_flags(const char *restrict mode) {
 }
 
 FILE* fopen(const char *restrict pathname, const char *restrict mode) {
-    printf("Path: %s, mode: %s\n", pathname, mode);
-    printf("Flags are: %d\n", 1);
     int flags = str_to_flags(mode);
-    return NULL;
+    FILE *ret = (FILE*) malloc(sizeof(FILE));
+    ret->fd = open(pathname, flags, 0);
+    ret->buffer = (char*) malloc(4096);
+    return ret;
 }
