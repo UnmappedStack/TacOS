@@ -6,9 +6,8 @@
 int main(void) {
     // TODO: Open stdin and stderr, tty0 (stdout) becomes fd 1 instead of 0
     stdout = fopen("/dev/tty0", "w");
-    stdout->bufmode = _IOLBF;
+    setvbuf(stdout, NULL, _IOLBF, 0);
     puts("Hello world from a userspace application loaded from an ELF file, writing to a stdout device!\n");
     printf("Hello, world! The number is %d and %d so yeah\n", atoi("69"), atoi("\t\n  -420abc"));
-    fflush(stdout);
     return 0;
 }

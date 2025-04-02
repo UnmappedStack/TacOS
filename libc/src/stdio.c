@@ -73,7 +73,8 @@ FILE* fopen(const char *restrict pathname, const char *restrict mode) {
     int flags = str_to_flags(mode);
     FILE *ret = (FILE*) malloc(sizeof(FILE));
     ret->fd = open(pathname, flags, 0);
-    ret->buffer = (char*) malloc(4096);
+    ret->bufmax = 4096;
+    ret->buffer = (char*) malloc(ret->bufmax);
     ret->bufsz = 0;
     ret->bufmode = _IOFBF;
     return ret;
@@ -102,7 +103,7 @@ size_t fwrite(const void *restrict ptr, size_t size, size_t nitems,
     switch (stream->bufmode) {
         case _IOFBF:
             // Full buffering
-            if (stream->bufsz + bytes >= 4096) {
+            if (stream->bufsz + bytes >= stream->bufmax) {
                 write(stream->fd, stream->buffer, stream->bufsz);
                 stream->bufsz = 0;
                 return write(stream->fd, ptr, bytes);
@@ -138,4 +139,12 @@ int fputs(const char *str, FILE *stream) {
 int fflush(FILE *stream) {
     write(stream->fd, stream->buffer, stream->bufsz);
     return 0;
+}
+
+int setvbuf(FILE *stream, char *buffer, int mode, size_t size) {
+    if (buffer) {
+        stream->buffer = buffer;
+        stream->bufsz = size;
+    }
+    stream->bufmode = mode;
 }

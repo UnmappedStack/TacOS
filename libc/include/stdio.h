@@ -15,6 +15,7 @@ typedef struct {
     int fd;
     char *buffer;
     size_t bufsz;
+    size_t bufmax;
     BufMode bufmode;
 } FILE;
 
@@ -34,3 +35,4 @@ size_t fwrite(const void *restrict ptr, size_t size, size_t nitems,
     FILE *restrict stream);
 int fputs(const char *str, FILE *stream);
 int fflush(FILE *stream);
+int setvbuf(FILE *stream, char *buffer, int mode, size_t size);
