@@ -1,4 +1,5 @@
 #include <string.h>
+#include <stdint.h>
 
 size_t strlen(const char *str) {
     size_t len = 0;
@@ -30,4 +31,26 @@ void *memcpy(void *dest, const void *src, size_t n) {
         : "memory"
     );
     return dest;
+}
+
+
+void *memmove(void *dest, const void *src, size_t n) {
+    if (dest == src) {
+        return dest;
+    } else if ((uintptr_t) dest < (uintptr_t) src) {
+        return memcpy(dest, src, n);
+    } else if ((uintptr_t) dest > (uintptr_t) src) {
+        // copy in reverse
+        asm volatile(
+            "std\n"
+            "rep movsb\n"
+            "cld\n"
+            : "=D"(dest), "=S"(src), "=c"(n)
+            : "D"(dest + n - 1), "S"(src + n - 1), "c"(n)
+            : "memory"
+        );
+        return dest;
+    } else {
+        return NULL; // unreachable
+    }
 }
