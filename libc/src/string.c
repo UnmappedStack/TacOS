@@ -54,3 +54,8 @@ void *memmove(void *dest, const void *src, size_t n) {
         return NULL; // unreachable
     }
 }
+
+int toupper(char ch) {
+    if (ch >= 'a' && ch <= 'z') return ch - ('a' - 'A');
+    return ch;
+}

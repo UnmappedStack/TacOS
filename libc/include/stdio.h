@@ -11,5 +11,4 @@ int puts(char *str);
 int printf(const char *fmt, ...);
 int vsnprintf(char* buffer, size_t count, const char* format, va_list va);
 int snprintf(char* buffer, size_t count, const char* format, ...);
-
-#include <sprintf.h>
+int putchar(int ch);
