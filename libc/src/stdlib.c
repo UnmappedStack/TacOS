@@ -105,8 +105,3 @@ int atoi(const char *nptr) {
     if (sign) return -ret;
     else return ret;
 }
-
-
-
-
-
