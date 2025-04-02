@@ -15,12 +15,12 @@ void exit(int status) {
 #define PAGE_ALIGN_DOWN(addr) ((addr / 4096) * 4096)
 #define PAGE_ALIGN_UP(x) ((((x) + 4095) / 4096) * 4096)
 
-extern HeapPool start_heap;
+extern HeapPool *start_heap;
 
 HeapPool create_pool(uint64_t size, uint64_t required_size, HeapPool *next, bool free) {
     HeapPool pool;
     pool.verify        = 69;
-    pool.size          = size - 1;
+    pool.size          = size;
     pool.required_size = required_size;
     pool.next          = next;
     pool.free          = free;
@@ -29,7 +29,7 @@ HeapPool create_pool(uint64_t size, uint64_t required_size, HeapPool *next, bool
 
 void* split_pool(HeapPool *pool_addr, uint64_t size) {
     HeapPool *new_pool = (HeapPool*) (((uint64_t) pool_addr) + pool_addr->required_size + 1);
-    uint64_t new_pool_size = sizeof(HeapPool) + size;
+    uint64_t new_pool_size = sizeof(HeapPool) + size + 1;
     *new_pool = create_pool(pool_addr->size - pool_addr->required_size, new_pool_size, pool_addr->next, false);
     pool_addr->size = pool_addr->required_size;
     pool_addr->next = new_pool;
@@ -44,7 +44,7 @@ void* heap_grow(size_t size, HeapPool *this_pool) {
 }
 
 void* malloc(uint64_t size) {
-    HeapPool *this_pool = &start_heap;
+    HeapPool *this_pool = start_heap;
     for (;;) {
         if (this_pool->free && this_pool->size > size + sizeof(HeapPool)) {
             this_pool->free = false;

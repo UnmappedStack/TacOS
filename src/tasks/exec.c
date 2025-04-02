@@ -75,13 +75,13 @@ int execve(Task *task, char *filename) {
         printf("Header with type = %i, num %i, vaddr = %p, off = %i, size_vmem = %i, is writable = %i\n", program_header.type, i, program_header.virtual_address, program_header.offset, program_header.size_in_memory, (uint64_t) (program_header.flags & ELF_FLAG_WRITABLE));
         offset += file_header.program_header_entry_size;
     }
-    printf("eoe = %p\n", end_of_executable);
     alloc_pages((uint64_t*) (task->pml4 + kernel.hhdm), USER_STACK_ADDR, USER_STACK_PAGES, KERNEL_PFLAG_WRITE | KERNEL_PFLAG_USER | KERNEL_PFLAG_PRESENT);
     add_memregion(&task->memregion_list, USER_STACK_ADDR, true, USER_STACK_PAGES, KERNEL_PFLAG_WRITE | KERNEL_PFLAG_USER | KERNEL_PFLAG_PRESENT);
     task->entry = (void*) file_header.entry;
     task->flags = TASK_FIRST_EXEC | TASK_PRESENT;
     task->rsp   = USER_STACK_PTR;
     task->program_break = PAGE_ALIGN_UP(end_of_executable);
+    printf("\neoe = %p\n", task->program_break);
     alloc_pages((uint64_t*) (task->pml4 + kernel.hhdm), task->program_break, 1, KERNEL_PFLAG_WRITE | KERNEL_PFLAG_PRESENT | KERNEL_PFLAG_USER);
     add_memregion(&task->memregion_list, task->program_break, 1, true, KERNEL_PFLAG_WRITE | KERNEL_PFLAG_PRESENT | KERNEL_PFLAG_USER);
     task->program_break++;

@@ -34,7 +34,7 @@ struct Task {
     Task         *parent;
     Memregion    *memregion_list;
     task_flags_t  flags;
-    VfsFile      *resources[MAX_RESOURCES]; // TODO: This needs to also contain offsets etc
+    VfsFile      *resources[MAX_RESOURCES]; // TODO: This needs to also contain offsets, flags etc
     Child         children[MAX_CHILDREN];
     uintptr_t     program_break; // used for sbrk
 };

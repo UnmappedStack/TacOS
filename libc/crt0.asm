@@ -23,22 +23,19 @@ _start:
 
 init_libc:
     ;; Initiate the heap
-    ; Get the location of the start of the heap
-    mov rax, 11 ; sbrk(
-    mov rdi, 0  ;   0
-    int 0x80    ; );
-    mov [start_heap], rax
-    ; Move the program break forward by a page
+    ; Move the program break forward by a page and get the initial program break
     mov rax, 11   ; sbrk(
     mov rdi, 4096 ;   4096
     int 0x80      ; );
+    mov [start_heap], rax
     ; Fill the heap so far with a single pool
-    mov byte  [start_heap + HEAP_VERIFY_OFF       ], 69
-    mov qword [start_heap + HEAP_NEXT_OFF         ], 0
-    mov qword [start_heap + HEAP_POOL_SIZE_OFF    ], 4095
-    mov qword [start_heap + HEAP_REQUIRED_SIZE_OFF], 4095
-    mov byte  [start_heap + HEAP_FREE_OFF         ], 1
+    mov byte  [rax + HEAP_VERIFY_OFF       ], 69
+    mov qword [rax + HEAP_NEXT_OFF         ], 0
+    mov qword [rax + HEAP_POOL_SIZE_OFF    ], 4095
+    mov qword [rax + HEAP_REQUIRED_SIZE_OFF], 4095
+    mov byte  [rax + HEAP_FREE_OFF         ], 1
     ret
 
 section .data
-start_heap: dq 0
+start_heap:
+    dq 0

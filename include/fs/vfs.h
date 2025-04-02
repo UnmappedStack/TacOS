@@ -17,7 +17,13 @@ typedef enum {
     VAT_mkdir,
 } VfsAccessType;
 
-#define O_CREAT 64
+/* TODO: Actually take flags into account when reading/writing files */
+typedef enum {
+    O_CREAT = 1,
+    O_RDONLY = 2,
+    O_WRONLY = 4,
+    O_RDWR = 8,
+} VfsFlag;
 
 typedef struct {
     uint8_t fs_id;

@@ -4,6 +4,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <syscall.h>
+#include <fcntl.h>
 
 #define stdout_fd 0
 
@@ -24,17 +25,47 @@ int printf(const char *fmt, ...) {
     va_list args, copy;
     va_start(args, fmt);
     va_copy(copy, args);
-    int len = vsnprintf(NULL, 0, fmt, args);
-    char *buf = (char*) malloc(len + 1);
+    int len = vsnprintf(NULL, 0, fmt, args) + 1;
+    char *buf = (char*) malloc(len);
     int ret = vsnprintf(buf, len, fmt, copy);
     puts(buf);
     va_end(args);
     va_end(copy);
-    free(buf);
     return ret;
 }
 
 int putchar(int ch) {
     write(stdout_fd, &ch, 1);
     return ch;
+}
+
+int str_to_flags(const char *restrict mode) {
+    int ret = 0;
+    bool can_write = 0;
+    bool can_read = 0;
+    for (; *mode; mode++) {
+        switch (*mode) {
+            case 'w':
+                ret |= O_CREAT;
+                can_write = 1;
+                break;
+            case 'r':
+                can_read = 1;
+                break;
+            default:
+                printf("Invalid flag when opening file!\n");
+                exit(1);
+        }
+    }
+    if (can_write && !can_read) ret |= O_WRONLY;
+    else if (!can_write && can_read) ret |= O_RDONLY;
+    else if (can_write && can_write) ret |= O_RDWR;
+    return ret;
+}
+
+FILE* fopen(const char *restrict pathname, const char *restrict mode) {
+    printf("Path: %s, mode: %s\n", pathname, mode);
+    printf("Flags are: %d\n", 1);
+    int flags = str_to_flags(mode);
+    return NULL;
 }
