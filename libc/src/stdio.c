@@ -3,6 +3,8 @@
 #include <stdlib.h>
 #include <syscall.h>
 
+#define stdout_fd 0
+
 int open(const char *pathname, int flags, mode_t mode) {
     return __syscall3(2, (size_t) pathname, (size_t) flags, mode);
 }
@@ -12,7 +14,7 @@ size_t write(int fd, const void *buf, size_t count) {
 }
 
 int puts(char *str) {
-    write(0, str, strlen(str));
+    write(stdout_fd, str, strlen(str));
     return 0;
 }
 
@@ -28,4 +30,9 @@ int printf(const char *fmt, ...) {
     va_end(copy);
     free(buf);
     return ret;
+}
+
+int putchar(int ch) {
+    write(stdout_fd, &ch, 1);
+    return ch;
 }
