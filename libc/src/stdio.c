@@ -14,6 +14,11 @@ int remove(char *filename) {
     return __syscall1(13, (size_t) filename);
 }
 
+int rename(const char *oldpath, const char *newpath) {
+    printf("TODO: rename() in libc\n");
+    return 0;
+}
+
 int open(const char *pathname, int flags, mode_t mode) {
     return __syscall3(2, (size_t) pathname, (size_t) flags, mode);
 }
