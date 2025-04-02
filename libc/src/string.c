@@ -64,3 +64,18 @@ int tolower(char ch) {
     if (ch >= 'A' && ch <= 'Z') return ch + ('a' - 'A');
     return ch;
 }
+
+char* strrchr(const char *s, int c) {
+    char *ret = NULL;
+    for (size_t i = 0; s[i]; i++) {
+        if (s[i] == c) ret = &s[i];
+    }
+    return ret;
+}
+
+char* strchr(const char *s, int c) {
+    for (size_t i = 0; s[i]; i++) {
+        if (s[i] == c) return &s[i];
+    }
+    return NULL;
+}
