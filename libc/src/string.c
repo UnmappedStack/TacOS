@@ -1,4 +1,5 @@
 #include <string.h>
+#include <stdlib.h>
 #include <stdint.h>
 
 size_t strlen(const char *str) {
@@ -21,6 +22,10 @@ void *memset(void *dest, int x, size_t n) {
         : "memory"
     );
     return dest;
+}
+
+char *strcpy(char *restrict dst, const char *restrict src) {
+    return memcpy(dst, src, strlen(src));
 }
 
 void *memcpy(void *dest, const void *src, size_t n) {
@@ -85,4 +90,10 @@ char* strstr(char *str, const char *needle) {
         if (!strcmp(needle, str)) return str;
     }
     return NULL;
+}
+
+char* strdup(const char *s) {
+    char *ret = (char*) malloc(strlen(s) + 1);
+    strcpy(ret, s);
+    return ret;
 }

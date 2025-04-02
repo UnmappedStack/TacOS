@@ -11,3 +11,5 @@ int tolower(char ch);
 char* strrchr(char *s, int c);
 char* strchr(char *s, int c);
 char* strstr(char *str, const char *needle);
+char *strcpy(char *restrict dst, const char *restrict src);
+char* strdup(const char *s);
