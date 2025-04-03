@@ -216,3 +216,25 @@ void sys_sched_yield(void) {
     for (size_t i = 0; i < 3; i++)
         asm volatile("hlt\n");
 }
+
+// major stub
+void* sys_mmap(void *addr, size_t length, int prot, int flags,
+                  int fd, size_t offset) {
+    (void) prot; // TODO: don't ignore prot and map (MAP_SHARED and MAP_ANONYMOUS are default)
+    (void) flags;
+    (void) addr;
+    (void) length;
+    char fname[30];
+    vfs_identify(CURRENT_TASK->resources[fd].f, fname, NULL, NULL);
+    if (strcmp(fname, "fb0")) {
+        printf("TODO: mmap currently can only map in the framebuffer device "
+                "because why would you do things properly when you can just... "
+                "not.\n");
+        return NULL;
+    }
+    if (offset) {
+        printf("TODO: offset currently must be 0 in mmap syscall\n");
+        return NULL;
+    }
+    return kernel.framebuffer.addr;
+}

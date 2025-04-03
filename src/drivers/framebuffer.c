@@ -138,14 +138,20 @@ void write_framebuffer_text(const char *msg) {
 
 void init_framebuffer() {
     kernel.framebuffer = boot_get_framebuffer();
-    DeviceOps ops = (DeviceOps) {
+    // tty device
+    DeviceOps ttydev_ops = (DeviceOps) {
         .read = &fb_read,
         .write = &fb_write,
         .open = &fb_open,
         .close = &fb_close,
         .is_term = true,
     };
-    mkdevice("/dev/tty0", ops);
+    mkdevice("/dev/tty0", ttydev_ops);
+    // raw framebuffer device
+    DeviceOps fbdev_ops = {0};
+    fbdev_ops.is_term = true;
+    mkdevice("/dev/fb0", ttydev_ops);
+    // Fill the screen and finish up
     fill_rect(0, 0, kernel.framebuffer.width, kernel.framebuffer.height, BG_COLOUR);
     printf("Framebuffer initialised.\n");
 }
