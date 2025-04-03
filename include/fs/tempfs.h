@@ -29,6 +29,7 @@ struct TempfsInode {
     char name[MAX_FILENAME_LEN]; // TODO: Allocate dynamically
     TempfsInode *parent;
     TempfsInodeType type;
+    size_t size;
     union {
         union {
             DeviceOps devops;

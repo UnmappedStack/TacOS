@@ -56,6 +56,7 @@ TempfsInode *tempfs_new_file(TempfsInode *dir, char *name) {
     }
     strcpy(new_inode->name, name);
     new_inode->type = RegularFile;
+    new_inode->size = 0;
     return new_inode;
 }
 
@@ -116,6 +117,7 @@ int tempfs_access(TempfsInode *file, char *buf, size_t len, size_t offset, bool 
         }
         this_fnode = this_fnode->next;
     }
+    if (write) file->size += len;
     return 0;
 }
 
