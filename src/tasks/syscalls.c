@@ -162,6 +162,31 @@ int sys_mkdir(char *filename, size_t mode) {
     return mkdir(filename);
 }
 
+typedef enum {
+    SEEK_SET,
+    SEEK_CUR,
+    SEEK_END,
+} FileLocs;
+size_t sys_lseek(int fd, size_t offset, int whence) {
+    size_t fsize;
+    switch (whence) {
+        case SEEK_SET:
+            CURRENT_TASK->resources[fd].offset = offset;
+            return offset;
+        case SEEK_CUR:
+            CURRENT_TASK->resources[fd].offset += offset;
+            return CURRENT_TASK->resources[fd].offset;
+        case SEEK_END:
+            vfs_identify(CURRENT_TASK->resources[fd].f, NULL, NULL, &fsize);
+            CURRENT_TASK->resources[fd].offset = fsize + offset;
+            return CURRENT_TASK->resources[fd].offset;
+        default:
+            printf("Invalid whence value for lseek\n");
+            sys_exit(1);
+            return 1;
+    }
+}
+
 void sys_invalid(int sys) {
     printf("Invalid syscall: %i\n", sys);
 }
