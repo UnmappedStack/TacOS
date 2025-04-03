@@ -15,5 +15,7 @@ int main(void) {
     struct timespec wait_time = {.tv_sec = 5, .tv_nsec = 0};
     nanosleep(&wait_time);
     clock_gettime(CLOCK_REALTIME, &finish);
+    printf("Start is %zu:%zu, end is %zu:%zu\n",
+            start.tv_sec, start.tv_nsec, finish.tv_sec, finish.tv_nsec);
     return 0;
 }

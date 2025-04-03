@@ -19,8 +19,6 @@ int nanosleep(struct timespec *duration) {
         finish_time.tv_sec += secs_in_nsec;
         finish_time.tv_nsec -= secs_in_nsec * ns_in_s;
     }
-    printf("Start is %zu:%zu, end is %zu:%zu\n",
-            current_time.tv_sec, current_time.tv_nsec, finish_time.tv_sec, finish_time.tv_nsec);
     while (!(current_time.tv_sec > finish_time.tv_sec ||
                 (current_time.tv_sec == finish_time.tv_sec &&
                  current_time.tv_nsec >= finish_time.tv_nsec))) {
