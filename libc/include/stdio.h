@@ -43,3 +43,5 @@ int fputs(const char *str, FILE *stream);
 int fflush(FILE *stream);
 int setvbuf(FILE *stream, char *buffer, int mode, size_t size);
 size_t fread(void *ptr, size_t size, size_t nmemb, FILE *stream);
+long ftell(FILE *stream);
+int fseek(FILE *stream, long offset, int whence);

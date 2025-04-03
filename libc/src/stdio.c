@@ -1,5 +1,6 @@
 #define STB_SPRINTF_IMPLEMENTATION
 #include <sprintf.h>
+#include <unistd.h>
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
@@ -182,4 +183,13 @@ size_t fread(void *ptr, size_t size, size_t nmemb, FILE *stream) {
 int sscanf(const char *str, const char *format, ...) {
     printf("TODO: sscanf is not implemented yet\n");
     exit(1);
+}
+
+long ftell(FILE *stream) {
+    return lseek(stream->fd, 0, SEEK_SET);
+}
+
+int fseek(FILE *stream, long offset, int whence) {
+    lseek(stream->fd, offset, whence);
+    return 0;
 }
