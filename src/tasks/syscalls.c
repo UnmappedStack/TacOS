@@ -26,8 +26,9 @@ int sys_open(char *filename, int flags, int mode) {
     uint64_t file_descriptor = 0;
     Task *current_task = CURRENT_TASK;
     for (; file_descriptor < MAX_RESOURCES; file_descriptor++) {
-        if (current_task->resources[file_descriptor]) continue;
-        current_task->resources[file_descriptor] = open((char*) filename, flags);
+        if (current_task->resources[file_descriptor].f) continue;
+        current_task->resources[file_descriptor].f = open((char*) filename, flags);
+        current_task->resources[file_descriptor].offset = 0;
         printf("Opened %s to file descriptor %i\n", filename, file_descriptor);
         return file_descriptor;
     }
@@ -36,16 +37,16 @@ int sys_open(char *filename, int flags, int mode) {
 }
 
 int sys_close(int fd) {
-    return close(CURRENT_TASK->resources[fd]);
+    return close(CURRENT_TASK->resources[fd].f);
 }
 
 int sys_read(int fd, char *buf, size_t count) {
-    return vfs_read(CURRENT_TASK->resources[fd], buf, count, 0);
+    return vfs_read(CURRENT_TASK->resources[fd].f, buf, count, 0);
 }
 
 size_t sys_write(int fd, char *buf, size_t count) {
     printf("Args: %i, %p, %i\n", (uint64_t) fd, buf, count); 
-    return vfs_write(CURRENT_TASK->resources[fd], buf, count, 0);
+    return vfs_write(CURRENT_TASK->resources[fd].f, buf, count, 0);
 }
 
 void sys_exit(int status) {
@@ -93,7 +94,7 @@ int sys_kill(int pid, int sig) {
 }
 
 int sys_isatty(int fd) {
-    VfsFile *f = CURRENT_TASK->resources[fd];
+    VfsFile *f = CURRENT_TASK->resources[fd].f;
     if (!f) return 0;
     if (f->drive.fs.fs_id == fs_tempfs) {
         TempfsInode *private = f->private;
@@ -143,6 +144,75 @@ int sys_unlink(char *path) {
     return rm_file(f);
 }
 
+int sys_remove(char *filename) {
+    VfsFile *f = vfs_access(filename, 0, 0);
+    if (!f) return -1;
+    bool is_dir;
+    if (vfs_identify(f, NULL, &is_dir, NULL)) return -1;
+    if (is_dir) {
+        VfsDirIter dir = vfs_file_to_diriter(f);
+        return rm_dir(&dir);
+    } else {
+        return rm_file(f);
+    }
+}
+
+int sys_mkdir(char *filename, size_t mode) {
+    (void) mode;
+    return mkdir(filename);
+}
+
+typedef enum {
+    SEEK_SET,
+    SEEK_CUR,
+    SEEK_END,
+} FileLocs;
+size_t sys_lseek(int fd, size_t offset, int whence) {
+    size_t fsize;
+    switch (whence) {
+        case SEEK_SET:
+            CURRENT_TASK->resources[fd].offset = offset;
+            return offset;
+        case SEEK_CUR:
+            CURRENT_TASK->resources[fd].offset += offset;
+            return CURRENT_TASK->resources[fd].offset;
+        case SEEK_END:
+            vfs_identify(CURRENT_TASK->resources[fd].f, NULL, NULL, &fsize);
+            CURRENT_TASK->resources[fd].offset = fsize + offset;
+            return CURRENT_TASK->resources[fd].offset;
+        default:
+            printf("Invalid whence value for lseek\n");
+            sys_exit(1);
+            return 1;
+    }
+}
+
 void sys_invalid(int sys) {
     printf("Invalid syscall: %i\n", sys);
+}
+
+/* called by the task switch. Don't ask why this is in the syscalls.c file lol */
+void increment_global_clock(void) {
+    // since this is called about every ms, add one ms to it
+    const size_t frequency = 1000000; // it's called every `frequency` nanoseconds
+    const size_t ns_in_s   = 1000000000;
+    kernel.global_clock.tv_nsec += frequency;
+    if (kernel.global_clock.tv_nsec >= ns_in_s) {
+        kernel.global_clock.tv_sec++;
+        kernel.global_clock.tv_nsec -= ns_in_s;
+    }
+}
+
+/* TODO: Stop ignoring the clockid and actually have separate clocks */
+int sys_clock_gettime(size_t clockid, struct timespec *tp) {
+    (void) clockid;
+    tp->tv_sec  = kernel.global_clock.tv_sec;
+    tp->tv_nsec = kernel.global_clock.tv_nsec;
+    return 0;
+}
+
+// TODO: actually yield properly
+void sys_sched_yield(void) {
+    for (size_t i = 0; i < 3; i++)
+        asm volatile("hlt\n");
 }

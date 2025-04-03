@@ -20,21 +20,31 @@ extern sys_isatty
 extern sys_wait
 extern sys_sbrk
 extern sys_unlink
+extern sys_remove
+extern sys_mkdir
+extern sys_lseek
+extern sys_clock_gettime
+extern sys_sched_yield
 
 syscall_lookup:
-    dq sys_read   ; 0
-    dq sys_write  ; 1
-    dq sys_open   ; 2
-    dq sys_close  ; 3
-    dq sys_exit   ; 4
-    dq sys_getpid ; 5
-    dq sys_fork   ; 6
-    dq sys_execve ; 7
-    dq sys_kill   ; 8
-    dq sys_isatty ; 9
-    dq sys_wait   ; 10
-    dq sys_sbrk   ; 11
-    dq sys_unlink ; 12
+    dq sys_read          ; 0
+    dq sys_write         ; 1
+    dq sys_open          ; 2
+    dq sys_close         ; 3
+    dq sys_exit          ; 4
+    dq sys_getpid        ; 5
+    dq sys_fork          ; 6
+    dq sys_execve        ; 7
+    dq sys_kill          ; 8
+    dq sys_isatty        ; 9
+    dq sys_wait          ; 10
+    dq sys_sbrk          ; 11
+    dq sys_unlink        ; 12
+    dq sys_remove        ; 13
+    dq sys_mkdir         ; 14
+    dq sys_lseek         ; 15
+    dq sys_clock_gettime ; 16
+    dq sys_sched_yield   ; 17
 syscall_lookup_end:
 
 global syscall_isr

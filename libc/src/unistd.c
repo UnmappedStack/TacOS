@@ -15,3 +15,7 @@ void __stack_chk_fail(void) {
 void *sbrk(intptr_t increment) {
     return (void*) __syscall1(11, increment);
 }
+
+off_t lseek(int fd, size_t offset, int whence) {
+    return __syscall3(15, fd, offset, whence);
+}

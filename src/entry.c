@@ -27,6 +27,7 @@ void ls(char *path) {
     printf("LS: %s:\n", path);
     VfsDirIter dir;
     VfsFile *buf;
+    size_t fsize;
     char fname[MAX_FILENAME_LEN];
     bool is_dir;
     if (opendir(&dir, &buf, path, 0) < 0) {
@@ -34,9 +35,9 @@ void ls(char *path) {
         HALT_DEVICE();
     }
     for (;;) {
-        vfs_identify(buf, fname, &is_dir);
-        char *label = (is_dir) ? " - Directory: " : " - File: ";
-        printf("%s%s\n", label, fname);
+        vfs_identify(buf, fname, &is_dir, &fsize);
+        char *label = (is_dir) ? " - Directory" : " - File";
+        printf("%s (%i bytes): %s\n", label, fsize, fname);
         buf = vfs_diriter(&dir, &is_dir);
         if (!buf) break;
     }

@@ -5,6 +5,7 @@ global context_switch
 extern get_current_task
 extern task_select
 extern printf
+extern increment_global_clock
 
 %macro pushall 0
     push rax
@@ -71,6 +72,7 @@ extern printf
 
 context_switch:
     pushall
+    call increment_global_clock
     call task_select ; next Task* is in rax
     mov r15, rax
     ;; Save current rsp of *this* task

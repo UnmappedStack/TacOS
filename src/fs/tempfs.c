@@ -56,6 +56,7 @@ TempfsInode *tempfs_new_file(TempfsInode *dir, char *name) {
     }
     strcpy(new_inode->name, name);
     new_inode->type = RegularFile;
+    new_inode->size = 0;
     return new_inode;
 }
 
@@ -79,10 +80,14 @@ TempfsInode *tempfs_diriter(TempfsDirIter *iter) {
     return to_return;
 }
 
-int tempfs_identify(TempfsInode *inode, char *namebuf, bool *is_dir_buf) {
+int tempfs_identify(TempfsInode *inode, char *namebuf, bool *is_dir_buf, size_t *fsize) {
     if (!inode) return -1;
-    strcpy(namebuf, inode->name);
-    *is_dir_buf = inode->type == Directory;
+    if (namebuf)
+        strcpy(namebuf, inode->name);
+    if (is_dir_buf)
+        *is_dir_buf = inode->type == Directory;
+    if (fsize)
+        *fsize = inode->size;
     return 0;
 }
 
@@ -116,6 +121,7 @@ int tempfs_access(TempfsInode *file, char *buf, size_t len, size_t offset, bool 
         }
         this_fnode = this_fnode->next;
     }
+    if (write) file->size += len;
     return 0;
 }
 
@@ -192,6 +198,6 @@ FileSystem tempfs = (FileSystem) {
     .diriter_fn        = (void *(*)(void *))tempfs_diriter,
     .write_fn          = (int (*)(void *, char *, size_t, size_t))tempfs_write,
     .read_fn           = (int (*)(void *, char *, size_t, size_t))tempfs_read,
-    .identify_fn       = (int (*)(void *, char *, bool *))tempfs_identify,
+    .identify_fn       = (int (*)(void *, char *, bool *, size_t *))tempfs_identify,
     .file_from_diriter = (void *(*)(void *))tempfs_file_from_diriter,
 };

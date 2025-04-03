@@ -29,6 +29,7 @@ struct TempfsInode {
     char name[MAX_FILENAME_LEN]; // TODO: Allocate dynamically
     TempfsInode *parent;
     TempfsInodeType type;
+    size_t size;
     union {
         union {
             DeviceOps devops;
@@ -57,6 +58,6 @@ TempfsInode *tempfs_diriter(TempfsDirIter *iter);
 int tempfs_closedir(TempfsDirIter *dir);
 int tempfs_rmdir(TempfsDirIter *dir);
 int tempfs_rmfile(TempfsInode *file);
-int tempfs_identify(TempfsInode *inode, char *namebuf, bool *is_dir_buf);
+int tempfs_identify(TempfsInode *inode, char *namebuf, bool *is_dir_buf, size_t *fsize);
 void *tempfs_file_from_diriter(TempfsDirIter *iter);
 extern FileSystem tempfs;
