@@ -7,7 +7,26 @@
 #include <syscall.h>
 #include <fcntl.h>
 
+FILE *stdin;
 FILE *stdout;
+FILE *stderr;
+
+void init_streams(void) {
+    stdin = (FILE*) malloc(sizeof(FILE));
+    stdin->fd = 0;
+    stdin->bufmode = _IONBF;
+
+    stdout = (FILE*) malloc(sizeof(FILE));
+    stdout->fd = 1;
+    stdout->buffer = (char*) malloc(512);
+    stdout->bufsz = 0;
+    stdout->bufmax = 512;
+    stdout->bufmode = _IOLBF;
+
+    stderr = (FILE*) malloc(sizeof(FILE));
+    stderr->fd = 2;
+    stderr->bufmode = _IONBF;
+}
 
 #define stdout_fd 0
 

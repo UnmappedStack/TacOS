@@ -2,6 +2,7 @@
 global _start
 global start_heap
 extern main
+extern init_streams
 
 %define HEAP_VERIFY_OFF        0
 %define HEAP_NEXT_OFF          1
@@ -34,6 +35,8 @@ init_libc:
     mov qword [rax + HEAP_POOL_SIZE_OFF    ], 4095
     mov qword [rax + HEAP_REQUIRED_SIZE_OFF], 4095
     mov byte  [rax + HEAP_FREE_OFF         ], 1
+    ;; Initiate other stuff
+    call init_streams
     ret
 
 section .data

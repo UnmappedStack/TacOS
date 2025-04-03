@@ -20,7 +20,9 @@ typedef struct {
     BufMode bufmode;
 } FILE;
 
+extern FILE *stdin;
 extern FILE *stdout;
+extern FILE *stderr;
 
 int putchar(int ch);
 int open(const char *pathname, int flags, mode_t mode);
