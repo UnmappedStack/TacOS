@@ -24,6 +24,7 @@ extern sys_remove
 extern sys_mkdir
 extern sys_lseek
 extern sys_clock_gettime
+extern sys_sched_yield
 
 syscall_lookup:
     dq sys_read          ; 0
@@ -43,6 +44,7 @@ syscall_lookup:
     dq sys_mkdir         ; 14
     dq sys_lseek         ; 15
     dq sys_clock_gettime ; 16
+    dq sys_sched_yield   ; 17
 syscall_lookup_end:
 
 global syscall_isr

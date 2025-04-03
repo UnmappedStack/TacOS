@@ -11,13 +11,9 @@ int main(void) {
     puts("Hello world from a userspace application loaded from an ELF file, writing to a stdout device!\n");
     printf("Hello, world! The number is %d and %d so yeah. Testing timer...\n", atoi("69"), atoi("\t\n  -420abc"));
     struct timespec start, finish;
-    size_t i = 1;
     clock_gettime(CLOCK_REALTIME, &start);
-    for (size_t n = 0; n < 200000000; n++) {
-        i *= 3;
-    }
+    struct timespec wait_time = {.tv_sec = 5, .tv_nsec = 0};
+    nanosleep(&wait_time);
     clock_gettime(CLOCK_REALTIME, &finish);
-    printf("Start time: %zu:%zu, finish time: %zu:%zu\n",
-            start.tv_sec, start.tv_nsec, finish.tv_sec, finish.tv_nsec);
     return 0;
 }

@@ -210,3 +210,9 @@ int sys_clock_gettime(size_t clockid, struct timespec *tp) {
     tp->tv_nsec = kernel.global_clock.tv_nsec;
     return 0;
 }
+
+// TODO: actually yield properly
+void sys_sched_yield(void) {
+    for (size_t i = 0; i < 3; i++)
+        asm volatile("hlt\n");
+}

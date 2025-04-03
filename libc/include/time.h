@@ -11,3 +11,4 @@ typedef enum {
 } ClockID;
 
 int clock_gettime(ClockID clockid, struct timespec *tp);
+int nanosleep(struct timespec *duration);
