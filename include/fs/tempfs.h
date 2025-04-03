@@ -58,6 +58,6 @@ TempfsInode *tempfs_diriter(TempfsDirIter *iter);
 int tempfs_closedir(TempfsDirIter *dir);
 int tempfs_rmdir(TempfsDirIter *dir);
 int tempfs_rmfile(TempfsInode *file);
-int tempfs_identify(TempfsInode *inode, char *namebuf, bool *is_dir_buf);
+int tempfs_identify(TempfsInode *inode, char *namebuf, bool *is_dir_buf, size_t *fsize);
 void *tempfs_file_from_diriter(TempfsDirIter *iter);
 extern FileSystem tempfs;

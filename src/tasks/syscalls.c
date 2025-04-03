@@ -148,7 +148,7 @@ int sys_remove(char *filename) {
     VfsFile *f = vfs_access(filename, 0, 0);
     if (!f) return -1;
     bool is_dir;
-    if (vfs_identify(f, NULL, &is_dir)) return -1;
+    if (vfs_identify(f, NULL, &is_dir, NULL)) return -1;
     if (is_dir) {
         VfsDirIter dir = vfs_file_to_diriter(f);
         return rm_dir(&dir);

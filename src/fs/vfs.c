@@ -68,25 +68,19 @@ VfsDrive *vfs_path_to_drive(char *path, size_t *drive_root_idx_buf) {
     return vfs_find_mounted_drive("/");
 }
 
-// If name is NULL, it won't copy it to the buffer.
-int vfs_identify(VfsFile *file, char *name, bool *is_dir) {
-    if (name) {
-        return file->drive.fs.identify_fn(file->private, name, is_dir);
-    } else {
-        char buf[MAX_FILENAME_LEN];
-        return file->drive.fs.identify_fn(file->private, buf, is_dir);
-    }
+// If any field is NULL, it won't copy it to the buffer.
+int vfs_identify(VfsFile *file, char *name, bool *is_dir, size_t *fsize) {
+    return file->drive.fs.identify_fn(file->private, name, is_dir, fsize);
 }
 
 // Returns the *private*, not an actual VfsFile
 void *find_direntry(VfsDrive *drive, VfsDirIter *dir, char *name) {
     char entry_name[MAX_FILENAME_LEN];
-    bool is_dir;
     void *this_entry;
     for (;;) {
         if (!dir) return NULL;
         if (!(this_entry = drive->fs.diriter_fn(dir->private))) return NULL;
-        if (drive->fs.identify_fn(this_entry, entry_name, &is_dir) < 0) return NULL;
+        if (drive->fs.identify_fn(this_entry, entry_name, NULL, NULL) < 0) return NULL;
         if (!strcmp(name, entry_name)) return this_entry;
     }
 }
@@ -160,7 +154,7 @@ VfsFile *vfs_access(char *path, int flags, VfsAccessType type) {
                         .private = drive->fs.open_fn(entry),
                         .drive = *drive,
                     };
-                    vfs_identify(file_addr, path_cpy, &is_dir);
+                    vfs_identify(file_addr, path_cpy, &is_dir, NULL);
                     if (is_dir && type == VAT_open) {
                         printf("Can't open file, is a directory.\n");
                         drive->fs.close_fn(entry);
@@ -274,7 +268,7 @@ VfsFile *vfs_diriter(VfsDirIter *dir, bool *is_dir) {
         slab_free(kernel.vfs_file_cache, to_return);
         return NULL;
     }
-    vfs_identify(to_return, NULL, is_dir);
+    vfs_identify(to_return, NULL, is_dir, NULL);
     return to_return;
 }
 
