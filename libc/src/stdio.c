@@ -204,6 +204,11 @@ int sscanf(const char *str, const char *format, ...) {
     exit(1);
 }
 
+int __isoc99_sscanf(const char *str, const char *format, ...) {
+    printf("TODO: __isoc99_sscanf is not implemented yet\n");
+    exit(1);
+}
+
 long ftell(FILE *stream) {
     return lseek(stream->fd, 0, SEEK_SET);
 }

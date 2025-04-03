@@ -15,3 +15,4 @@ char *strcpy(char *restrict dst, const char *restrict src);
 int strncmp(const char *s1, const char *s2, size_t n);
 char *strncpy(char *restrict dst, const char *restrict src, size_t n);
 char* strdup(const char *s);
+char* memchr(char *s, int c, size_t n);

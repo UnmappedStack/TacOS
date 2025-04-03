@@ -97,6 +97,13 @@ char* strchr(char *s, int c) {
     return NULL;
 }
 
+char* memchr(char *s, int c, size_t n) {
+    for (size_t i = 0; i < n; i++) {
+        if (s[i] == c) return &s[i];
+    }
+    return NULL;
+}
+
 char* strstr(char *str, const char *needle) {
     while (*str++) {
         if (!strcmp(needle, str)) return str;
