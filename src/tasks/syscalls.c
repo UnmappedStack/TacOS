@@ -190,3 +190,23 @@ size_t sys_lseek(int fd, size_t offset, int whence) {
 void sys_invalid(int sys) {
     printf("Invalid syscall: %i\n", sys);
 }
+
+/* called by the task switch. Don't ask why this is in the syscalls.c file lol */
+void increment_global_clock(void) {
+    // since this is called about every ms, add one ms to it
+    const size_t frequency = 1000000; // it's called every `frequency` nanoseconds
+    const size_t ns_in_s   = 1000000000;
+    kernel.global_clock.tv_nsec += frequency;
+    if (kernel.global_clock.tv_nsec >= ns_in_s) {
+        kernel.global_clock.tv_sec++;
+        kernel.global_clock.tv_nsec -= ns_in_s;
+    }
+}
+
+/* TODO: Stop ignoring the clockid and actually have separate clocks */
+int sys_clock_gettime(size_t clockid, struct timespec *tp) {
+    (void) clockid;
+    tp->tv_sec  = kernel.global_clock.tv_sec;
+    tp->tv_nsec = kernel.global_clock.tv_nsec;
+    return 0;
+}
