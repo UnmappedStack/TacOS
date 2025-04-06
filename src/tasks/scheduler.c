@@ -1,5 +1,6 @@
 #include <string.h>
 #include <scheduler.h>
+#include <cpu.h>
 #include <printf.h>
 #include <list.h>
 #include <kernel.h>
@@ -26,19 +27,30 @@ void init_scheduler() {
 Task *task_add() {
     Task *new_task = slab_alloc(kernel.scheduler.cache);
     new_task->pid  = kernel.scheduler.pid_upto++;
+    new_task->flags = 0;
     if (kernel.scheduler.list == 0) {
+        printf(" -> task_add() initiates queue\n");
         list_init(&new_task->list);
         kernel.scheduler.list = &new_task->list;
-    } else
+    } else {
+        printf(" -> task_add() inserts task\n");
         list_insert(kernel.scheduler.list, &new_task->list);
-    printf("New task = %p\n", new_task);
+    }
+    printf(" -> New task = %p, pid = %i\n", new_task, new_task->pid);
     return new_task;
 }
 
 Task *task_select() {
+    Task *first_task = kernel.scheduler.current_task;
     kernel.scheduler.current_task = (Task*) kernel.scheduler.current_task->list.next;
-    if (!(kernel.scheduler.current_task->flags & TASK_PRESENT))
+    while (!(kernel.scheduler.current_task->flags & TASK_PRESENT)) {
+        if (first_task == (Task*) kernel.scheduler.current_task) {
+            printf("No avaliable task!\n");
+            HALT_DEVICE();
+        }
         kernel.scheduler.current_task = (Task*) kernel.scheduler.current_task->list.next;
+    }
+    printf("Switched to %i\n", kernel.scheduler.current_task->pid);
     return (Task*) kernel.scheduler.current_task;
 }
 

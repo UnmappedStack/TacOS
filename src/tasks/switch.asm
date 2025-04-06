@@ -91,7 +91,7 @@ context_switch:
     ;; Disable first exec flag
     mov r11, 0b100
     not r11
-    mov r10, r15
+    mov r10, [r15 + TASK_FLAGS_OFF]
     and r10, r11
     mov [r15 + TASK_FLAGS_OFF], r10
     ;; Push the interrupt stack
@@ -120,11 +120,11 @@ context_switch:
     eoi
     popall
     iretq
-    
+
 section .rodata
 
 msg:  db "In context switch :D", 10, 0
-msg2: db "PID to switch to: %i", 10, 0
+msg2: db " -> Context switch to task of PID=%i", 10, 0
 iretq_msg: db "Iretq frame: rip: 0x%p, cs: %i, rflags: 0x%x, rsp = 0x%p, ss = %i", 10, 0
 msg4: db "In previously_executed", 10, 0
 msg5: db "In first exec", 10, 0

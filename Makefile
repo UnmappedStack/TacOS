@@ -39,10 +39,11 @@ all: bootloader kernel libc userspace initrd disk qemu
 bootloader:
 	make -C limine
 
-.PHONY: userspace
-userspace:
-	echo "Building userspace."
-	make -C userspace/*
+USER_PROGRAMS := $(wildcard userspace/*)
+.PHONY: userspace $(USER_PROGRAMS)
+userspace: $(USER_PROGRAMS)
+$(USER_PROGRAMS):
+	$(MAKE) -C $@
 
 .PHONY: libc
 libc:
@@ -66,7 +67,12 @@ disk:
 	./limine/limine bios-install tacos.iso
 
 qemu:
-	qemu-system-x86_64 tacos.iso -serial stdio -no-shutdown -no-reboot -monitor telnet:127.0.0.1:8000,server,nowait -d int,cpu_reset,in_asm -D log.txt
+	qemu-system-x86_64 tacos.iso -serial stdio -no-shutdown -no-reboot -monitor telnet:127.0.0.1:8000,server,nowait -d int,cpu_reset,in_asm -D log.txt -accel kvm 
+
+
+qemu-gdb:
+	qemu-system-x86_64 tacos.iso -serial stdio -no-shutdown -no-reboot -monitor telnet:127.0.0.1:8000,server,nowait -d int,cpu_reset,in_asm -D log.txt -S -s 
+
 # everything below here is the kernel
 
 # Internal C flags that should not be changed by the user.

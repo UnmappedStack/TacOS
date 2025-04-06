@@ -81,10 +81,10 @@ int execve(Task *task, char *filename) {
     task->flags = TASK_FIRST_EXEC | TASK_PRESENT;
     task->rsp   = USER_STACK_PTR;
     task->program_break = PAGE_ALIGN_UP(end_of_executable);
-    printf("\neoe = %p\n", task->program_break);
     alloc_pages((uint64_t*) (task->pml4 + kernel.hhdm), task->program_break, 1, KERNEL_PFLAG_WRITE | KERNEL_PFLAG_PRESENT | KERNEL_PFLAG_USER);
     add_memregion(&task->memregion_list, task->program_break, 1, true, KERNEL_PFLAG_WRITE | KERNEL_PFLAG_PRESENT | KERNEL_PFLAG_USER);
     task->program_break++;
     close(f);
+    printf("\n -> execve(): Task %i has flags 0b%b, task ptr = 0x%p\n", task->pid, task->flags, &task->flags);
     return 0;
 }

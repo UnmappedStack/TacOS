@@ -4,11 +4,15 @@
 #include <kernel.h>
 
 pid_t fork() {
+    printf("\n === IN FORK ===\n\n");
     bool found = false;
     Task *initial_task = kernel.scheduler.current_task;
     Task *new_task     = task_add();
+    printf(" -> fork() inherits resources\n");
     memcpy(new_task->resources, initial_task->resources, sizeof(new_task->resources));
+    printf(" -> fork() empties child list\n");
     memset(new_task->children, 0, sizeof(new_task->children));
+    printf(" -> fork() sets other fields\n");
     new_task->entry    = kernel.scheduler.current_task->entry;
     new_task->parent   = kernel.scheduler.current_task;
     new_task->pml4     = (uint64_t) init_paging_task();
@@ -44,6 +48,7 @@ pid_t fork() {
         printf("Couldn't fork, task already has too many children.\n");
         return 0;
     }
+    printf("\n === SETTING FLAGS ===\n\n");
     new_task->flags = kernel.scheduler.current_task->flags; /* Flags are set last so that it's only 
                                                              * ever run after everything else is set up
                                                              * (because of the TASK_PRESENT flag) */

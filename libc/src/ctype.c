@@ -8,3 +8,13 @@ const int32_t __ctype_toupper_list[] = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12
 int32_t **__ctype_toupper_loc(void) {
     return (int**) &__ctype_toupper_list;
 }
+
+int toupper(char ch) {
+    if (ch >= 'a' && ch <= 'z') return ch - ('a' - 'A');
+    return ch;
+}
+
+int tolower(char ch) {
+    if (ch >= 'A' && ch <= 'Z') return ch + ('a' - 'A');
+    return ch;
+}

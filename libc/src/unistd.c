@@ -19,3 +19,12 @@ void *sbrk(intptr_t increment) {
 off_t lseek(int fd, size_t offset, int whence) {
     return __syscall3(15, fd, offset, whence);
 }
+
+pid_t fork(void) {
+    return __syscall0(6);
+}
+
+// TODO: argv, envp
+int execve(const char *path) {
+    return __syscall1(7, (size_t) path);
+}

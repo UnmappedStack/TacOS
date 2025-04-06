@@ -52,6 +52,7 @@ size_t sys_write(int fd, char *buf, size_t count) {
 void sys_exit(int status) {
     // TODO: Clean up and report to parent
     if (CURRENT_TASK->pid <= 1) {
+        DISABLE_INTERRUPTS();
         printf("Init task exited! Halting device. (Exited with status %i, 0x%x)\n", status, status);
         HALT_DEVICE();
     }

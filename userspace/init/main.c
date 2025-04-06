@@ -1,9 +1,5 @@
-#include <string.h>
-#include <syscall.h>
-#include <time.h>
+#include <unistd.h>
 #include <stdio.h>
-#include <stdlib.h>
-#include <sys/mman.h>
 
 int main(void) {
     stdin  = fopen("/home/longfile.txt", "r"); // TODO: keyboard input + stdin stream
@@ -24,6 +20,8 @@ int main(void) {
         fprintf(stderr, "stderr is wrong file descriptor (init)! (fd = %d)\n", stderr->fd);
         return 1;
     }
-    printf("Streams initiated.\n");
+    printf("Streams forked initiated.\n");
+//    pid_t pid = fork();
+//    for (;;);
     return 0;
 }
