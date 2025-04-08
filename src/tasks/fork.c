@@ -91,10 +91,10 @@ pid_t fork(void) {
     size_t rsp;
     asm volatile("movq %%rsp, %0" : "=r" (rsp));
     printf("pml4 = %p, rsp = %p\n", new_task->pml4, new_task->rsp);
-    *((uint64_t*) (new_task_rsp -  8)) = 0x20 | 3;
+    *((uint64_t*) (new_task_rsp -  8)) = 0x10 | 0;
     *((uint64_t*) (new_task_rsp - 16)) = rsp;
     *((uint64_t*) (new_task_rsp - 24)) = 0x200;
-    *((uint64_t*) (new_task_rsp - 32)) = 0x18 | 3;
+    *((uint64_t*) (new_task_rsp - 32)) = 0x8 | 0;
     *((uint64_t*) (new_task_rsp - 40)) = (uint64_t) &&new_task_starts_here;
     new_task->rsp -= 5 * 8;
     push_gprs_in_task(new_task, new_task_rsp);
