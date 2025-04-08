@@ -20,8 +20,8 @@ int main(void) {
         fprintf(stderr, "stderr is wrong file descriptor (init)! (fd = %d)\n", stderr->fd);
         return 1;
     }
-    printf("Streams forked initiated.\n");
-//    pid_t pid = fork();
-//    for (;;);
+    printf("Streams initiated.\n");
+    pid_t pid = fork();
+    for (;;);
     return 0;
 }
