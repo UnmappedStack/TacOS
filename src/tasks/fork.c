@@ -1,4 +1,6 @@
 #include <fork.h>
+#include <mem/pmm.h>
+#include <cpu.h>
 #include <scheduler.h>
 #include <printf.h>
 #include <kernel.h>
@@ -54,7 +56,8 @@ pid_t fork(void) {
     printf("new pml4 = %p\n", new_task->pml4);
     new_task->rsp      = kernel.scheduler.current_task->rsp;
     bool is_first      = true;
-    alloc_pages((uint64_t*) (new_task->pml4 + kernel.hhdm), KERNEL_STACK_ADDR, KERNEL_STACK_PAGES, KERNEL_PFLAG_PRESENT | KERNEL_PFLAG_WRITE);
+    uintptr_t mem = kmalloc(KERNEL_STACK_PAGES);
+    map_pages((uint64_t*) (new_task->pml4 + kernel.hhdm), KERNEL_STACK_ADDR, mem, KERNEL_STACK_PAGES, KERNEL_PFLAG_PRESENT | KERNEL_PFLAG_WRITE);
     printf("Mapped stack\n");
     if (!kernel.scheduler.current_task->memregion_list) {
         printf("Skipped\n");
@@ -86,24 +89,32 @@ pid_t fork(void) {
         return 0;
     }
     uint64_t new_task_rsp = virt_to_phys(
-            (uint64_t*) (new_task->pml4 + kernel.hhdm), KERNEL_STACK_PTR
-        ) + kernel.hhdm;
+            (uint64_t*) (new_task->pml4 + kernel.hhdm), KERNEL_STACK_ADDR
+        ) + kernel.hhdm + KERNEL_STACK_PAGES * PAGE_SIZE;
+    if (new_task_rsp == 0xDEAD + kernel.hhdm + KERNEL_STACK_PAGES * PAGE_SIZE) {
+        printf("\nFork failed, couldn't find of new address space\n");
+        HALT_DEVICE();
+    }
     size_t rsp;
     asm volatile("movq %%rsp, %0" : "=r" (rsp));
     printf("pml4 = %p, rsp = %p\n", new_task->pml4, new_task->rsp);
+    printf("New task rsp = 0x%p\n", new_task_rsp);
+    printf("Start of user stack is 0x%p\n", KERNEL_STACK_PTR);
     *((uint64_t*) (new_task_rsp -  8)) = 0x10 | 0;
     *((uint64_t*) (new_task_rsp - 16)) = rsp;
     *((uint64_t*) (new_task_rsp - 24)) = 0x200;
     *((uint64_t*) (new_task_rsp - 32)) = 0x8 | 0;
     *((uint64_t*) (new_task_rsp - 40)) = (uint64_t) &&new_task_starts_here;
     new_task->rsp -= 5 * 8;
-    push_gprs_in_task(new_task, new_task_rsp);
+    push_gprs_in_task(new_task, new_task_rsp - 5 * 8);
     printf("\n === SETTING FLAGS ===\n\n");
     new_task->flags = kernel.scheduler.current_task->flags; /* Flags are set last so that it's only 
                                                              * ever run after everything else is set up
                                                              * (because of the TASK_PRESENT flag) */
 new_task_starts_here:
     // TODO: Remove debug messages once everything is *definitely* working
+    printf("Parent, pid = %i\n", new_task->pid);
+    return new_task->pid;
     if (kernel.scheduler.current_task->pid == initial_task->pid) {
         printf("Parent\n");
         return new_task->pid;

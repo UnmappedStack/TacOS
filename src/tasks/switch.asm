@@ -117,7 +117,28 @@ context_switch:
     clearall
     iretq
 .previously_executed:
+    cli
     eoi
+    popall
+    ;; copy into regs
+    pop rsi
+    pop rdx
+    pop rcx
+    pop r8
+    pop r9
+    ;; keep frame on the stack
+    push r9
+    push r8
+    push rcx
+    push rdx
+    push rsi
+    ;; call it
+    pushall
+    mov rdi, iretq_msg
+    call printf
+    mov rdi, rsp_msg
+    mov rsi, rsp
+    call printf
     popall
     iretq
 
@@ -126,5 +147,6 @@ section .rodata
 msg:  db "In context switch :D", 10, 0
 msg2: db " -> Context switch to task of PID=%i", 10, 0
 iretq_msg: db "Iretq frame: rip: 0x%p, cs: %i, rflags: 0x%x, rsp = 0x%p, ss = %i", 10, 0
+rsp_msg: db "RSP = %p", 10, 0
 msg4: db "In previously_executed", 10, 0
 msg5: db "In first exec", 10, 0

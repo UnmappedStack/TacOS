@@ -30,19 +30,21 @@ void exception_handler(IDTEFrame registers) {
            BWHT  " === Debug information: ===\n" WHT);
 
     if (registers.type == 14)
-        printf("Exception type: Page fault\n");
+        printf("Exception type: Page fault");
     else if (registers.type == 13)
-        printf("Exception type: General protection fault\n");
+        printf("Exception type: General protection fault");
     else
-        printf("Exception type: %i\n", registers.type);
-    
+        printf("Exception type: %i", registers.type);
+    printf(" in task of PID=%i\n", kernel.scheduler.current_task->pid);
+    size_t cr3;
+    asm volatile("movq %%cr3, %0" : "=r" (cr3));
     printf("Error code: 0b%b\n\n", registers.code);
     printf("CR2: 0x%p\n\n", registers.cr2);
     printf("RSP: 0x%p | RAX: 0x%p\n", registers.rsp, registers.rax);
     printf("RBP: 0x%p | RBX: 0x%p\n", registers.rbp, registers.rbx);
     printf("CR2: 0x%p | RCX: 0x%p\n", registers.cr2, registers.rcx);
     printf("RDI: 0x%p | RDX: 0x%p\n", registers.rdi, registers.rdx);
-    printf("RSI: 0x%p            \n", registers.rsi               );
+    printf("RSI: 0x%p | CR3: 0x%p\n", registers.rsi,           cr3);
     if ((registers.ss & 0b11) != (registers.cs & 0b11)) {
         printf("SS and CS ring levels do not match up.\n");
     } else {

@@ -2,7 +2,7 @@
 #include <pic.h>
 #include <stddef.h>
 
-#define HERTZ_DIVIDER 1190
+#define HERTZ_DIVIDER 11900
 
 // for the global timer
 struct timespec {

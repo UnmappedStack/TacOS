@@ -67,6 +67,7 @@ uintptr_t kmalloc(size_t num_pages) {
         list_insert(kernel.pmm_chunklist, &new_chunk->list);
         init_chunk(new_chunk, (chunk->length - (num_pages + 1)) * PAGE_SIZE);
         memset(chunk, 0, PAGE_SIZE);
+        printf("Allocated pmem: 0x%p\n", (uintptr_t) chunk - kernel.hhdm);
         return (uintptr_t) chunk - kernel.hhdm;
     }
     return 0;
