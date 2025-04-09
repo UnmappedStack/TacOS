@@ -88,6 +88,8 @@ pid_t fork(void) {
         printf("Couldn't fork, task already has too many children.\n");
         return 0;
     }
+    size_t rsp;
+    asm volatile("movq %%rsp, %0" : "=r" (rsp));
     uint64_t new_task_rsp = virt_to_phys(
             (uint64_t*) (new_task->pml4 + kernel.hhdm), KERNEL_STACK_ADDR
         ) + kernel.hhdm + KERNEL_STACK_PAGES * PAGE_SIZE;
@@ -95,25 +97,25 @@ pid_t fork(void) {
         printf("\nFork failed, couldn't find of new address space\n");
         HALT_DEVICE();
     }
-    size_t rsp;
-    asm volatile("movq %%rsp, %0" : "=r" (rsp));
-    printf("pml4 = %p, rsp = %p\n", new_task->pml4, new_task->rsp);
-    printf("New task rsp = 0x%p\n", new_task_rsp);
-    printf("Start of user stack is 0x%p\n", KERNEL_STACK_PTR);
     *((uint64_t*) (new_task_rsp -  8)) = 0x10 | 0;
-    *((uint64_t*) (new_task_rsp - 16)) = rsp;
+    *((uint64_t*) (new_task_rsp - 16)) = KERNEL_STACK_PTR - 20 * 8 - (KERNEL_STACK_PTR - rsp);
     *((uint64_t*) (new_task_rsp - 24)) = 0x200;
     *((uint64_t*) (new_task_rsp - 32)) = 0x8 | 0;
     *((uint64_t*) (new_task_rsp - 40)) = (uint64_t) &&new_task_starts_here;
     new_task->rsp -= 5 * 8;
     push_gprs_in_task(new_task, new_task_rsp - 5 * 8);
+    // copy the stack over
+    uintptr_t copy_to = new_task_rsp - (KERNEL_STACK_PTR - *((uint64_t*) (new_task_rsp - 16)));
+    printf(" -> Copy %i bytes of stack from %p to %p\n", KERNEL_STACK_PTR - rsp, rsp, copy_to);
+    memcpy((void*) copy_to, (void*) rsp, KERNEL_STACK_PTR - rsp);
+    printf("Copied :)\n");
     printf("\n === SETTING FLAGS ===\n\n");
     new_task->flags = kernel.scheduler.current_task->flags; /* Flags are set last so that it's only 
                                                              * ever run after everything else is set up
                                                              * (because of the TASK_PRESENT flag) */
 new_task_starts_here:
     // TODO: Remove debug messages once everything is *definitely* working
-    printf("Parent, pid = %i\n", new_task->pid);
+    printf("Parent, new task = 0x%p\n", new_task);
     return new_task->pid;
     if (kernel.scheduler.current_task->pid == initial_task->pid) {
         printf("Parent\n");
