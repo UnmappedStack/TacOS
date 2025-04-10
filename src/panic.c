@@ -17,6 +17,10 @@ void stack_trace(uint64_t rbp, uint64_t rip) {
     struct stackFrame *stack = (struct stackFrame*) rbp;
     while (stack) {
         printf(" 0x%x\n", stack->rip);
+        if (stack->rbp->rip == stack->rip) {
+            printf(" ...recursive call\n");
+            return;
+        }
         stack = stack->rbp;
     }
 }

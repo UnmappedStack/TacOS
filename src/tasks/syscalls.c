@@ -67,10 +67,6 @@ int sys_getpid() {
     return CURRENT_TASK->pid;
 }
 
-int sys_fork() {
-    return fork();
-}
-
 int sys_execve(char *path) {
     return execve(CURRENT_TASK, path);
 }

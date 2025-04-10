@@ -6,6 +6,8 @@ extern iretq_msg
 extern lock_pit
 extern unlock_pit
 
+%include "include/asm.inc"
+
 extern sys_read
 extern sys_write
 extern sys_open
@@ -115,3 +117,4 @@ print_iretq_outputs:
 section .rodata
 in_syscall_msg: db "In syscall %i", 10, 0
 rbp_msg: db "RBP = %p", 10, 0
+rsp_msg: db "RSP in syscall handler = %p", 10, 0

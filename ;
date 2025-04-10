@@ -40,20 +40,29 @@ void push_gprs_in_task(Task *task, uint64_t new_task_rsp) {
     task->rsp -= 15 * 8;
 }
 
-pid_t fork(CallFrame *callframe) {
+pid_t fork(void) {
+    printf("\n === IN FORK ===\n\n");
     bool found = false;
     Task *initial_task = kernel.scheduler.current_task;
     Task *new_task     = task_add();
+    printf(" -> fork() inherits resources\n");
     memcpy(new_task->resources, initial_task->resources, sizeof(new_task->resources));
+    printf(" -> fork() empties child list\n");
     memset(new_task->children, 0, sizeof(new_task->children));
+    printf(" -> fork() sets other fields\n");
     new_task->entry    = kernel.scheduler.current_task->entry;
     new_task->parent   = kernel.scheduler.current_task;
     new_task->pml4     = (uint64_t) init_paging_task();
+    printf("new pml4 = %p\n", new_task->pml4);
     new_task->rsp      = kernel.scheduler.current_task->rsp;
     bool is_first      = true;
     uintptr_t mem = kmalloc(KERNEL_STACK_PAGES);
     map_pages((uint64_t*) (new_task->pml4 + kernel.hhdm), KERNEL_STACK_ADDR, mem, KERNEL_STACK_PAGES, KERNEL_PFLAG_PRESENT | KERNEL_PFLAG_WRITE);
-    if (!kernel.scheduler.current_task->memregion_list) goto endcopy;
+    printf("Mapped stack\n");
+    if (!kernel.scheduler.current_task->memregion_list) {
+        printf("Skipped\n");
+        goto endcopy;
+    }
     for (struct list *iter = &kernel.scheduler.current_task->memregion_list->list;
          iter != &kernel.scheduler.current_task->memregion_list->list || is_first;
          iter = iter->next
@@ -76,8 +85,8 @@ pid_t fork(CallFrame *callframe) {
         }
     }
     if (!found) {
-        printf("\nCouldn't fork, task already has too many children.\n");
-        HALT_DEVICE();
+        printf("Couldn't fork, task already has too many children.\n");
+        return 0;
     }
     size_t rsp;
     asm volatile("movq %%rsp, %0" : "=r" (rsp));
@@ -88,18 +97,35 @@ pid_t fork(CallFrame *callframe) {
         printf("\nFork failed, couldn't find of new address space\n");
         HALT_DEVICE();
     }
-    if (callframe) {
-        *((uint64_t*) (new_task_rsp -  8)) = 0x20 | 3;
-        *((uint64_t*) (new_task_rsp - 16)) = callframe->rsp;
-        *((uint64_t*) (new_task_rsp - 24)) = callframe->rflags;
-        *((uint64_t*) (new_task_rsp - 32)) = 0x18 | 3;
-        *((uint64_t*) (new_task_rsp - 40)) = (uint64_t) callframe->rip;
-        new_task->rsp -= 5 * 8;
-        push_gprs_in_task(new_task, new_task_rsp - 5 * 8);
-    }
+    *((uint64_t*) (new_task_rsp -  8)) = 0x10 | 0;
+    *((uint64_t*) (new_task_rsp - 16)) = KERNEL_STACK_PTR - 20 * 8 - (KERNEL_STACK_PTR - rsp);
+    *((uint64_t*) (new_task_rsp - 24)) = 0x200;
+    *((uint64_t*) (new_task_rsp - 32)) = 0x8 | 0;
+    *((uint64_t*) (new_task_rsp - 40)) = (uint64_t) &&new_task_starts_here;
+    new_task->rsp -= 5 * 8;
+    push_gprs_in_task(new_task, new_task_rsp - 5 * 8);
     // copy the stack over
+    uintptr_t copy_to = new_task_rsp - (KERNEL_STACK_PTR - *((uint64_t*) (new_task_rsp - 16)));
+    printf(" -> Copy %i bytes of stack from %p to %p\n", KERNEL_STACK_PTR - rsp, rsp, copy_to);
+    memcpy((void*) copy_to, (void*) rsp, KERNEL_STACK_PTR - rsp);
+    printf("Copied :)\n");
+    printf("BEFORE Parent, new task = %p\n", new_task);
+    printf("\n === SETTING FLAGS ===\n\n");
     new_task->flags = kernel.scheduler.current_task->flags; /* Flags are set last so that it's only 
                                                              * ever run after everything else is set up
                                                              * (because of the TASK_PRESENT flag) */
+new_task_starts_here:
+    // TODO: Remove debug messages once everything is *definitely* working
+    printf("Parent, new task = %p\n", new_task);
     return new_task->pid;
+    if (kernel.scheduler.current_task->pid == initial_task->pid) {
+        printf("Parent\n");
+        return new_task->pid;
+    } else if (kernel.scheduler.current_task->pid == new_task->pid) {
+        printf("Child\n");
+        return 0;
+    } else {
+        printf("Weird as fuck error in fork(), wtf??? (supposed to be unreachable but theoretically reachable)\n");
+        return 0;
+    }
 }
