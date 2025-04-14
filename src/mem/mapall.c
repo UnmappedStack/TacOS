@@ -58,6 +58,7 @@ void map_kernel(uint64_t pml4[], bool verbose) {
 }
 
 void map_all(uint64_t pml4[], bool verbose) {
+    printf("Map all to pml4 = %p\n", pml4);
     map_sections(pml4, verbose);
     map_kernel(pml4, verbose);
 }

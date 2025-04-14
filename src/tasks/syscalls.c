@@ -211,7 +211,7 @@ int sys_clock_gettime(size_t clockid, struct timespec *tp) {
 // TODO: actually yield properly
 void sys_sched_yield(void) {
     for (size_t i = 0; i < 3; i++)
-        asm volatile("hlt\n");
+        __asm__ volatile("hlt\n");
 }
 
 // major stub

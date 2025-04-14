@@ -9,20 +9,20 @@ void push_gprs_in_task(Task *task, uint64_t new_task_rsp) {
     size_t rax, rbx, rcx, rdx;
     size_t rsi, rdi, rbp;
     size_t r9, r10, r11, r12, r13, r14, r15;
-    asm volatile("mov %%rax, %0" : "=r" (rax));
-    asm volatile("mov %%rbx, %0" : "=r" (rbx));
-    asm volatile("mov %%rcx, %0" : "=r" (rcx));
-    asm volatile("mov %%rdx, %0" : "=r" (rdx));
-    asm volatile("mov %%rsi, %0" : "=r" (rsi));
-    asm volatile("mov %%rdi, %0" : "=r" (rdi));
-    asm volatile("mov %%rbp, %0" : "=r" (rbp));
-    asm volatile("mov %%r9,  %0" : "=r" (r9));
-    asm volatile("mov %%r10, %0" : "=r" (r10));
-    asm volatile("mov %%r11, %0" : "=r" (r11));
-    asm volatile("mov %%r12, %0" : "=r" (r12));
-    asm volatile("mov %%r13, %0" : "=r" (r13));
-    asm volatile("mov %%r14, %0" : "=r" (r14));
-    asm volatile("mov %%r15, %0" : "=r" (r15));
+    __asm__ volatile("mov %%rax, %0" : "=r" (rax));
+    __asm__ volatile("mov %%rbx, %0" : "=r" (rbx));
+    __asm__ volatile("mov %%rcx, %0" : "=r" (rcx));
+    __asm__ volatile("mov %%rdx, %0" : "=r" (rdx));
+    __asm__ volatile("mov %%rsi, %0" : "=r" (rsi));
+    __asm__ volatile("mov %%rdi, %0" : "=r" (rdi));
+    __asm__ volatile("mov %%rbp, %0" : "=r" (rbp));
+    __asm__ volatile("mov %%r9,  %0" : "=r" (r9));
+    __asm__ volatile("mov %%r10, %0" : "=r" (r10));
+    __asm__ volatile("mov %%r11, %0" : "=r" (r11));
+    __asm__ volatile("mov %%r12, %0" : "=r" (r12));
+    __asm__ volatile("mov %%r13, %0" : "=r" (r13));
+    __asm__ volatile("mov %%r14, %0" : "=r" (r14));
+    __asm__ volatile("mov %%r15, %0" : "=r" (r15));
     *((uint64_t*) (new_task_rsp - 8))   = rax;
     *((uint64_t*) (new_task_rsp - 16))  = rbx;
     *((uint64_t*) (new_task_rsp - 24))  = rcx;
@@ -80,7 +80,7 @@ pid_t fork(CallFrame *callframe) {
         HALT_DEVICE();
     }
     size_t rsp;
-    asm volatile("movq %%rsp, %0" : "=r" (rsp));
+    __asm__ volatile("movq %%rsp, %0" : "=r" (rsp));
     uint64_t new_task_rsp = virt_to_phys(
             (uint64_t*) (new_task->pml4 + kernel.hhdm), KERNEL_STACK_ADDR
         ) + kernel.hhdm + KERNEL_STACK_PAGES * PAGE_SIZE;

@@ -19,7 +19,7 @@ size_t strlen(const char *str) {
 }
 
 void *memset(void *dest, int x, size_t n) {
-    asm volatile(
+    __asm__ volatile(
         "rep stosb"
         : "=D"(dest), "=c"(n)
         : "D"(dest), "a"(x), "c"(n)
@@ -58,7 +58,7 @@ int memcmp(char *str1, char *str2, size_t bytes) {
 }
 
 void *memcpy(void *dest, const void *src, size_t n) {
-    asm volatile(
+    __asm__ volatile(
         "rep movsb"
         : "=D"(dest), "=S"(src), "=c"(n)
         : "D"(dest), "S"(src), "c"(n)
@@ -74,12 +74,12 @@ void *memmove(void *dest, const void *src, size_t n) {
         return memcpy(dest, src, n);
     } else if ((uintptr_t) dest > (uintptr_t) src) {
         // copy in reverse
-        asm volatile(
+        __asm__ volatile(
             "std\n"
             "rep movsb\n"
             "cld\n"
             : "=D"(dest), "=S"(src), "=c"(n)
-            : "D"(dest + n - 1), "S"(src + n - 1), "c"(n)
+            : "D"((uintptr_t) dest + n - 1), "S"((uintptr_t) src + n - 1), "c"(n)
             : "memory"
         );
         return dest;
