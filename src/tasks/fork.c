@@ -5,38 +5,8 @@
 #include <printf.h>
 #include <kernel.h>
 
-void push_gprs_in_task(Task *task, uint64_t new_task_rsp) {
-    size_t rax, rbx, rcx, rdx;
-    size_t rsi, rdi, rbp;
-    size_t r9, r10, r11, r12, r13, r14, r15;
-    __asm__ volatile("mov %%rax, %0" : "=r" (rax));
-    __asm__ volatile("mov %%rbx, %0" : "=r" (rbx));
-    __asm__ volatile("mov %%rcx, %0" : "=r" (rcx));
-    __asm__ volatile("mov %%rdx, %0" : "=r" (rdx));
-    __asm__ volatile("mov %%rsi, %0" : "=r" (rsi));
-    __asm__ volatile("mov %%rdi, %0" : "=r" (rdi));
-    __asm__ volatile("mov %%rbp, %0" : "=r" (rbp));
-    __asm__ volatile("mov %%r9,  %0" : "=r" (r9));
-    __asm__ volatile("mov %%r10, %0" : "=r" (r10));
-    __asm__ volatile("mov %%r11, %0" : "=r" (r11));
-    __asm__ volatile("mov %%r12, %0" : "=r" (r12));
-    __asm__ volatile("mov %%r13, %0" : "=r" (r13));
-    __asm__ volatile("mov %%r14, %0" : "=r" (r14));
-    __asm__ volatile("mov %%r15, %0" : "=r" (r15));
-    *((uint64_t*) (new_task_rsp - 8))   = rax;
-    *((uint64_t*) (new_task_rsp - 16))  = rbx;
-    *((uint64_t*) (new_task_rsp - 24))  = rcx;
-    *((uint64_t*) (new_task_rsp - 32))  = rdx;
-    *((uint64_t*) (new_task_rsp - 40))  = rsi;
-    *((uint64_t*) (new_task_rsp - 48))  = rdi;
-    *((uint64_t*) (new_task_rsp - 56))  = rbp;
-    *((uint64_t*) (new_task_rsp - 64))  = r9;
-    *((uint64_t*) (new_task_rsp - 72))  = r10;
-    *((uint64_t*) (new_task_rsp - 80))  = r11;
-    *((uint64_t*) (new_task_rsp - 88))  = r12;
-    *((uint64_t*) (new_task_rsp - 96))  = r13;
-    *((uint64_t*) (new_task_rsp - 104)) = r14;
-    *((uint64_t*) (new_task_rsp - 112)) = r15;
+void push_gprs_in_task(Task *task, uint64_t new_task_rsp, void *callframe) {
+    memcpy((void*) (new_task_rsp - 112), (void*) ((uintptr_t) callframe - 120), 128);
     task->rsp -= 15 * 8;
 }
 
@@ -95,7 +65,7 @@ pid_t fork(CallFrame *callframe) {
         *((uint64_t*) (new_task_rsp - 32)) = 0x18 | 3;
         *((uint64_t*) (new_task_rsp - 40)) = (uint64_t) callframe->rip;
         new_task->rsp -= 5 * 8;
-        push_gprs_in_task(new_task, new_task_rsp - 5 * 8);
+        push_gprs_in_task(new_task, new_task_rsp - 5 * 8, callframe);
     }
     // copy the stack over
     new_task->flags = kernel.scheduler.current_task->flags; /* Flags are set last so that it's only 
