@@ -22,6 +22,7 @@ int main(void) {
     }
     printf("Streams initiated.\n");
     pid_t pid = fork();
+    printf("fork returned %d\n", pid);
     for (;;);
     return 0;
 }

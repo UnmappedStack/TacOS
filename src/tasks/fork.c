@@ -6,9 +6,9 @@
 #include <kernel.h>
 
 void push_gprs_in_task(Task *task, uint64_t new_task_rsp, void *callframe) {
-    // TODO: ensure rax is zeroed out
     printf("gprs from 0x%p to 0x%p\n", callframe, new_task_rsp);
     memcpy((void*) (new_task_rsp - 8 * 15), (void*) ((uintptr_t) callframe - 8 * 14), 8 * 14);
+    *((uint64_t*) (new_task_rsp - 8)) = 0; // clear rax
     task->rsp -= 8 * 15;
 }
 
