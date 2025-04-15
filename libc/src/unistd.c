@@ -23,7 +23,7 @@ off_t lseek(int fd, size_t offset, int whence) {
 
 pid_t fork(void) {
     pid_t ret = __syscall0(6);
-    printf("forked\n");
+    printf("forked with %zu\n", ret);
     return ret;
 }
 

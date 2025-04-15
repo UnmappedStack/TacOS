@@ -1,5 +1,4 @@
-%macro pushall 0
-    push rax
+%macro pushmost 0
     push rbx
     push rcx
     push rdx
@@ -15,7 +14,7 @@
     push r14
     push r15
 %endmacro
-%macro popall 0
+%macro popmost 0
     pop r15
     pop r14
     pop r13
@@ -30,6 +29,13 @@
     pop rdx
     pop rcx
     pop rbx
+%endmacro
+%macro pushall 0
+    push rax
+    pushmost
+%endmacro
+%macro popall 0
+    popmost
     pop rax
 %endmacro
 %macro clearall 0

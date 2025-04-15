@@ -6,11 +6,13 @@
 #include <kernel.h>
 
 void push_gprs_in_task(Task *task, uint64_t new_task_rsp, void *callframe) {
-    memcpy((void*) (new_task_rsp - 8 * 15), (void*) ((uintptr_t) callframe - 8 * 15), 8 * 15);
-    task->rsp -= 8 * 16;
+    printf("gprs from 0x%p to 0x%p\n", callframe, new_task_rsp);
+    memcpy((void*) (new_task_rsp - 8 * 15), (void*) ((uintptr_t) callframe - 8 * 14), 8 * 14);
+    task->rsp -= 8 * 15;
 }
 
 pid_t fork(CallFrame *callframe) {
+    DISABLE_INTERRUPTS();
     bool found = false;
     Task *initial_task = kernel.scheduler.current_task;
     Task *new_task     = task_add();
@@ -73,5 +75,6 @@ pid_t fork(CallFrame *callframe) {
     new_task->flags = kernel.scheduler.current_task->flags; /* Flags are set last so that it's only 
                                                              * ever run after everything else is set up
                                                              * (because of the TASK_PRESENT flag) */
+    ENABLE_INTERRUPTS();
     return new_task->pid;
 }
