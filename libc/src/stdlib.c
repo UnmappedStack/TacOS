@@ -111,3 +111,9 @@ __attribute__((noreturn))
 void abort(void) {
     exit(1);
 }
+
+int system(const char *command) {
+    (void) command;
+    printf("TODO: system()\n");
+    return 0;
+}

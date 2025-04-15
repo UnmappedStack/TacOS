@@ -6,6 +6,8 @@ extern iretq_msg
 extern lock_pit
 extern unlock_pit
 
+%include "include/asm.inc"
+
 extern sys_read
 extern sys_write
 extern sys_open
@@ -25,6 +27,7 @@ extern sys_mkdir
 extern sys_lseek
 extern sys_clock_gettime
 extern sys_sched_yield
+extern sys_mmap
 
 syscall_lookup:
     dq sys_read          ; 0
@@ -45,6 +48,7 @@ syscall_lookup:
     dq sys_lseek         ; 15
     dq sys_clock_gettime ; 16
     dq sys_sched_yield   ; 17
+    dq sys_mmap          ; 18
 syscall_lookup_end:
 
 global syscall_isr
@@ -52,35 +56,9 @@ global syscall_isr
 syscall_isr:
     cmp rax, (syscall_lookup_end-syscall_lookup) / 8
     jge invalid_syscall
-    push rbp
-    push rbx
-    push rcx
-    push rdx
-    push rsi
-    push rdi
-    push r8
-    push r9
-    push r10
-    push r11
-    push r12
-    push r13
-    push r14
-    push r15
+    pushmost
     call [syscall_lookup + rax * 8]
-    pop r15
-    pop r14
-    pop r13
-    pop r12
-    pop r11
-    pop r10
-    pop r9
-    pop r8
-    pop rdi
-    pop rsi
-    pop rdx
-    pop rcx
-    pop rbx
-    pop rbp
+    popmost
     iretq
 
 invalid_syscall:
@@ -113,3 +91,4 @@ print_iretq_outputs:
 section .rodata
 in_syscall_msg: db "In syscall %i", 10, 0
 rbp_msg: db "RBP = %p", 10, 0
+rsp_msg: db "RSP in syscall handler = %p", 10, 0

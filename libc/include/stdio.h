@@ -2,8 +2,9 @@
 #include <stddef.h>
 #include <stdarg.h>
 #include <sprintf.h>
+#include <stdint.h>
 #define ssize_t long long   // TODO: Move these to their
-#define mode_t unsigned int // relevant header files
+#define mode_t uint32_t // relevant header files
 
 typedef enum {
     _IOFBF, // buffer when full
@@ -19,7 +20,9 @@ typedef struct {
     BufMode bufmode;
 } FILE;
 
+extern FILE *stdin;
 extern FILE *stdout;
+extern FILE *stderr;
 
 int putchar(int ch);
 int open(const char *pathname, int flags, mode_t mode);

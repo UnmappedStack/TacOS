@@ -1,17 +1,17 @@
 #pragma once
 
 #define DISABLE_INTERRUPTS() \
-    asm volatile ( \
+    __asm__ volatile ( \
         "cli" \
     )
 
 #define ENABLE_INTERRUPTS() \
-    asm volatile ( \
+    __asm__ volatile ( \
         "sti" \
     )
 
 #define WAIT_FOR_INTERRUPT() \
-    asm volatile ( \
+    __asm__ volatile ( \
         "hlt" \
     )
 
@@ -24,6 +24,6 @@
     } while (0)
 
 #define IO_WAIT() \
-    asm volatile ( \
+    __asm__ volatile ( \
         "outb %%al, $0x80" : : : "al" \
     )

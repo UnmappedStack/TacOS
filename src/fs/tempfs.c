@@ -1,4 +1,5 @@
 #include <fs/tempfs.h>
+#include <cpu.h>
 #include <printf.h>
 #include <mem/slab.h>
 #include <mem/pmm.h>
@@ -166,7 +167,7 @@ int tempfs_close(TempfsInode *file) {
 TempfsDirIter *tempfs_opendir(TempfsInode *dir) {
     if (dir->type != Directory) {
         printf("Cannot open directory because it's not a directory. dir = %p\n", dir);
-        asm volatile("int $0x0");
+        HALT_DEVICE();
         return NULL;
     }
     TempfsDirIter *buf = slab_alloc(kernel.tempfs_direntry_cache);

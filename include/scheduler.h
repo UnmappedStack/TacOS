@@ -51,8 +51,8 @@ typedef struct {
     pid_t        pid_upto;
 } SchedulerQueue;
 
-void init_scheduler();
-Task *task_add();
-Task *task_select();
+void init_scheduler(void);
+Task *task_add(void);
+Task *task_select(void);
 
 

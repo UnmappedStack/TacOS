@@ -7,9 +7,26 @@
 #include <syscall.h>
 #include <fcntl.h>
 
+FILE *stdin;
 FILE *stdout;
+FILE *stderr;
 
-#define stdout_fd 0
+void init_streams(void) {
+    stdin = (FILE*) malloc(sizeof(FILE));
+    stdin->fd = 0;
+    stdin->bufmode = _IONBF;
+
+    stdout = (FILE*) malloc(sizeof(FILE));
+    stdout->fd = 1;
+    stdout->buffer = (char*) malloc(512);
+    stdout->bufsz = 0;
+    stdout->bufmax = 512;
+    stdout->bufmode = _IOLBF;
+
+    stderr = (FILE*) malloc(sizeof(FILE));
+    stderr->fd = 2;
+    stderr->bufmode = _IONBF;
+}
 
 int remove(char *filename) {
     return __syscall1(13, (size_t) filename);
@@ -37,7 +54,8 @@ ssize_t read(int fd, void *buf, size_t count) {
 }
 
 int puts(char *str) {
-    write(stdout_fd, str, strlen(str));
+    write(stdout->fd, str, strlen(str));
+    putchar('\n');
     return 0;
 }
 
@@ -48,6 +66,8 @@ int vfprintf(FILE *stream, const char *fmt, va_list args) {
     char *buf = (char*) malloc(len);
     int ret = vsnprintf(buf, len, fmt, copy);
     fputs(buf, stream);
+    free(buf);
+    va_end(copy);
     return ret;
 }
 
@@ -68,7 +88,7 @@ int fprintf(FILE *stream, const char *fmt, ...) {
 }
 
 int putchar(int ch) {
-    write(stdout_fd, &ch, 1);
+    write(stdout->fd, &ch, 1);
     return ch;
 }
 
@@ -117,13 +137,6 @@ int fclose(FILE *stream) {
     return 0;
 }
 
-static bool char_in_mem(const char *ptr, char ch, size_t n) {
-    for (size_t i = 0; i < n; i++) {
-        if (ptr[i] == ch) return true;
-    }
-    return false;
-}
-
 size_t fwrite(const void *restrict ptr, size_t size, size_t nitems, 
         FILE *restrict stream) {
     size_t bytes = size * nitems;
@@ -141,7 +154,7 @@ size_t fwrite(const void *restrict ptr, size_t size, size_t nitems,
             }
         case _IOLBF:
             // Line buffering
-            if (char_in_mem(ptr, '\n', bytes)) {
+            if (memchr(ptr, '\n', bytes)) {
                 stream->bufsz = 0;
                 return write(stream->fd, ptr, bytes);
             } else {
@@ -182,6 +195,11 @@ size_t fread(void *ptr, size_t size, size_t nmemb, FILE *stream) {
 
 int sscanf(const char *str, const char *format, ...) {
     printf("TODO: sscanf is not implemented yet\n");
+    exit(1);
+}
+
+int __isoc99_sscanf(const char *str, const char *format, ...) {
+    printf("TODO: __isoc99_sscanf is not implemented yet\n");
     exit(1);
 }
 

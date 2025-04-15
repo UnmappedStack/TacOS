@@ -56,8 +56,8 @@ void init_GDT() {
         .offset = (uint64_t) kernel.GDT
     };
     // inline assembly because when has that ever been a dumb idea :P
-    asm volatile("lgdt (%0)" : : "r" (&gdtr));
-    asm volatile("mov $0x28, %%ax\nltr %%ax" : : : "eax");
+    __asm__ volatile("lgdt (%0)" : : "r" (&gdtr));
+    __asm__ volatile("mov $0x28, %%ax\nltr %%ax" : : : "eax");
     printf("gdt: %p\n", &kernel.GDT[0]);
     reload_gdt();
 }

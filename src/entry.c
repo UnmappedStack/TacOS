@@ -63,7 +63,7 @@ void cat(char *path) {
 
 void try_exec_init() {
     printf("Executing init.\n");
-    pid_t new_task = fork();
+    pid_t new_task = fork(NULL);
     if (!new_task) {
         printf("Context switch shouldn't yet be enabled, yet the kernel task is already running in a forked task. Halting device.\n");
         HALT_DEVICE();

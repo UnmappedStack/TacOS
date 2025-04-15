@@ -72,16 +72,6 @@ void *memmove(void *dest, const void *src, size_t n) {
     }
 }
 
-int toupper(char ch) {
-    if (ch >= 'a' && ch <= 'z') return ch - ('a' - 'A');
-    return ch;
-}
-
-int tolower(char ch) {
-    if (ch >= 'A' && ch <= 'Z') return ch + ('a' - 'A');
-    return ch;
-}
-
 char* strrchr(char *s, int c) {
     char *ret = NULL;
     for (size_t i = 0; s[i]; i++) {
@@ -92,6 +82,13 @@ char* strrchr(char *s, int c) {
 
 char* strchr(char *s, int c) {
     for (size_t i = 0; s[i]; i++) {
+        if (s[i] == c) return &s[i];
+    }
+    return NULL;
+}
+
+char* memchr(const char *s, int c, size_t n) {
+    for (size_t i = 0; i < n; i++) {
         if (s[i] == c) return &s[i];
     }
     return NULL;

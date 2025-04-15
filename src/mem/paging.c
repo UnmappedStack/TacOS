@@ -209,7 +209,7 @@ void alloc_pages(uint64_t pml4_addr[], uint64_t virt_addr, uint64_t num_pages, u
 }
 
 void clear_page_cache(uint64_t addr) {
-    asm volatile("invlpg (%0)" ::"r" (addr) : "memory");
+    __asm__ volatile("invlpg (%0)" ::"r" (addr) : "memory");
 }
 
 uint64_t* init_paging_task() {
