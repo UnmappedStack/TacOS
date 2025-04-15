@@ -67,10 +67,11 @@ void delete_memregion_list(Memregion **list) {
  * memory space, but otherwise it should copy the data as well.
  */
 Memregion *memregion_clone(Memregion *original, uint64_t old_uint64_tree, uint64_t new_uint64_tree) {
+    printf("Copy memregion, vaddr = 0x%p, flags = 0b%b, len = %i\n", original->addr, original->flags, original->num_pages);
     if (original->flags & KERNEL_PFLAG_WRITE) {
         // copy data and map
         void *dest = (void*) (kmalloc(original->num_pages) + kernel.hhdm);
-        size_t bytes_to_copy = PAGE_ALIGN_UP(original->num_pages) / 4096;
+        size_t bytes_to_copy = original->num_pages * 4096;
         read_vmem((uint64_t*) old_uint64_tree, original->addr, dest, bytes_to_copy);
         map_pages((uint64_t*) new_uint64_tree, original->addr, (uint64_t) dest - kernel.hhdm, original->num_pages, original->flags);
     } else {

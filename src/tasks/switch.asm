@@ -66,26 +66,26 @@ context_switch:
     cli
     eoi
     popall
-    ;; copy into regs
-    pop rsi
-    pop rdx
-    pop rcx
-    pop r8
-    pop r9
-    ;; keep frame on the stack
-    push r9
-    push r8
-    push rcx
-    push rdx
-    push rsi
-    ;; call it
-    pushall
-    mov rdi, iretq_msg
-    call printf
-    mov rdi, rsp_msg
-    mov rsi, rsp
-    call printf
-    popall
+;    ;; copy into regs
+;    pop rsi
+;    pop rdx
+;    pop rcx
+;    pop r8
+;    pop r9
+;    ;; keep frame on the stack
+;    push r9
+;    push r8
+;    push rcx
+;    push rdx
+;    push rsi
+;    ;; call it
+;    pushall
+;    mov rdi, iretq_msg
+;    call printf
+;    mov rdi, rsp_msg
+;    mov rsi, rsp
+;    call printf
+;    popall
     iretq
 
 section .rodata
