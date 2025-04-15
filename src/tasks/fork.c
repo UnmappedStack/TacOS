@@ -6,7 +6,7 @@
 #include <kernel.h>
 
 void push_gprs_in_task(Task *task, uint64_t new_task_rsp, void *callframe) {
-    memcpy((void*) (new_task_rsp - 112), (void*) ((uintptr_t) callframe - 120), 128);
+    memcpy((void*) (new_task_rsp - 112), (void*) ((uintptr_t) callframe - 120), 120);
     task->rsp -= 15 * 8;
 }
 
