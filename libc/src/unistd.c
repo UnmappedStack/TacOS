@@ -1,4 +1,5 @@
 #include <unistd.h>
+#include <stdio.h>
 #include <syscall.h>
 
 #if UINT32_MAX == UINTPTR_MAX
@@ -21,7 +22,9 @@ off_t lseek(int fd, size_t offset, int whence) {
 }
 
 pid_t fork(void) {
-    return __syscall0(6);
+    pid_t ret = __syscall0(6);
+    printf("forked\n");
+    return ret;
 }
 
 // TODO: argv, envp

@@ -18,11 +18,12 @@ extern increment_global_clock
 context_switch:
     pushall
     call increment_global_clock
-    call task_select ; next Task* is in rax
-    mov r15, rax
     ;; Save current rsp of *this* task
     call get_current_task
     mov [rax + TASK_RSP_OFF], rsp
+    ;; Select new task
+    call task_select ; next Task* is in rax
+    mov r15, rax
     ;; Switch page tree
     mov r11, [r15 + TASK_PML4_OFF]
     mov cr3, r11

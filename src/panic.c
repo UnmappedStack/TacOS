@@ -49,6 +49,7 @@ void exception_handler(IDTEFrame registers) {
     printf("CR2: 0x%p | RCX: 0x%p\n", registers.cr2, registers.rcx);
     printf("RDI: 0x%p | RDX: 0x%p\n", registers.rdi, registers.rdx);
     printf("RSI: 0x%p | CR3: 0x%p\n", registers.rsi,           cr3);
+    printf(" R8: 0x%p |  R9: 0x%p\n",  registers.r8,  registers.r9);
     if ((registers.ss & 0b11) != (registers.cs & 0b11)) {
         printf("SS and CS ring levels do not match up.\n");
     } else {

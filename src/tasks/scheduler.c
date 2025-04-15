@@ -50,7 +50,7 @@ Task *task_select() {
         }
         kernel.scheduler.current_task = (Task*) kernel.scheduler.current_task->list.next;
     }
-    printf("Switched to %i\n", kernel.scheduler.current_task->pid);
+    printf("Switched to %i (it's rsp is 0x%p)\n", kernel.scheduler.current_task->pid, kernel.scheduler.current_task->rsp);
     return (Task*) kernel.scheduler.current_task;
 }
 

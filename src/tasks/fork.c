@@ -6,8 +6,8 @@
 #include <kernel.h>
 
 void push_gprs_in_task(Task *task, uint64_t new_task_rsp, void *callframe) {
-    memcpy((void*) (new_task_rsp - 112), (void*) ((uintptr_t) callframe - 120), 120);
-    task->rsp -= 15 * 8;
+    memcpy((void*) (new_task_rsp - 8 * 15), (void*) ((uintptr_t) callframe - 8 * 15), 8 * 15);
+    task->rsp -= 8 * 16;
 }
 
 pid_t fork(CallFrame *callframe) {
@@ -19,7 +19,7 @@ pid_t fork(CallFrame *callframe) {
     new_task->entry    = kernel.scheduler.current_task->entry;
     new_task->parent   = kernel.scheduler.current_task;
     new_task->pml4     = (uint64_t) init_paging_task();
-    new_task->rsp      = kernel.scheduler.current_task->rsp;
+    new_task->rsp      = KERNEL_STACK_PTR;
     bool is_first      = true;
     uintptr_t mem = kmalloc(KERNEL_STACK_PAGES);
     map_pages((uint64_t*) (new_task->pml4 + kernel.hhdm), KERNEL_STACK_ADDR, mem, KERNEL_STACK_PAGES, KERNEL_PFLAG_PRESENT | KERNEL_PFLAG_WRITE);
@@ -65,7 +65,9 @@ pid_t fork(CallFrame *callframe) {
         *((uint64_t*) (new_task_rsp - 32)) = 0x18 | 3;
         *((uint64_t*) (new_task_rsp - 40)) = (uint64_t) callframe->rip;
         new_task->rsp -= 5 * 8;
+        printf(" -> new task rsp before = 0x%p\n", new_task->rsp);
         push_gprs_in_task(new_task, new_task_rsp - 5 * 8, callframe);
+        printf(" -> new task rsp after =  0x%p\n", new_task->rsp);
     }
     // copy the stack over
     new_task->flags = kernel.scheduler.current_task->flags; /* Flags are set last so that it's only 
