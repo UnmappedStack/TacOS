@@ -28,9 +28,7 @@ int main(int argc, char **argv) {
     printf("[INIT] Spawning child.\n\n");
     pid_t pid = fork();
     if (!pid) {
-        char *args[] = {"helloworld", "no", NULL};
-        printf("args is %p, args[0] = %p\n", args, args[0]);
-        execve("/usr/bin/helloworld", args);
+        execve("/usr/bin/helloworld", (char*[]) {"./helloworld", "i_am_taco", NULL});
         printf("[INIT] ERROR: init failed to execute child.\n");
     }
     for (;;);
