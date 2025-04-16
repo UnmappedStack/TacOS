@@ -45,7 +45,6 @@ int sys_read(int fd, char *buf, size_t count) {
 }
 
 size_t sys_write(int fd, char *buf, size_t count) {
-    printf("Args: %i, %p, %i\n", (uint64_t) fd, buf, count); 
     return vfs_write(CURRENT_TASK->resources[fd].f, buf, count, 0);
 }
 
@@ -67,8 +66,12 @@ int sys_getpid() {
     return CURRENT_TASK->pid;
 }
 
-int sys_execve(char *path) {
-    return execve(CURRENT_TASK, path);
+int sys_execve(char *path, char **argv) {
+    DISABLE_INTERRUPTS();
+    int e;
+    if ((e=execve(CURRENT_TASK, path, argv))) return e;
+    ENABLE_INTERRUPTS();
+    for (;;);
 }
 
 // TODO: Actually send a signal to the task and do clean up, report to it's parent

@@ -12,11 +12,19 @@ extern init_streams
 
 section .text
 _start:
-    push 0
+    sub rsp, 0
     mov rbp, rsp
     push rbp
+    ; save argc+argv
+    push rdi
+    push rsi
+    ; initiate everything the libc uses (streams, heap, etc)
     call init_libc
+    ; restore argc+argv & call entry
+    pop rsi
+    pop rdi
     call main
+    ; exit
     mov rdi, rax
     mov rax, 4
     int 0x80

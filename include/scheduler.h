@@ -42,6 +42,9 @@ struct Task {
     Resource      resources[MAX_RESOURCES];
     Child         children[MAX_CHILDREN];
     uintptr_t     program_break; // used for sbrk
+    char        **argv;
+    size_t        argc;
+    uint64_t      first_rsp;
 };
 
 typedef struct {

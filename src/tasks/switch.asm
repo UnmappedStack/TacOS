@@ -9,11 +9,14 @@ extern increment_global_clock
 
 %include "include/asm.inc"
 
-%define TASK_PID_OFF   16
-%define TASK_PML4_OFF  24
-%define TASK_RSP_OFF   32
-%define TASK_ENTRY_OFF 40
-%define TASK_FLAGS_OFF 64
+%define TASK_PID_OFF       16
+%define TASK_PML4_OFF      24
+%define TASK_RSP_OFF       32
+%define TASK_ENTRY_OFF     40
+%define TASK_FLAGS_OFF     64
+%define TASK_ARGV_OFF      720
+%define TASK_ARGC_OFF      728
+%define TASK_FIRST_RSP_OFF 736
 
 context_switch:
     pushall
@@ -34,6 +37,9 @@ context_switch:
     and r11, 0b100
     jz .previously_executed
 .first_exec:
+;    mov rdi, msg5
+;    mov rsi, [r15 + TASK_PID_OFF]
+;    call printf
     ;; Disable first exec flag
     mov r11, 0b100
     not r11
@@ -45,8 +51,8 @@ context_switch:
     mov rbx, 0x20
     or rbx, 3
     push rbx
-    ; rsp = 0x70000000000
-    mov rbx, 0x700000000000
+    ; rsp = 0x70000000000 - args_offset
+    mov rbx, [r15 + TASK_FIRST_RSP_OFF]
     push rbx
     ; rflags = 0x200
     mov rbx, 0x200
@@ -58,9 +64,16 @@ context_switch:
     ; rip = entry point in elf
     mov rbx, [r15 + TASK_ENTRY_OFF]
     push rbx
+    ; save argc+argv
+    mov rbx, [r15 + TASK_ARGC_OFF]
+    push rbx
+    mov rbx, [r15 + TASK_ARGV_OFF]
+    push rbx
     ;; clear all general purpose registers, send EOI to interrupt controller, and iretq
     eoi
     clearall
+    pop rsi
+    pop rdi
     iretq
 .previously_executed:
     cli
@@ -95,4 +108,4 @@ msg2: db " -> Context switch to task of PID=%i", 10, 0
 iretq_msg: db "Iretq frame: rip: 0x%p, cs: %i, rflags: 0x%x, rsp = 0x%p, ss = %i", 10, 0
 rsp_msg: db "RSP = %p", 10, 0
 msg4: db "In previously_executed", 10, 0
-msg5: db "In first exec", 10, 0
+msg5: db "In first exec, i=%i", 10, 0

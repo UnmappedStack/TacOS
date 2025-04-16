@@ -73,7 +73,7 @@ void try_exec_init() {
         printf("task_from_pid() failed, couldn't run init program (return NULL)\n");
         HALT_DEVICE();
     }
-    if (execve(task, "/usr/bin/init") < 0) {
+    if (execve(task, "/usr/bin/init", (char*[]) {"/usr/bin/init", NULL}) < 0) {
         printf("Failed to run init program, halting device (expected init program at /usr/bin/init).\n");
         HALT_DEVICE();
     }
