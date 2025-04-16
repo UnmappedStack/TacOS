@@ -47,7 +47,7 @@ int execve(Task *task, char *filename, char **argv) {
         printf("exec gives arg %s\n", argv[argc]);
         size_t len = strlen(argv[argc]) + 1;
         before_vals_off += len;
-        memcpy((void*) (usr_stack_paddr + PAGE_SIZE * USER_STACK_PAGES - before_vals_off + kernel.hhdm), argv[argc], len + 1);
+        memcpy((void*) (usr_stack_paddr + PAGE_SIZE * USER_STACK_PAGES - before_vals_off + kernel.hhdm), argv[argc], len);
         argv[argc] = (char*) (USER_STACK_PTR - before_vals_off);
     }
     // set up the actual array pointing to each string
