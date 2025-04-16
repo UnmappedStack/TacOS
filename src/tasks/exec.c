@@ -38,6 +38,26 @@ Task *task_from_pid(pid_t pid) {
 
 // TODO: Add envp
 int execve(Task *task, char *filename, char **argv) {
+    // get argc + copy argument strings to end of new stack
+    uintptr_t usr_stack_paddr = kmalloc(USER_STACK_PAGES);
+    size_t argc = 0;
+    size_t before_vals_off = 0;
+    printf("   === exec getting args (argv = %p, argv[0] = %p) ===\n", argv, argv[0]);
+    for (; argv[argc]; argc++) {
+        printf("exec gives arg %s\n", argv[argc]);
+        size_t len = strlen(argv[argc]) + 1;
+        before_vals_off += len;
+        memcpy((void*) (usr_stack_paddr + PAGE_SIZE * USER_STACK_PAGES - before_vals_off + kernel.hhdm), argv[argc], len + 1);
+        argv[argc] = (char*) (USER_STACK_PTR - before_vals_off);
+    }
+    // set up the actual array pointing to each string
+    size_t i = 1;
+    for (; i <= argc; i++)
+        *((char**)(usr_stack_paddr + PAGE_SIZE * USER_STACK_PAGES - before_vals_off - i * sizeof(char*) + kernel.hhdm)) = argv[argc - i];
+    i--;
+    task->argc = argc, task->argv = (char**)(USER_STACK_PTR - before_vals_off - i * sizeof(char*));
+    task->first_rsp = task->rsp = (uintptr_t) task->argv;
+    // parse and load the elf
     task->flags = 0;
     VfsFile *f = open(filename, 0);
     if (!f) {
@@ -76,7 +96,6 @@ int execve(Task *task, char *filename, char **argv) {
         printf("Header with type = %i, num %i, vaddr = %p, off = %i, size_vmem = %i, is writable = %i\n", program_header.type, i, program_header.virtual_address, program_header.offset, program_header.size_in_memory, (uint64_t) (program_header.flags & ELF_FLAG_WRITABLE));
         offset += file_header.program_header_entry_size;
     }
-    uintptr_t usr_stack_paddr = kmalloc(USER_STACK_PAGES);
     map_pages((uint64_t*) (task->pml4 + kernel.hhdm), USER_STACK_ADDR, usr_stack_paddr, USER_STACK_PAGES, KERNEL_PFLAG_WRITE | KERNEL_PFLAG_USER | KERNEL_PFLAG_PRESENT);
     add_memregion(&task->memregion_list, USER_STACK_ADDR, USER_STACK_PAGES, true, KERNEL_PFLAG_WRITE | KERNEL_PFLAG_USER | KERNEL_PFLAG_PRESENT);
     task->entry = (void*) file_header.entry;
@@ -87,24 +106,6 @@ int execve(Task *task, char *filename, char **argv) {
     close(f);
     task->flags = TASK_FIRST_EXEC | TASK_PRESENT;
     printf("\n -> execve(): Task %i has flags 0b%b, task ptr = 0x%p\n", task->pid, task->flags, &task->flags);
-    // get argc + copy argument strings to end of new stack
-    size_t argc = 0;
-    size_t before_vals_off = 0;
-    printf("   === exec getting args (argv = %p, argv[0] = %p) ===\n", argv, argv[0]);
-    for (; argv[argc]; argc++) {
-        printf("exec gives arg %s\n", argv[argc]);
-        size_t len = strlen(argv[argc]) + 1;
-        before_vals_off += len;
-        memcpy((void*) (usr_stack_paddr + PAGE_SIZE * USER_STACK_PAGES - before_vals_off + kernel.hhdm), argv[argc], len + 1);
-        argv[argc] = (char*) (USER_STACK_PTR - before_vals_off);
-    }
-    // set up the actual array pointing to each string
-    size_t i = 1;
-    for (; i <= argc; i++)
-        *((char**)(usr_stack_paddr + PAGE_SIZE * USER_STACK_PAGES - before_vals_off - i * sizeof(char*) + kernel.hhdm)) = argv[argc - i];
-    i--;
-    task->argc = argc, task->argv = (char**)(USER_STACK_PTR - before_vals_off - i * sizeof(char*));
-    task->first_rsp = task->rsp = (uintptr_t) task->argv;
     printf("first rsp offset = %i\n", offsetof(Task, first_rsp));
     return 0;
 }
