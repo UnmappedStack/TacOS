@@ -32,5 +32,5 @@ typedef struct {
     uint64_t align;
 } __attribute__((packed)) elf_program_header;
 
-int execve(Task *task, char *filename, char **argv);
+int execve(Task *task, char *filename, char **argv, char **envp);
 Task *task_from_pid(pid_t pid);

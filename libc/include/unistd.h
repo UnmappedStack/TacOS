@@ -14,4 +14,4 @@ typedef enum {
 void *sbrk(intptr_t increment);
 off_t lseek(int fd, size_t offset, int whence);
 pid_t fork(void);
-int execve(const char *path, char **argv);
+int execve(const char *path, char **argv, char **envp);

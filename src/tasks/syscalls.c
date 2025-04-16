@@ -66,10 +66,10 @@ int sys_getpid() {
     return CURRENT_TASK->pid;
 }
 
-int sys_execve(char *path, char **argv) {
+int sys_execve(char *path, char **argv, char **envp) {
     DISABLE_INTERRUPTS();
     int e;
-    if ((e=execve(CURRENT_TASK, path, argv))) return e;
+    if ((e=execve(CURRENT_TASK, path, argv, envp))) return e;
     ENABLE_INTERRUPTS();
     for (;;);
 }

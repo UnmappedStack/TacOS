@@ -36,15 +36,10 @@ Task *task_from_pid(pid_t pid) {
     return NULL; // none found
 }
 
-// TODO: Add envp
-int execve(Task *task, char *filename, char **argv) {
-    // get argc + copy argument strings to end of new stack
-    uintptr_t usr_stack_paddr = kmalloc(USER_STACK_PAGES);
+void setup_program_args(Task *task, char **argv, uintptr_t usr_stack_paddr, size_t from_end) {
     size_t argc = 0;
-    size_t before_vals_off = 0;
-    printf("   === exec getting args (argv = %p, argv[0] = %p) ===\n", argv, argv[0]);
+    size_t before_vals_off = from_end;
     for (; argv[argc]; argc++) {
-        printf("exec gives arg %s\n", argv[argc]);
         size_t len = strlen(argv[argc]) + 1;
         before_vals_off += len;
         memcpy((void*) (usr_stack_paddr + PAGE_SIZE * USER_STACK_PAGES - before_vals_off + kernel.hhdm), argv[argc], len);
@@ -52,11 +47,25 @@ int execve(Task *task, char *filename, char **argv) {
     }
     // set up the actual array pointing to each string
     size_t i = 1;
-    for (; i <= argc; i++)
-        *((char**)(usr_stack_paddr + PAGE_SIZE * USER_STACK_PAGES - before_vals_off - i * sizeof(char*) + kernel.hhdm)) = argv[argc - i];
+    printf("argc = %i\n", argc);
+    argv[argc] = NULL;
+    for (; i <= argc + 1; i++) {
+        *((char**)(usr_stack_paddr + PAGE_SIZE * USER_STACK_PAGES - before_vals_off - i * sizeof(char*) + kernel.hhdm)) = argv[argc + 1 - i];
+    }
     i--;
-    task->argc = argc, task->argv = (char**)(USER_STACK_PTR - before_vals_off - i * sizeof(char*));
-    task->first_rsp = task->rsp = (uintptr_t) task->argv;
+    if (from_end)
+        task->envp = (char**)(USER_STACK_PTR - before_vals_off - i * sizeof(char*));
+    else
+        task->argc = argc, task->argv = (char**)(USER_STACK_PTR - before_vals_off - i * sizeof(char*));
+}
+
+int execve(Task *task, char *filename, char **argv, char **envp) {
+    // get argc + copy argument strings to end of new stack
+    uintptr_t usr_stack_paddr = kmalloc(USER_STACK_PAGES);
+    setup_program_args(task, argv, usr_stack_paddr, /* stack end offset */ 0);
+    setup_program_args(task, envp, usr_stack_paddr,
+            /* stack end offset */ USER_STACK_PTR - (uintptr_t) task->argv);
+    task->first_rsp = task->rsp = (uintptr_t) task->envp - 16;
     // parse and load the elf
     task->flags = 0;
     VfsFile *f = open(filename, 0);

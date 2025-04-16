@@ -1,6 +1,7 @@
 [BITS 64]
 global _start
 global start_heap
+global environ
 extern main
 extern init_streams
 
@@ -15,12 +16,14 @@ _start:
     sub rsp, 0
     mov rbp, rsp
     push rbp
-    ; save argc+argv
+    ; save argc+argv+envp
     push rdi
     push rsi
+    push rdx
     ; initiate everything the libc uses (streams, heap, etc)
     call init_libc
-    ; restore argc+argv & call entry
+    ; restore argc+argv+envp & call entry
+    pop rdx
     pop rsi
     pop rdi
     call main
@@ -30,7 +33,10 @@ _start:
     int 0x80
     jmp $ ; in case exit failed, loop forever
 
+; takes envp in rdx
 init_libc:
+    ;; Save envp in **environ
+    mov [environ], rdx
     ;; Initiate the heap
     ; Move the program break forward by a page and get the initial program break
     mov rax, 11   ; sbrk(
@@ -49,4 +55,6 @@ init_libc:
 
 section .data
 start_heap:
+    dq 0
+environ:
     dq 0

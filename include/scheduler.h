@@ -45,6 +45,7 @@ struct Task {
     char        **argv;
     size_t        argc;
     uint64_t      first_rsp;
+    char        **envp;
 };
 
 typedef struct {

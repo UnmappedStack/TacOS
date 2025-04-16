@@ -17,6 +17,7 @@ extern increment_global_clock
 %define TASK_ARGV_OFF      720
 %define TASK_ARGC_OFF      728
 %define TASK_FIRST_RSP_OFF 736
+%define TASK_ENVP_OFF      744
 
 context_switch:
     pushall
@@ -64,14 +65,17 @@ context_switch:
     ; rip = entry point in elf
     mov rbx, [r15 + TASK_ENTRY_OFF]
     push rbx
-    ; save argc+argv
+    ; save argc+argv+envp
     mov rbx, [r15 + TASK_ARGC_OFF]
     push rbx
     mov rbx, [r15 + TASK_ARGV_OFF]
     push rbx
+    mov rbx, [r15 + TASK_ENVP_OFF]
+    push rbx
     ;; clear all general purpose registers, send EOI to interrupt controller, and iretq
     eoi
     clearall
+    pop rdx
     pop rsi
     pop rdi
     iretq

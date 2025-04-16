@@ -1,7 +1,7 @@
 #include <unistd.h>
 #include <stdio.h>
 
-int main(int argc, char **argv) {
+int main(int argc, char **argv, char **envp) {
     stdin  = fopen("/home/longfile.txt", "r"); // TODO: keyboard input + stdin stream
     stdout = fopen("/dev/tty0", "w");
     stderr = fopen("/dev/tty0", "w"); // same device, but no IO buffering
@@ -21,14 +21,18 @@ int main(int argc, char **argv) {
         return 1;
     }
     printf("[INIT] Initiated streams.\n");
-    printf("[INIT] Printing %d argument(s) passed from kernel\n", argc);
+    printf("[INIT] Listing %d argument(s) passed from kernel\n", argc);
     for (size_t i = 0; i < argc; i++) {
         printf("        -> %s\n", argv[i]);
+    }
+    printf("[INIT] Listing environmental variables.\n");
+    for (size_t i = 0; envp[i]; i++) {
+        printf("        -> %s\n", envp[i]);
     }
     printf("[INIT] Spawning child.\n\n");
     pid_t pid = fork();
     if (!pid) {
-        execve("/usr/bin/helloworld", (char*[]) {"./helloworld", "i_am_taco", NULL});
+        execve("/usr/bin/helloworld", (char*[]) {"./helloworld", "i_am_taco", NULL}, envp);
         printf("[INIT] ERROR: init failed to execute child.\n");
     }
     for (;;);
