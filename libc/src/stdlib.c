@@ -4,6 +4,8 @@
 #include <unistd.h>
 #include <syscall.h>
 
+char **environ;
+
 __attribute__((noreturn))
 void exit(int status) {
     __syscall1(4, status);
@@ -116,4 +118,20 @@ int system(const char *command) {
     (void) command;
     printf("TODO: system()\n");
     return 0;
+}
+
+void init_environ(char **envp) {
+    size_t num_envp = 0;
+    for (; envp[num_envp]; num_envp++);
+    num_envp++;
+    environ = (char**) malloc(sizeof(char*) * num_envp);
+    memcpy(environ, envp, sizeof(char*) * num_envp);
+}
+
+char *getenv(char *key) {
+    size_t len = strlen(key);
+    for (size_t i = 0; environ[i]; i++) {
+        if (!memcmp(environ[i], key, len - 1)) return &environ[i][len+1];
+    }
+    return NULL;
 }

@@ -25,7 +25,6 @@ pid_t fork(void) {
     return __syscall0(6);
 }
 
-// TODO: argv, envp
 int execve(const char *path, char **argv, char **envp) {
     return __syscall3(7, (size_t) path, (size_t) argv, (size_t) envp);
 }

@@ -1,8 +1,8 @@
 [BITS 64]
 global _start
 global start_heap
-global environ
 extern main
+extern init_environ
 extern init_streams
 
 %define HEAP_VERIFY_OFF        0
@@ -35,8 +35,6 @@ _start:
 
 ; takes envp in rdx
 init_libc:
-    ;; Save envp in **environ
-    mov [environ], rdx
     ;; Initiate the heap
     ; Move the program break forward by a page and get the initial program break
     mov rax, 11   ; sbrk(
@@ -50,11 +48,11 @@ init_libc:
     mov qword [rax + HEAP_REQUIRED_SIZE_OFF], 4095
     mov byte  [rax + HEAP_FREE_OFF         ], 1
     ;; Initiate other stuff
+    mov rdi, rdx
+    call init_environ
     call init_streams
     ret
 
 section .data
 start_heap:
-    dq 0
-environ:
     dq 0
