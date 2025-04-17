@@ -33,7 +33,8 @@ int execve(const char *path, char **argv, char **envp) {
 
 extern char **environ;
 int execvp(const char *path, char **argv) {
-    if (path[0] == '/')
+    int contains_slash = strchr(path, '/') != NULL;
+    if (path[0] == '/' || contains_slash)
         return execve(path, argv, environ);
     char *pathlist = getenv("PATH");
     if (!pathlist) {

@@ -42,7 +42,7 @@ int main(int argc, char **argv, char **envp) {
         waitpid(2, &status, 0);
         printf("\n[INIT] Child has finished executing.\n");
     } else {
-        execvp("helloworld", (char*[]) {"helloworld", "i_am_taco", NULL});
+        execvp("/usr/bin/helloworld", (char*[]) {"helloworld", "i_am_taco", NULL});
         printf("[INIT] ERROR: init failed to execute child.\n");
     }
     for (;;);
