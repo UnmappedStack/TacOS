@@ -120,18 +120,45 @@ int system(const char *command) {
     return 0;
 }
 
+size_t num_envp = 0;
 void init_environ(char **envp) {
-    size_t num_envp = 0;
     for (; envp[num_envp]; num_envp++);
     num_envp++;
     environ = (char**) malloc(sizeof(char*) * num_envp);
     memcpy(environ, envp, sizeof(char*) * num_envp);
 }
 
-char *getenv(char *key) {
-    size_t len = strlen(key);
+int get_env_idx(char *key, size_t key_len) {
     for (size_t i = 0; environ[i]; i++) {
-        if (!memcmp(environ[i], key, len - 1)) return &environ[i][len+1];
+        if (!memcmp(environ[i], key, key_len - 1)) return i;
     }
-    return NULL;
+    return -1;
 }
+
+char *getenv(char *key) {
+    size_t key_len = strlen(key);
+    int idx = get_env_idx(key, key_len);
+    return (idx < 0) ? NULL : &environ[idx][key_len + 1];
+}
+
+int setenv(char *key, char *val, int overwrite) {
+    size_t key_len = strlen(key);
+    int idx = get_env_idx(key, key_len);
+    if (idx >= 0 && !overwrite) return 0;
+    else if (idx < 0) {
+        environ = (char**) realloc(environ, ++num_envp * sizeof(char*));
+        idx = num_envp - 2;
+        environ[idx + 1] = 0;
+    }
+    size_t val_len = strlen(val) + 1;
+    environ[idx] = (char*) malloc(val_len + strlen(key) + 1);
+    sprintf(environ[idx], "%s=%s", key, val);
+    return 0;
+}
+
+
+
+
+
+
+

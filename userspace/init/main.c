@@ -30,8 +30,6 @@ int main(int argc, char **argv, char **envp) {
     for (size_t i = 0; envp[i]; i++) {
         printf("        -> %s\n", envp[i]);
     }
-    printf("[INIT] Value of TACOS is %s, value of TORTILLAS is %s, value of NACHOS is %s\n",
-            getenv("TACOS"), getenv("TORTILLAS"), getenv("NACHOS")); 
     printf("[INIT] Spawning child.\n\n");
     pid_t pid = fork();
     if (!pid) {

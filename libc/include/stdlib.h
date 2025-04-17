@@ -23,3 +23,4 @@ double atof(const char *nptr);
 int atoi(const char *nptr);
 int system(const char *command);
 char *getenv(char *key);
+int setenv(char *key, char *val, int overwrite);
