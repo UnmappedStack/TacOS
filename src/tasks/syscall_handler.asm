@@ -28,6 +28,7 @@ extern sys_lseek
 extern sys_clock_gettime
 extern sys_sched_yield
 extern sys_mmap
+extern sys_waitpid
 
 syscall_lookup:
     dq sys_read          ; 0
@@ -49,6 +50,7 @@ syscall_lookup:
     dq sys_clock_gettime ; 16
     dq sys_sched_yield   ; 17
     dq sys_mmap          ; 18
+    dq sys_waitpid       ; 19
 syscall_lookup_end:
 
 global syscall_isr

@@ -43,6 +43,7 @@ int fclose(FILE *stream);
 size_t fwrite(const void *restrict ptr, size_t size, size_t nitems,
     FILE *restrict stream);
 int fputs(const char *str, FILE *stream);
+char *fgets(char *str, int n, FILE *stream);
 int fflush(FILE *stream);
 int setvbuf(FILE *stream, char *buffer, int mode, size_t size);
 size_t fread(void *ptr, size_t size, size_t nmemb, FILE *stream);

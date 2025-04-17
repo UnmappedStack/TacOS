@@ -120,6 +120,23 @@ int sys_wait(int *status) {
     }
 }
 
+int sys_waitpid(int pid, int *status, int options) {
+    // TODO: Write status info to *status and take options into consideration
+    (void) status, (void) options;
+    if (pid <= 0) {
+        printf("TODO: waitpid does not yet support <=0 for the pid\n");
+        return -1;
+    }
+    // find child with needed pid
+    for (size_t i = 0; i < MAX_CHILDREN; i++) {
+        if (CURRENT_TASK->children[i].pid != (size_t) pid) continue;
+        while (!(task_from_pid(CURRENT_TASK->children[i].pid)->flags & TASK_DEAD))
+            IO_WAIT();
+        return 0;
+    }
+    return -1; // pid not found in children
+}
+
 uintptr_t sys_sbrk(intptr_t increment) {
     if (!increment) {
         printf("sbrk return %p (inc 0)\n", CURRENT_TASK->program_break);

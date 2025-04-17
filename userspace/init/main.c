@@ -1,9 +1,10 @@
 #include <unistd.h>
+#include <sys/wait.h>
 #include <stdlib.h>
 #include <stdio.h>
 
 int main(int argc, char **argv, char **envp) {
-    stdin  = fopen("/home/longfile.txt", "r"); // TODO: keyboard input + stdin stream
+    stdin  = fopen("/dev/kb0", "r");
     stdout = fopen("/dev/tty0", "w");
     stderr = fopen("/dev/tty0", "w"); // same device, but no IO buffering
     setvbuf(stdin, NULL, _IOLBF, 0);
@@ -33,7 +34,11 @@ int main(int argc, char **argv, char **envp) {
     }
     printf("[INIT] Spawning child.\n\n");
     pid_t pid = fork();
-    if (!pid) {
+    if (pid) {
+        int status;
+        waitpid(2, &status, 0);
+        printf("\n[INIT] Child has finished executing.\n");
+    } else {
         execvp("helloworld", (char*[]) {"helloworld", "i_am_taco", NULL});
         printf("[INIT] ERROR: init failed to execute child.\n");
     }

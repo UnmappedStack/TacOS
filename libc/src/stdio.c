@@ -176,6 +176,11 @@ int fputs(const char *str, FILE *stream) {
     return 0;
 }
 
+char *fgets(char *str, int n, FILE *stream) {
+    fread(str, n, 1, stream);
+    return str;
+}
+
 int fflush(FILE *stream) {
     write(stream->fd, stream->buffer, stream->bufsz);
     return 0;
