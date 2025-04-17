@@ -47,7 +47,6 @@ void setup_program_args(Task *task, char **argv, uintptr_t usr_stack_paddr, size
     }
     // set up the actual array pointing to each string
     size_t i = 1;
-    printf("argc = %i\n", argc);
     argv[argc] = NULL;
     for (; i <= argc + 1; i++) {
         *((char**)(usr_stack_paddr + PAGE_SIZE * USER_STACK_PAGES - before_vals_off - i * sizeof(char*) + kernel.hhdm)) = argv[argc + 1 - i];

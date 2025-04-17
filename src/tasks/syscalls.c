@@ -28,6 +28,7 @@ int sys_open(char *filename, int flags, int mode) {
     for (; file_descriptor < MAX_RESOURCES; file_descriptor++) {
         if (current_task->resources[file_descriptor].f) continue;
         current_task->resources[file_descriptor].f = open((char*) filename, flags);
+        if (!current_task->resources[file_descriptor].f) return -1;
         current_task->resources[file_descriptor].offset = 0;
         printf("Opened %s to file descriptor %i\n", filename, file_descriptor);
         return file_descriptor;

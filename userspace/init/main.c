@@ -22,6 +22,7 @@ int main(int argc, char **argv, char **envp) {
         return 1;
     }
     printf("[INIT] Initiated streams.\n");
+    setenv("PATH", "/usr/bin", false);
     printf("[INIT] Listing %d argument(s) passed from kernel\n", argc);
     for (size_t i = 0; i < argc; i++) {
         printf("        -> %s\n", argv[i]);
@@ -33,7 +34,7 @@ int main(int argc, char **argv, char **envp) {
     printf("[INIT] Spawning child.\n\n");
     pid_t pid = fork();
     if (!pid) {
-        execve("/usr/bin/helloworld", (char*[]) {"./helloworld", "i_am_taco", NULL}, envp);
+        execvp("helloworld", (char*[]) {"helloworld", "i_am_taco", NULL});
         printf("[INIT] ERROR: init failed to execute child.\n");
     }
     for (;;);
