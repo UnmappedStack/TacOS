@@ -24,6 +24,9 @@ int main(int argc, char **argv, char **envp) {
     }
     printf("[INIT] Initiated streams.\n");
     setenv("PATH", "/usr/bin", false);
+    printf("[INIT] Iniatiated $PATH\n");
+    chdir("/");
+    printf("[INIT] Set initial current working directory\n");
     printf("[INIT] Listing %d argument(s) passed from kernel\n", argc);
     for (size_t i = 0; i < argc; i++) {
         printf("        -> %s\n", argv[i]);

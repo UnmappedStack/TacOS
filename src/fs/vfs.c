@@ -86,9 +86,13 @@ void *find_direntry(VfsDrive *drive, VfsDirIter *dir, char *name) {
 }
 
 VfsFile *vfs_access(char *path, int flags, VfsAccessType type) {
+    char path_from_rel[MAX_PATH_LEN];
     if (*path != '/') {
-        printf("Relative path accessing is not yet supported (TODO).\n");
-        return NULL;
+        char *cwd = kernel.scheduler.current_task->cwd;
+        size_t cwd_len = strlen(cwd);
+        memcpy(path_from_rel, cwd, cwd_len);
+        memcpy(path_from_rel + cwd_len, path, strlen(path));
+        path = path_from_rel;
     }
     if (strlen(path) >= MAX_PATH_LEN) {
         printf("Path is too long (max length is currently %i bytes)\n", MAX_PATH_LEN);

@@ -61,3 +61,11 @@ int execvp(const char *path, char **argv) {
     printf("execvp failed: not found on $PATH\n");
     return -1;
 }
+
+int chdir(const char *path) {
+    return __syscall1(21, (size_t) path);
+}
+
+char *getcwd(char *buf, size_t size) {
+    return (char*) __syscall2(20, (size_t) buf, size);
+}

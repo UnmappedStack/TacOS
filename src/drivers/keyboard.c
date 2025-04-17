@@ -146,8 +146,9 @@ int kb_read(void *f, char *buf, size_t len, size_t off) {
     current_input_data.current_buffer    = buf;
     current_input_data.buffer_size       = len - 1;
     lock_pit();
-    ENABLE_INTERRUPTS();
+    unmask_irq(1);
     while (current_input_data.currently_reading) outb(0x80, 0);
+    mask_irq(1);
     current_input_data.current_buffer = 0;
     current_input_data.input_len      = 0;
     // clear the cursor
@@ -167,5 +168,4 @@ void init_keyboard() {
     };
     mkdevice("/dev/kb0", ttydev_ops);
     set_IDT_entry(33, (void*) keyboard_isr, 0x8E, kernel.IDT);
-    unmask_irq(1);
 }

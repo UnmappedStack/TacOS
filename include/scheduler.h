@@ -46,6 +46,7 @@ struct Task {
     size_t        argc;
     uint64_t      first_rsp;
     char        **envp;
+    char          cwd[MAX_PATH_LEN];
 };
 
 typedef struct {

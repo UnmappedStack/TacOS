@@ -256,3 +256,18 @@ void* sys_mmap(void *addr, size_t length, int prot, int flags,
     }
     return kernel.framebuffer.addr;
 }
+
+int sys_chdir(char *path) {
+    size_t len = strlen(path);
+    memcpy(CURRENT_TASK->cwd, path, len + 1);
+    if (CURRENT_TASK->cwd[len - 1] != '/') {
+        CURRENT_TASK->cwd[len] = '/';
+        CURRENT_TASK->cwd[len + 1]     = '\0';
+    }
+    return 0;
+}
+
+char *sys_getcwd(char *buf, size_t n) {
+    memcpy(buf, CURRENT_TASK->cwd, (n > MAX_PATH_LEN) ? MAX_PATH_LEN : n);
+    return buf;
+}
