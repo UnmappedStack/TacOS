@@ -23,7 +23,7 @@ void run_program(char *program_file, char *argv[]) {
 }
 
 void run_cmd(char *cmd) {
-    if (!*cmd) return;
+    if (!*cmd || *cmd == '#') return;
     char *argv[10];
     memset(argv, 0, 10 * sizeof(char*));
     size_t argc = 0;

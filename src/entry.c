@@ -22,6 +22,8 @@
 #include <scheduler.h>
 #include <fork.h>
 
+extern void enable_sse();
+
 Kernel kernel = {0};
 
 void ls(char *path) {
@@ -93,6 +95,7 @@ void _start() {
     init_TSS();
     init_GDT();
     init_IDT();
+    enable_sse();
     init_exceptions();
     init_paging();
     switch_page_structures();
