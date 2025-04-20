@@ -258,6 +258,12 @@ void* sys_mmap(void *addr, size_t length, int prot, int flags,
 }
 
 int sys_chdir(char *path) {
+    char buf[MAX_PATH_LEN];
+    if (path[0] != '/') {
+        strcpy(buf, CURRENT_TASK->cwd);
+        strcpy(buf + strlen(CURRENT_TASK->cwd), path);
+        path = buf;
+    }
     size_t len = strlen(path);
     memcpy(CURRENT_TASK->cwd, path, len + 1);
     if (CURRENT_TASK->cwd[len - 1] != '/') {

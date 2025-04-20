@@ -3,6 +3,16 @@
 #include <stdlib.h>
 #include <stdio.h>
 
+char *ascii_art = " ________                     ______    ______  \n"
+"|        \\                   /      \\  /      \\\n" 
+" \\$$$$$$$$______    _______ |  $$$$$$\\|  $$$$$$\\\n"
+"   | $$  |      \\  /       \\| $$  | $$| $$___\\$$\n"
+"   | $$   \\$$$$$$\\|  $$$$$$$| $$  | $$ \\$$    \\ \n"
+"   | $$  /      $$| $$      | $$  | $$ _\\$$$$$$\\\n"
+"   | $$ |  $$$$$$$| $$_____ | $$__/ $$|  \\__| $$\n"
+"   | $$  \\$$    $$ \\$$     \\ \\$$    $$ \\$$    $$\n"
+"    \\$$   \\$$$$$$$  \\$$$$$$$  \\$$$$$$   \\$$$$$$ \n";
+
 int main(int argc, char **argv, char **envp) {
     stdin  = fopen("/dev/kb0", "r");
     stdout = fopen("/dev/tty0", "w");
@@ -22,27 +32,17 @@ int main(int argc, char **argv, char **envp) {
         fprintf(stderr, "stderr is wrong file descriptor (init)! (fd = %d)\n", stderr->fd);
         return 1;
     }
-    printf("[INIT] Initiated streams.\n");
     setenv("PATH", "/usr/bin", false);
-    printf("[INIT] Iniatiated $PATH\n");
     chdir("/");
-    printf("[INIT] Set initial current working directory\n");
-    printf("[INIT] Listing %d argument(s) passed from kernel\n", argc);
-    for (size_t i = 0; i < argc; i++) {
-        printf("        -> %s\n", argv[i]);
-    }
-    printf("[INIT] Listing environmental variables.\n");
-    for (size_t i = 0; envp[i]; i++) {
-        printf("        -> %s\n", envp[i]);
-    }
-    printf("[INIT] Spawning child.\n\n");
     pid_t pid = fork();
     if (pid) {
         int status;
         waitpid(2, &status, 0);
-        printf("\n[INIT] Child has finished executing.\n");
+        printf("\n[INIT] Child shell has finished executing.\n");
     } else {
-        execvp("/usr/bin/helloworld", (char*[]) {"helloworld", "i_am_taco", NULL});
+        printf("%s\nWelcome to TacOS! This message is from /usr/bin/init. Spawning shell (/usr/bin/shell) now.\n"
+               "See /home/README.txt for more information.\n", ascii_art);
+        execvp("/usr/bin/shell", (char*[]) {"/usr/bin/shell", NULL});
         printf("[INIT] ERROR: init failed to execute child.\n");
     }
     for (;;);

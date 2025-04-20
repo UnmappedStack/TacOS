@@ -74,9 +74,11 @@ void free(void *addr) {
 
 void* realloc(void *addr, size_t sz) {
     void *new = malloc(sz);
+    if (!addr) return new;
     HeapPool *this_pool = (HeapPool*) (((uint64_t)addr) - sizeof(HeapPool));
     if (this_pool->verify != 69) {
         printf("Heap corruption detected in realloc()\n");
+        printf("addr is %p, verify val is %d\n", addr, this_pool->verify);
         exit(1);
     }
     memcpy(new, addr, this_pool->size);

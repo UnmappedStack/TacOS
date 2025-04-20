@@ -183,6 +183,7 @@ char *fgets(char *str, int n, FILE *stream) {
 
 int fflush(FILE *stream) {
     write(stream->fd, stream->buffer, stream->bufsz);
+    stream->bufsz = 0;
     return 0;
 }
 

@@ -15,10 +15,16 @@ int strcmp(const char *s1, const char *s2) {
     return *(const unsigned char*) s1 - *(const unsigned char*) s2;
 }
 
-int memcmp(const char *s1, const char *s2, size_t n) {
-    size_t i = 0;
-    for (; (s1[i] == s2[i]) && (i < n); i++);
-    return ((const unsigned char*) s1)[i] - ((const unsigned char*) s2)[i];
+int memcmp(const void *s1, const void *s2, size_t n) {
+    const unsigned char *p1 = s1;
+    const unsigned char *p2 = s2;
+    while (n--) {
+        if (*p1 != *p2)
+            return (int)(*p1 - *p2);
+        p1++;
+        p2++;
+    }
+    return 0;
 }
 
 int strncmp(const char *s1, const char *s2, size_t n) {
