@@ -70,8 +70,9 @@ int vfprintf(FILE *stream, const char *fmt, va_list args) {
     va_end(copy);
     return ret;
 }
-
+int set = 0;
 int printf(const char *fmt, ...) {
+    set = 1;
     va_list args;
     va_start(args, fmt);
     int ret = vfprintf(stdout, fmt, args);
@@ -155,8 +156,11 @@ size_t fwrite(const void *restrict ptr, size_t size, size_t nitems,
         case _IOLBF:
             // Line buffering
             if (memchr(ptr, '\n', bytes)) {
+                memcpy(&stream->buffer[stream->bufsz], ptr, bytes);
+                stream->bufsz += bytes;
+                size_t ret = write(stream->fd, stream->buffer, stream->bufsz);
                 stream->bufsz = 0;
-                return write(stream->fd, ptr, bytes);
+                return ret;
             } else {
                 memcpy(&stream->buffer[stream->bufsz], ptr, bytes);
                 stream->bufsz += bytes;
@@ -186,7 +190,6 @@ int fflush(FILE *stream) {
     stream->bufsz = 0;
     return 0;
 }
-
 int setvbuf(FILE *stream, char *buffer, int mode, size_t size) {
     if (buffer) {
         stream->buffer = buffer;
