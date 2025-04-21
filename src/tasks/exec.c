@@ -110,7 +110,6 @@ int execve(Task *task, char *filename, char **argv, char **envp) {
     task->program_break = PAGE_ALIGN_UP(end_of_executable);
     alloc_pages((uint64_t*) (task->pml4 + kernel.hhdm), task->program_break, 1, KERNEL_PFLAG_WRITE | KERNEL_PFLAG_PRESENT | KERNEL_PFLAG_USER);
     add_memregion(&task->memregion_list, task->program_break, 1, true, KERNEL_PFLAG_WRITE | KERNEL_PFLAG_PRESENT | KERNEL_PFLAG_USER);
-    task->program_break++;
     close(f);
     task->flags = TASK_FIRST_EXEC | TASK_PRESENT;
     printf("\n -> execve(): Task %i has flags 0b%b, task ptr = 0x%p\n", task->pid, task->flags, &task->flags);

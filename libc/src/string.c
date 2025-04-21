@@ -115,7 +115,9 @@ char* strstr(char *str, const char *needle) {
 }
 
 char* strdup(const char *s) {
-    char *ret = (char*) malloc(strlen(s) + 1);
-    strcpy(ret, s);
+    size_t len = strlen(s);
+    char *ret = (char*) malloc(len + 1);
+    memcpy(ret, s, len);
+    ret[len] = 0;
     return ret;
 }

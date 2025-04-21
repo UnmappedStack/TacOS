@@ -39,9 +39,11 @@ void* split_pool(HeapPool *pool_addr, uint64_t size) {
 }
 
 void* heap_grow(size_t size, HeapPool *this_pool) {
-    uint64_t new_pool_size = PAGE_ALIGN_UP(size + sizeof(HeapPool));
+    size_t max = (size > 4096) ? size * 2 : 4096;
+    uint64_t new_pool_size = PAGE_ALIGN_UP(max + sizeof(HeapPool));
     this_pool->next = sbrk(new_pool_size);
     *((HeapPool*) this_pool->next) = create_pool(new_pool_size, size + sizeof(HeapPool), 0, false);
+    memset(this_pool->next, 0, new_pool_size);
     return (void*) ((HeapPool*) this_pool->next)->data;
 }
 
@@ -158,9 +160,6 @@ int setenv(char *key, char *val, int overwrite) {
     return 0;
 }
 
-
-
-
-
-
-
+int abs(int j) {
+    return j & ~0x7FFFFFFF;
+}

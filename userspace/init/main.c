@@ -33,7 +33,7 @@ int main(int argc, char **argv, char **envp) {
         return 1;
     }
     setenv("PATH", "/usr/bin", false);
-    chdir("/");
+    chdir("/home");
     pid_t pid = fork();
     if (pid) {
         int status;

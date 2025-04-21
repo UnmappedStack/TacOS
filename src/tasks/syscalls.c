@@ -28,11 +28,12 @@ int sys_open(char *filename, int flags, int mode) {
     for (; file_descriptor < MAX_RESOURCES; file_descriptor++) {
         if (current_task->resources[file_descriptor].f) continue;
         current_task->resources[file_descriptor].f = open((char*) filename, flags);
-        if (!current_task->resources[file_descriptor].f) return -1;
+        if (!current_task->resources[file_descriptor].f) goto err;
         current_task->resources[file_descriptor].offset = 0;
         printf("Opened %s to file descriptor %i\n", filename, file_descriptor);
         return file_descriptor;
     }
+err:
     printf("Couldn't open file %s\n", filename);
     return -1;
 }
@@ -143,14 +144,13 @@ uintptr_t sys_sbrk(intptr_t increment) {
         return CURRENT_TASK->program_break;
     }
     uintptr_t previous_break = CURRENT_TASK->program_break;
-    CURRENT_TASK->program_break += increment;
-    if (!(CURRENT_TASK->program_break % PAGE_SIZE) ||
-         (PAGE_ALIGN_DOWN(CURRENT_TASK->program_break) > PAGE_ALIGN_DOWN(previous_break))) {
+    CURRENT_TASK->program_break += PAGE_ALIGN_UP(increment);
+    if (CURRENT_TASK->program_break > previous_break) {
         size_t num_new_pages = PAGE_ALIGN_UP(increment) / 4096;
-        alloc_pages((uint64_t*) (CURRENT_TASK->pml4 + kernel.hhdm), CURRENT_TASK->program_break, num_new_pages, KERNEL_PFLAG_WRITE | KERNEL_PFLAG_PRESENT | KERNEL_PFLAG_USER);
-        add_memregion(&CURRENT_TASK->memregion_list, CURRENT_TASK->program_break, num_new_pages, true, KERNEL_PFLAG_WRITE | KERNEL_PFLAG_PRESENT | KERNEL_PFLAG_USER);
+        alloc_pages((uint64_t*) (CURRENT_TASK->pml4 + kernel.hhdm), previous_break, num_new_pages, KERNEL_PFLAG_WRITE | KERNEL_PFLAG_PRESENT | KERNEL_PFLAG_USER);
+        add_memregion(&CURRENT_TASK->memregion_list, previous_break, num_new_pages, true, KERNEL_PFLAG_WRITE | KERNEL_PFLAG_PRESENT | KERNEL_PFLAG_USER);
     }
-    printf("sbrk return %p\n", previous_break);
+    printf("sbrk return %p, end = %p\n", previous_break, CURRENT_TASK->program_break);
     return previous_break;
 }
 

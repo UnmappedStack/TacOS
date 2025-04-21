@@ -9,15 +9,15 @@ extern increment_global_clock
 
 %include "include/asm.inc"
 
-%define TASK_PID_OFF       16
-%define TASK_PML4_OFF      24
-%define TASK_RSP_OFF       32
-%define TASK_ENTRY_OFF     40
-%define TASK_FLAGS_OFF     64
-%define TASK_ARGV_OFF      720
-%define TASK_ARGC_OFF      728
-%define TASK_FIRST_RSP_OFF 736
-%define TASK_ENVP_OFF      744
+%define TASK_PID_OFF         16
+%define TASK_PML4_OFF        24
+%define TASK_RSP_OFF         32
+%define TASK_ENTRY_OFF       40
+%define TASK_FLAGS_OFF       64
+%define TASK_ARGV_OFF        720
+%define TASK_ARGC_OFF        728
+%define TASK_FIRST_RSP_OFF   736
+%define TASK_ENVP_OFF        744
 
 context_switch:
     pushall
@@ -80,6 +80,7 @@ context_switch:
     pop rdi
     iretq
 .previously_executed:
+    ;; Restore SSE stuff of this task
     cli
     eoi
     popall

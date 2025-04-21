@@ -73,28 +73,7 @@ invalid_syscall:
     call sys_invalid
     iretq
 
-print_iretq_outputs:
-    ; Pop iretq frame for printf
-    pop rsi
-    pop rdx
-    pop rcx
-    pop r8
-    pop r9
-    ; Push it back so it's still able to iretq
-    push r9
-    push r8
-    push rcx
-    push rdx
-    push rsi
-    ; print and return
-    mov rdi, iretq_msg
-    call printf
-    mov rdi, rbp_msg
-    mov rsi, rbp
-    call printf
-    iretq
-
 section .rodata
 in_syscall_msg: db "In syscall %i", 10, 0
-rbp_msg: db "RBP = %p", 10, 0
+rdi_msg: db "RDI = %i", 10, 0
 rsp_msg: db "RSP in syscall handler = %p", 10, 0
