@@ -38,7 +38,7 @@ int rename(const char *oldpath, const char *newpath) {
 }
 
 int open(const char *pathname, int flags, mode_t mode) {
-    return __syscall3(2, (size_t) pathname, (size_t) flags, mode);
+     return __syscall3(2, (size_t) pathname, (size_t) flags, mode);
 }
 
 int close(int fd) {
@@ -121,6 +121,7 @@ FILE* fopen(const char *restrict pathname, const char *restrict mode) {
     int flags = str_to_flags(mode);
     FILE *ret = (FILE*) malloc(sizeof(FILE));
     ret->fd = open(pathname, flags, 0);
+    if (ret->fd < 0) return NULL;
     ret->bufmax = 4096;
     ret->buffer = (char*) malloc(ret->bufmax);
     ret->bufsz = 0;

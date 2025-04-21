@@ -39,6 +39,7 @@ err:
 }
 
 int sys_close(int fd) {
+    printf("close fd = %b\n", fd);
     return close(CURRENT_TASK->resources[fd].f);
 }
 

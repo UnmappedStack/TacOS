@@ -91,9 +91,10 @@ VfsFile *vfs_access(char *path, int flags, VfsAccessType type) {
         char *cwd = kernel.scheduler.current_task->cwd;
         size_t cwd_len = strlen(cwd);
         memcpy(path_from_rel, cwd, cwd_len);
-        memcpy(path_from_rel + cwd_len, path, strlen(path));
+        memcpy(path_from_rel + cwd_len, path, strlen(path) + 1);
         path = path_from_rel;
-    }
+        printf("relative, new path = %s\n", path);
+    } else printf("not relative");
     if (strlen(path) >= MAX_PATH_LEN) {
         printf("Path is too long (max length is currently %i bytes)\n", MAX_PATH_LEN);
     }
