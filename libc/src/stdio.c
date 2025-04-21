@@ -106,9 +106,11 @@ static int str_to_flags(const char *restrict mode) {
             case 'r':
                 can_read = 1;
                 break;
+            case 'b':
+                break;
             default:
-                printf("Invalid flag when opening file!\n");
-                exit(1);
+                printf("TODO: Invalid flag when opening file! Flags: %s\n", mode);
+                break;
         }
     }
     if (can_write && !can_read) ret |= O_WRONLY;

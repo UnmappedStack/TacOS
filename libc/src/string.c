@@ -28,7 +28,7 @@ int memcmp(const void *s1, const void *s2, size_t n) {
 }
 
 int strncmp(const char *s1, const char *s2, size_t n) {
-    for (size_t i = 0; *s1 && (*s1 != *s1) && i < n; i++)
+    for (size_t i = 0; *s1 && (*s1 != *s2) && i < n; i++)
         s1++, s2++;
     return *(const unsigned char*) s1 - *(const unsigned char*) s2;
 }
@@ -46,11 +46,13 @@ void *memset(void *dest, int x, size_t n) {
 char *strncpy(char *restrict dst, const char *restrict src, size_t n) {
     size_t len = strlen(src);
     size_t sz = (len > n) ? len : n;
-    return memcpy(dst, src, sz);
+    char *ret = memcpy(dst, src, sz);
+    dst[len] = 0;
+    return ret;
 }
 
 char *strcpy(char *restrict dst, const char *restrict src) {
-    return memcpy(dst, src, strlen(src));
+    return memcpy(dst, src, strlen(src) + 1);
 }
 
 void *memcpy(void *dest, const void *src, size_t n) {
@@ -102,7 +104,7 @@ char* strchr(char *s, int c) {
 
 char* memchr(const char *s, int c, size_t n) {
     for (size_t i = 0; i < n; i++) {
-        if (s[i] == c) return &s[i];
+        if (s[i] == (char) c) return &s[i];
     }
     return NULL;
 }
