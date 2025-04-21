@@ -3,6 +3,8 @@
 #include <stdlib.h>
 #include <stdio.h>
 
+extern int is_init;
+
 char *ascii_art = " ________                     ______    ______  \n"
 "|        \\                   /      \\  /      \\\n" 
 " \\$$$$$$$$______    _______ |  $$$$$$\\|  $$$$$$\\\n"
@@ -14,6 +16,7 @@ char *ascii_art = " ________                     ______    ______  \n"
 "    \\$$   \\$$$$$$$  \\$$$$$$$  \\$$$$$$   \\$$$$$$ \n";
 
 int main(int argc, char **argv, char **envp) {
+    is_init = 1;
     stdin  = fopen("/dev/kb0", "r");
     stdout = fopen("/dev/tty0", "w");
     stderr = fopen("/dev/tty0", "w"); // same device, but no IO buffering

@@ -141,7 +141,6 @@ int sys_waitpid(int pid, int *status, int options) {
 
 uintptr_t sys_sbrk(intptr_t increment) {
     if (!increment) {
-        printf("sbrk return %p (inc 0)\n", CURRENT_TASK->program_break);
         return CURRENT_TASK->program_break;
     }
     uintptr_t previous_break = CURRENT_TASK->program_break;
@@ -151,7 +150,6 @@ uintptr_t sys_sbrk(intptr_t increment) {
         alloc_pages((uint64_t*) (CURRENT_TASK->pml4 + kernel.hhdm), previous_break, num_new_pages, KERNEL_PFLAG_WRITE | KERNEL_PFLAG_PRESENT | KERNEL_PFLAG_USER);
         add_memregion(&CURRENT_TASK->memregion_list, previous_break, num_new_pages, true, KERNEL_PFLAG_WRITE | KERNEL_PFLAG_PRESENT | KERNEL_PFLAG_USER);
     }
-    printf("sbrk return %p, end = %p\n", previous_break, CURRENT_TASK->program_break);
     return previous_break;
 }
 

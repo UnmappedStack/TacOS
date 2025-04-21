@@ -4,6 +4,7 @@
 #include <unistd.h>
 #include <syscall.h>
 
+int is_init = 0;
 char **environ;
 
 __attribute__((noreturn))
@@ -42,55 +43,11 @@ void* heap_grow(size_t size, HeapPool *this_pool) {
     size_t max = (size > 4096) ? size * 2 : 4096;
     uint64_t new_pool_size = PAGE_ALIGN_UP(max + sizeof(HeapPool));
     this_pool->next = sbrk(new_pool_size);
-    *((HeapPool*) this_pool->next) = create_pool(new_pool_size, size + sizeof(HeapPool), 0, false);
     memset(this_pool->next, 0, new_pool_size);
+    *((HeapPool*) this_pool->next) = create_pool(new_pool_size, size + sizeof(HeapPool), 0, false);
     return (void*) ((HeapPool*) this_pool->next)->data;
 }
 
-void* malloc(uint64_t size) {
-    HeapPool *this_pool = start_heap;
-    for (;;) {
-        if (this_pool->free && this_pool->size > size + sizeof(HeapPool)) {
-            this_pool->free = false;
-            this_pool->required_size = size + sizeof(HeapPool);
-            return (void*) this_pool->data;
-        } else if (this_pool->size > this_pool->required_size + size + sizeof(HeapPool)) {
-            HeapPool *new_pool = (HeapPool*) split_pool(this_pool, size);
-            return (void*) new_pool->data;
-        } else if (this_pool->next == 0) {
-            return heap_grow(size, this_pool);
-        }
-        this_pool = (HeapPool*) this_pool->next;
-    }
-}
-
-void free(void *addr) {
-    HeapPool *this_pool      = (HeapPool*) (((uint64_t)addr) - sizeof(HeapPool));
-    if (!addr || this_pool->verify != 69) {
-        printf("Heap corruption detected in free(%p)\n", addr);
-        return;
-    }
-    this_pool->free          = true;
-    this_pool->required_size = sizeof(HeapPool);
-}
-
-void* realloc(void *addr, size_t sz) {
-    void *new = malloc(sz);
-    if (!addr) return new;
-    HeapPool *this_pool = (HeapPool*) (((uint64_t)addr) - sizeof(HeapPool));
-    if (this_pool->verify != 69) {
-        printf("Heap corruption detected in realloc()\n");
-        printf("addr is %p, verify val is %d\n", addr, this_pool->verify);
-        exit(1);
-    }
-    memcpy(new, addr, this_pool->size);
-    free(addr);
-    return new;
-}
-
-void *calloc(size_t nmemb, size_t sz) {
-    return malloc(sz * nmemb);
-}
 
 double atof(const char *nptr) {
     printf("TODO: atof() is not yet implemented because SSE2 is not supported in TacOS.\n");
