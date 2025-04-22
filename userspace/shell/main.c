@@ -65,6 +65,11 @@ int main(int argc, char **argv) {
     setenv("SHELL", "unbash", true);
     if (argc == 1)
         shell_mode();
-    else
-        printf("Too many arguments for unbash.\n");
+    if (argv[1][0] == '-') {
+        printf("GuacUtils shell: A simple CLI shell.\n"
+               "Copyright (C) 2025 Jake Steinburger (UnmappedStack) under the Mozilla Public License 2.0. "
+               "See LICENSE in the source repo for more information.\n");
+        exit(-1);
+    }
+    printf("Invalid argument for shell. Run `%s --help`.\n", argv[0]);
 }

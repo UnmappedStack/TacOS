@@ -61,7 +61,8 @@ void keyboard_isr(void*) {
     if (!(inb(PS2_STATUS_REGISTER) & 0x01)) return;
     uint8_t scancode = inb(PS2_DATA_REGISTER);
     // special cases
-    if (scancode & 0x80) { // it's a release, not a press
+    // it's a release, not a press, OR an unprintable key
+    if (scancode & 0x80 || scancode == 0x5B || scancode == 1) {
         if (scancode == 0xAA || scancode == 0xB6) // shift key is released
             current_input_data.shifted = false;
         end_of_interrupt();

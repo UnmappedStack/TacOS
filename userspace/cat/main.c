@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <string.h>
 #include <unistd.h>
 #include <stdlib.h>
 
@@ -6,6 +7,12 @@ int main(int argc, char **argv) {
     if (argc != 2) {
         printf("cat only takes one argument, being the file to read from.\n");
         return -1;
+    }
+    if (argv[1][0] == '-') {
+        printf("GuacUtils cat: A simple shell utility for writing the contents of a file to standard output.\n"
+               "Copyright (C) 2025 Jake Steinburger (UnmappedStack) under the Mozilla Public License 2.0. "
+               "See LICENSE in the source repo for more information.\n");
+        exit(-1);
     }
     int f = open(argv[1], 0, 0);
     if (f < 0) {
