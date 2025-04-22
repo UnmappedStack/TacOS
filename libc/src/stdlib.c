@@ -76,8 +76,8 @@ void abort(void) {
 }
 
 int system(const char *command) {
-    printf("TODO: system(): command is %s\n", command);
-    exit(1);
+    printf("\nTODO: system(): command is %s\n", command);
+    return 0;
 }
 
 size_t num_envp = 0;

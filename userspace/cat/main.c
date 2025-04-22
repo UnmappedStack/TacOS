@@ -8,8 +8,8 @@ int main(int argc, char **argv) {
         return -1;
     }
     int f = open(argv[1], 0, 0);
-    if (!f) {
-        printf("Failed to open %s\n", argv[1]);
+    if (f < 0) {
+        printf("cat: Failed to open file: %s\n", argv[1]);
         return -1;
     }
     off_t sz = lseek(f, 0, SEEK_END);
