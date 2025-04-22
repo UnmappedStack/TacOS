@@ -23,6 +23,7 @@ int main(int argc, char **argv) {
     lseek(f, 0, SEEK_SET);
     char *buf = (char*) malloc(sz);
     read(f, buf, sz);
+    buf[sz] = 0;
     puts(buf);
     close(f);
     return 0;
