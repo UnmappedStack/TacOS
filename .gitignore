@@ -6,3 +6,4 @@ limine/
 sysroot/
 log.txt
 initrd/usr/bin
+userspace/doom/tacos-doomgeneric
