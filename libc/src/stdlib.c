@@ -1,5 +1,6 @@
 #include <stdlib.h>
 #include <stdio.h>
+#include <stdbool.h>
 #include <string.h>
 #include <unistd.h>
 #include <syscall.h>
@@ -9,6 +10,7 @@ char **environ;
 
 __attribute__((noreturn))
 void exit(int status) {
+    fflush(stdout);
     __syscall1(4, status);
     for (;;);
 }
