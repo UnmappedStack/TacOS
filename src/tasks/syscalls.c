@@ -44,11 +44,13 @@ int sys_close(int fd) {
 }
 
 int sys_read(int fd, char *buf, size_t count) {
-    return vfs_read(CURRENT_TASK->resources[fd].f, buf, count, 0);
+    return vfs_read(CURRENT_TASK->resources[fd].f, buf, count,
+            CURRENT_TASK->resources[fd].offset);
 }
 
 size_t sys_write(int fd, char *buf, size_t count) {
-    return vfs_write(CURRENT_TASK->resources[fd].f, buf, count, 0);
+    return vfs_write(CURRENT_TASK->resources[fd].f, buf, count, 
+            CURRENT_TASK->resources[fd].offset);
 }
 
 void sys_exit(int status) {
