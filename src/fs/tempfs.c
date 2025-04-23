@@ -127,7 +127,7 @@ int tempfs_access(TempfsInode *file, char *buf, size_t len, size_t offset, bool 
         this_fnode = this_fnode->next;
     }
     if (write) file->size += len;
-    return 0;
+    return len - len_left;
 }
 
 int tempfs_write(TempfsInode *file, char *buf, size_t len, size_t offset) {
