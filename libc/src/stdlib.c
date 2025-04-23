@@ -119,5 +119,5 @@ int setenv(char *key, char *val, int overwrite) {
 }
 
 int abs(int j) {
-    return j & ~0x7FFFFFFF;
+    return (j < 0) ? -j : j;
 }
