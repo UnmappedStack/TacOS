@@ -31,6 +31,8 @@ extern sys_mmap
 extern sys_waitpid
 extern sys_getcwd
 extern sys_chdir
+extern sys_opendir
+extern sys_readdir
 
 syscall_lookup:
     dq sys_read          ; 0
@@ -55,6 +57,8 @@ syscall_lookup:
     dq sys_waitpid       ; 19
     dq sys_getcwd        ; 20
     dq sys_chdir         ; 21
+    dq sys_opendir       ; 22
+    dq sys_readdir       ; 23
 syscall_lookup_end:
 
 global syscall_isr

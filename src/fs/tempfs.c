@@ -77,6 +77,10 @@ TempfsInode *tempfs_mkdir(TempfsInode *parentdir, char *name) {
 TempfsInode *tempfs_diriter(TempfsDirIter *iter) {
     if (!iter->current_entry) return NULL;
     TempfsInode *to_return = iter->current_entry->inode;
+    if (iter->is_first) {
+        iter->is_first = false;
+        return to_return;
+    }
     iter->current_entry = iter->current_entry->next;
     return to_return;
 }
@@ -173,6 +177,7 @@ TempfsDirIter *tempfs_opendir(TempfsInode *dir) {
     TempfsDirIter *buf = slab_alloc(kernel.tempfs_direntry_cache);
     buf->inode = dir;
     buf->current_entry = dir->first_dir_entry;
+    buf->is_first = true;
     return buf;
 }
 

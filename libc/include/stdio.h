@@ -3,8 +3,14 @@
 #include <stdarg.h>
 #include <sprintf.h>
 #include <stdint.h>
-#define ssize_t long long   // TODO: Move these to their
+#define ssize_t int64_t // TODO: Move these to their
 #define mode_t uint32_t // relevant header files
+
+typedef enum {
+    SEEK_SET,
+    SEEK_CUR,
+    SEEK_END,
+} FileLocs;
 
 typedef enum {
     _IOFBF, // buffer when full

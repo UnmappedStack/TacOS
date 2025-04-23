@@ -276,3 +276,39 @@ char *sys_getcwd(char *buf, size_t n) {
     memcpy(buf, CURRENT_TASK->cwd, (n > MAX_PATH_LEN) ? MAX_PATH_LEN : n);
     return buf;
 }
+
+// returns fd of directory, creates a new diriter and stored it in buf.
+// opens dir from path given in `path`
+int sys_opendir(VfsDirIter *buf, char *filename) {
+    VfsFile *newfile;
+    if (opendir(buf, &newfile, filename, 0) < 0) goto err;
+    // find fd
+    uint64_t file_descriptor = 0;
+    Task *current_task = CURRENT_TASK;
+    for (; file_descriptor < MAX_RESOURCES; file_descriptor++) {
+        if (current_task->resources[file_descriptor].f) continue;
+        current_task->resources[file_descriptor].f = newfile;
+        if (!current_task->resources[file_descriptor].f) goto err;
+        current_task->resources[file_descriptor].offset = 0;
+        printf("Opened directory: %s\n", buf);
+        return file_descriptor;
+    }
+err:
+    printf("Couldn't open directory %s\n", filename);
+    return -1;
+}
+
+struct dirent {
+    char d_name[30];
+    bool d_isdir;
+    size_t d_fsize;
+};
+
+// reads the current entry in a DirIter to return then iterates
+int sys_readdir(VfsDirIter *iter, struct dirent *dp) {
+    VfsFile *entry = vfs_diriter(iter, &dp->d_isdir);
+    if (!entry)
+        return 1;
+    vfs_identify(entry, dp->d_name, NULL, &dp->d_fsize);
+    return 0;
+}

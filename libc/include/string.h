@@ -8,7 +8,7 @@ void *memcpy(void *dest, const void *src, size_t n);
 void *memmove(void *dest, const void *src, size_t n);
 char* strrchr(char *s, int c);
 char* strchr(char *s, int c);
-char* strstr(char *str, const char *needle);
+char* strstr(const char *str, const char *needle);
 char *strcpy(char *restrict dst, const char *restrict src);
 int strncmp(const char *s1, const char *s2, size_t n);
 char *strncpy(char *restrict dst, const char *restrict src, size_t n);
