@@ -8,6 +8,11 @@ void lsdir(char *dir) {
     struct dirent *entry;
     printf("ls %s:\n", dir);
     DIR *d = opendir(dir);
+    if (d == NULL) {
+        printf("\"%s\": No such file or directory.\n", dir);
+        exit(1);
+    }
+
     while ((entry = readdir(d)) != NULL) {
         printf(" %s%s: %zu bytes\n", entry->d_name, (entry->d_isdir) ? " [DIR]" : "", entry->d_fsize);
     }
