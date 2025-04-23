@@ -56,6 +56,7 @@ Framebuffer boot_get_framebuffer() {
         .height        = (*limine_framebuffer_request.response->framebuffers)->height,
         .pitch         = (*limine_framebuffer_request.response->framebuffers)->pitch,
         .bytes_per_pix = (*limine_framebuffer_request.response->framebuffers)->bpp / 8,
+        .width_bytes   = (*limine_framebuffer_request.response->framebuffers)->width * (*limine_framebuffer_request.response->framebuffers)->bpp / 8,
     };
 }
 
@@ -94,19 +95,19 @@ void draw_char(char ch, uint64_t x_coord, uint64_t y_coord, uint32_t colour) {
 
 void scroll_pixels(size_t num_pix) {
     size_t max_height = kernel.framebuffer.height - num_pix;
-    size_t fb_width_bytes = kernel.framebuffer.width * kernel.framebuffer.bytes_per_pix;
     uintptr_t new_row_loc = (uintptr_t) kernel.framebuffer.addr;
+    uintptr_t old_row_loc = (uintptr_t) kernel.framebuffer.addr + (num_pix * kernel.framebuffer.pitch);
     for (size_t y = 0; y < max_height; y++) {
-        uint32_t *old_row_loc = (uint32_t*)(((uint8_t*) kernel.framebuffer.addr) + (y + num_pix) * kernel.framebuffer.pitch);
-        memcpy((uint32_t*) new_row_loc, old_row_loc, fb_width_bytes);
+        memcpy((uint32_t*) new_row_loc, (uint32_t*) old_row_loc, kernel.framebuffer.width_bytes);
         new_row_loc += kernel.framebuffer.pitch;
+        old_row_loc += kernel.framebuffer.pitch;
     }
     fill_rect(0, max_height, kernel.framebuffer.width, num_pix, BG_COLOUR);
 }
 
 void scroll_line() {
-    kernel.char_y -= 16;
-    scroll_pixels(16);
+    kernel.char_y -= 32;
+    scroll_pixels(32);
 }
 
 void newline() {
