@@ -1,7 +1,6 @@
 #pragma once
 #include <stddef.h>
 #include <stdint.h>
-#include <stdbool.h>
 
 typedef struct HeapPool HeapPool;
 
@@ -10,7 +9,7 @@ struct HeapPool {
     HeapPool *next;
     size_t    size;
     size_t    required_size;
-    bool      free;
+    uint8_t   free;
     uint8_t   data[0];
 } __attribute__((packed));
 

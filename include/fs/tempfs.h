@@ -1,4 +1,5 @@
 #pragma once
+#include <stdbool.h>
 #include <fs/device.h>
 #include <mem/paging.h>
 #include <fs/vfs.h>
@@ -42,6 +43,7 @@ struct TempfsInode {
 typedef struct {
     TempfsInode    *inode;
     TempfsDirEntry *current_entry;
+    bool is_first;
 } TempfsDirIter;
 
 TempfsInode *tempfs_new();

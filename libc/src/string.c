@@ -110,7 +110,7 @@ char* memchr(const char *s, int c, size_t n) {
     return NULL;
 }
 
-char* strstr(char *str, const char *needle) {
+char* strstr(const char *str, const char *needle) {
     while (*str++) {
         if (!strcmp(needle, str)) return str;
     }

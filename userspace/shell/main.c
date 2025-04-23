@@ -10,6 +10,11 @@
 
 // forks, execs, then waits
 void run_program(char *program_file, char *argv[]) {
+    if (!strcmp(program_file, "init") && !strcmp(argv[1], "YOU_ARE_INIT")) {
+        // safeguard to prevent init being called as if it's actually the first process.
+        printf("ERROR: Stop trying to break TacOS, the shell has a safeguard for people like you :P\n");
+        return;
+    }
     pid_t pid = fork();
     if (pid == 0) {
         // hey... I'm not the original! I'm a child???

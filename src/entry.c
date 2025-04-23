@@ -81,7 +81,7 @@ void try_exec_init() {
         "TORTILLAS=ripoff",
         NULL
     };
-    if (execve(task, "/usr/bin/init", (char*[]) {"/usr/bin/init", NULL}, env) < 0) {
+    if (execve(task, "/usr/bin/init", (char*[]) {"/usr/bin/init", "YOU_ARE_INIT", NULL}, env) < 0) {
         printf("Failed to run init program, halting device (expected init program at /usr/bin/init).\n");
         HALT_DEVICE();
     }
