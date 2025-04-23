@@ -1,4 +1,5 @@
 #define STB_SPRINTF_IMPLEMENTATION
+#include <stdbool.h>
 #include <sprintf.h>
 #include <unistd.h>
 #include <stdio.h>

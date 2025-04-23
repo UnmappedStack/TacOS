@@ -43,11 +43,11 @@ int sys_close(int fd) {
     return close(CURRENT_TASK->resources[fd].f);
 }
 
-int sys_read(int fd, char *buf, size_t count) {
-    return vfs_read(CURRENT_TASK->resources[fd].f, buf, count,
-            CURRENT_TASK->resources[fd].offset);
+size_t sys_read(int fd,char *buf,size_t count){
+    size_t resize = vfs_read(CURRENT_TASK->resources[fd].f,buf,count,CURRENT_TASK->resources[fd].offset);
+    CURRENT_TASK->resources[fd].offset += resize;
+    return resize;
 }
-
 size_t sys_write(int fd, char *buf, size_t count) {
     return vfs_write(CURRENT_TASK->resources[fd].f, buf, count, 
             CURRENT_TASK->resources[fd].offset);
@@ -313,4 +313,9 @@ int sys_readdir(VfsDirIter *iter, struct dirent *dp) {
         return 1;
     vfs_identify(entry, dp->d_name, NULL, &dp->d_fsize);
     return 0;
+}
+
+void sys_get_fb_info(uint64_t *pitchbuf, uint64_t *bppbuf) {
+    *pitchbuf = kernel.framebuffer.pitch;
+    *bppbuf   = kernel.framebuffer.bytes_per_pix;
 }
