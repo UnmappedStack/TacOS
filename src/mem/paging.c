@@ -149,7 +149,7 @@ void map_pages(uint64_t pml4_addr[], uint64_t virt_addr, uint64_t phys_addr, uin
         }
         pml3 = 0;
     }
-    printf("\n[KPANIC] Failed to allocate pages: No more avaliable virtual memory. Halting.\n");
+    printf("\n[KPANIC] Failed to allocate pages: No more available virtual memory. Halting.\n");
     HALT_DEVICE();
 } 
 
@@ -204,7 +204,7 @@ void alloc_pages(uint64_t pml4_addr[], uint64_t virt_addr, uint64_t num_pages, u
         }
         pml3 = 0;
     }
-    printf("Failed to allocate pages: No more avaliable virtual memory. Halting.\n");
+    printf("Failed to allocate pages: No more available virtual memory. Halting.\n");
     HALT_DEVICE();
 }
 
