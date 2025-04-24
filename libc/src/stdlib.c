@@ -1,11 +1,16 @@
 #include <stdlib.h>
 #include <stdio.h>
+#include <stdbool.h>
 #include <string.h>
 #include <unistd.h>
 #include <syscall.h>
 
+int is_init = 0;
+char **environ;
+
 __attribute__((noreturn))
 void exit(int status) {
+    fflush(stdout);
     __syscall1(4, status);
     for (;;);
 }
@@ -37,54 +42,14 @@ void* split_pool(HeapPool *pool_addr, uint64_t size) {
 }
 
 void* heap_grow(size_t size, HeapPool *this_pool) {
-    uint64_t new_pool_size = PAGE_ALIGN_UP(size + sizeof(HeapPool));
+    size_t max = (size > 4096) ? size * 2 : 4096;
+    uint64_t new_pool_size = PAGE_ALIGN_UP(max + sizeof(HeapPool));
     this_pool->next = sbrk(new_pool_size);
+    memset(this_pool->next, 0, new_pool_size);
     *((HeapPool*) this_pool->next) = create_pool(new_pool_size, size + sizeof(HeapPool), 0, false);
     return (void*) ((HeapPool*) this_pool->next)->data;
 }
 
-void* malloc(uint64_t size) {
-    HeapPool *this_pool = start_heap;
-    for (;;) {
-        if (this_pool->free && this_pool->size > size + sizeof(HeapPool)) {
-            this_pool->free = false;
-            this_pool->required_size = size + sizeof(HeapPool);
-            return (void*) this_pool->data;
-        } else if (this_pool->size > this_pool->required_size + size + sizeof(HeapPool)) {
-            HeapPool *new_pool = (HeapPool*) split_pool(this_pool, size);
-            return (void*) new_pool->data;
-        } else if (this_pool->next == 0) {
-            return heap_grow(size, this_pool);
-        }
-        this_pool = (HeapPool*) this_pool->next;
-    }
-}
-
-void free(void *addr) {
-    HeapPool *this_pool      = (HeapPool*) (((uint64_t)addr) - sizeof(HeapPool));
-    if (this_pool->verify != 69) {
-        printf("Heap corruption detected in free()\n");
-        exit(1);
-    }
-    this_pool->free          = true;
-    this_pool->required_size = sizeof(HeapPool);
-}
-
-void* realloc(void *addr, size_t sz) {
-    void *new = malloc(sz);
-    HeapPool *this_pool = (HeapPool*) (((uint64_t)addr) - sizeof(HeapPool));
-    if (this_pool->verify != 69) {
-        printf("Heap corruption detected in realloc()\n");
-        exit(1);
-    }
-    memcpy(new, addr, this_pool->size);
-    free(addr);
-    return new;
-}
-
-void *calloc(size_t nmemb, size_t sz) {
-    return malloc(sz * nmemb);
-}
 
 double atof(const char *nptr) {
     printf("TODO: atof() is not yet implemented because SSE2 is not supported in TacOS.\n");
@@ -113,7 +78,46 @@ void abort(void) {
 }
 
 int system(const char *command) {
-    (void) command;
-    printf("TODO: system()\n");
+    printf("\nTODO: system(): command is %s\n", command);
     return 0;
+}
+
+size_t num_envp = 0;
+void init_environ(char **envp) {
+    for (; envp[num_envp]; num_envp++);
+    num_envp++;
+    environ = (char**) malloc(sizeof(char*) * num_envp);
+    memcpy(environ, envp, sizeof(char*) * num_envp);
+}
+
+int get_env_idx(char *key, size_t key_len) {
+    for (size_t i = 0; environ[i]; i++) {
+        if (!memcmp(environ[i], key, key_len - 1)) return i;
+    }
+    return -1;
+}
+
+char *getenv(char *key) {
+    size_t key_len = strlen(key);
+    int idx = get_env_idx(key, key_len);
+    return (idx < 0) ? NULL : &environ[idx][key_len + 1];
+}
+
+int setenv(char *key, char *val, int overwrite) {
+    size_t key_len = strlen(key);
+    int idx = get_env_idx(key, key_len);
+    if (idx >= 0 && !overwrite) return 0;
+    else if (idx < 0) {
+        environ = (char**) realloc(environ, ++num_envp * sizeof(char*));
+        idx = num_envp - 2;
+        environ[idx + 1] = 0;
+    }
+    size_t val_len = strlen(val) + 1;
+    environ[idx] = (char*) malloc(val_len + strlen(key) + 1);
+    sprintf(environ[idx], "%s=%s", key, val);
+    return 0;
+}
+
+int abs(int j) {
+    return (j < 0) ? -j : j;
 }

@@ -2,6 +2,7 @@
 global _start
 global start_heap
 extern main
+extern init_environ
 extern init_streams
 
 %define HEAP_VERIFY_OFF        0
@@ -12,16 +13,27 @@ extern init_streams
 
 section .text
 _start:
-    push 0
+    sub rsp, 0
     mov rbp, rsp
     push rbp
+    ; save argc+argv+envp
+    push rdi
+    push rsi
+    push rdx
+    ; initiate everything the libc uses (streams, heap, etc)
     call init_libc
+    ; restore argc+argv+envp & call entry
+    pop rdx
+    pop rsi
+    pop rdi
     call main
+    ; exit
     mov rdi, rax
     mov rax, 4
     int 0x80
     jmp $ ; in case exit failed, loop forever
 
+; takes envp in rdx
 init_libc:
     ;; Initiate the heap
     ; Move the program break forward by a page and get the initial program break
@@ -36,6 +48,8 @@ init_libc:
     mov qword [rax + HEAP_REQUIRED_SIZE_OFF], 4095
     mov byte  [rax + HEAP_FREE_OFF         ], 1
     ;; Initiate other stuff
+    mov rdi, rdx
+    call init_environ
     call init_streams
     ret
 

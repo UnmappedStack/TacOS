@@ -6,6 +6,7 @@ typedef struct {
     uint64_t height;
     uint64_t pitch;
     uint64_t bytes_per_pix;
+    uint64_t width_bytes;
 } Framebuffer;
 
 void init_framebuffer();

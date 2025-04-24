@@ -28,6 +28,12 @@ extern sys_lseek
 extern sys_clock_gettime
 extern sys_sched_yield
 extern sys_mmap
+extern sys_waitpid
+extern sys_getcwd
+extern sys_chdir
+extern sys_opendir
+extern sys_readdir
+extern sys_get_fb_info
 
 syscall_lookup:
     dq sys_read          ; 0
@@ -49,6 +55,12 @@ syscall_lookup:
     dq sys_clock_gettime ; 16
     dq sys_sched_yield   ; 17
     dq sys_mmap          ; 18
+    dq sys_waitpid       ; 19
+    dq sys_getcwd        ; 20
+    dq sys_chdir         ; 21
+    dq sys_opendir       ; 22
+    dq sys_readdir       ; 23
+    dq sys_get_fb_info   ; 24
 syscall_lookup_end:
 
 global syscall_isr
@@ -67,28 +79,7 @@ invalid_syscall:
     call sys_invalid
     iretq
 
-print_iretq_outputs:
-    ; Pop iretq frame for printf
-    pop rsi
-    pop rdx
-    pop rcx
-    pop r8
-    pop r9
-    ; Push it back so it's still able to iretq
-    push r9
-    push r8
-    push rcx
-    push rdx
-    push rsi
-    ; print and return
-    mov rdi, iretq_msg
-    call printf
-    mov rdi, rbp_msg
-    mov rsi, rbp
-    call printf
-    iretq
-
 section .rodata
 in_syscall_msg: db "In syscall %i", 10, 0
-rbp_msg: db "RBP = %p", 10, 0
+rdi_msg: db "RDI = %i", 10, 0
 rsp_msg: db "RSP in syscall handler = %p", 10, 0

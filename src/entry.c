@@ -1,4 +1,5 @@
 #include <mem/pmm.h>
+#include <keyboard.h>
 #include <string.h>
 #include <framebuffer.h>
 #include <fs/device.h>
@@ -20,6 +21,8 @@
 #include <fs/ustar.h>
 #include <scheduler.h>
 #include <fork.h>
+
+extern void enable_sse();
 
 Kernel kernel = {0};
 
@@ -73,7 +76,12 @@ void try_exec_init() {
         printf("task_from_pid() failed, couldn't run init program (return NULL)\n");
         HALT_DEVICE();
     }
-    if (execve(task, "/usr/bin/init") < 0) {
+    char *env[] = {
+        "TACOS=yum",
+        "TORTILLAS=ripoff",
+        NULL
+    };
+    if (execve(task, "/usr/bin/init", (char*[]) {"/usr/bin/init", "YOU_ARE_INIT", NULL}, env) < 0) {
         printf("Failed to run init program, halting device (expected init program at /usr/bin/init).\n");
         HALT_DEVICE();
     }
@@ -87,6 +95,7 @@ void _start() {
     init_TSS();
     init_GDT();
     init_IDT();
+    enable_sse();
     init_exceptions();
     init_paging();
     switch_page_structures();
@@ -100,6 +109,7 @@ void _start() {
     ls("/");
     ls("/home");
     init_framebuffer();
+    init_keyboard();
     try_exec_init();
     unlock_pit();
     ENABLE_INTERRUPTS();

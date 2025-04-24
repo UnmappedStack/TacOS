@@ -1,4 +1,5 @@
 #define STB_SPRINTF_IMPLEMENTATION
+#include <stdbool.h>
 #include <sprintf.h>
 #include <unistd.h>
 #include <stdio.h>
@@ -38,7 +39,7 @@ int rename(const char *oldpath, const char *newpath) {
 }
 
 int open(const char *pathname, int flags, mode_t mode) {
-    return __syscall3(2, (size_t) pathname, (size_t) flags, mode);
+     return __syscall3(2, (size_t) pathname, (size_t) flags, mode);
 }
 
 int close(int fd) {
@@ -70,8 +71,9 @@ int vfprintf(FILE *stream, const char *fmt, va_list args) {
     va_end(copy);
     return ret;
 }
-
+int set = 0;
 int printf(const char *fmt, ...) {
+    set = 1;
     va_list args;
     va_start(args, fmt);
     int ret = vfprintf(stdout, fmt, args);
@@ -105,9 +107,11 @@ static int str_to_flags(const char *restrict mode) {
             case 'r':
                 can_read = 1;
                 break;
+            case 'b':
+                break;
             default:
-                printf("Invalid flag when opening file!\n");
-                exit(1);
+                printf("TODO: Invalid flag when opening file! Flags: %s\n", mode);
+                break;
         }
     }
     if (can_write && !can_read) ret |= O_WRONLY;
@@ -120,6 +124,7 @@ FILE* fopen(const char *restrict pathname, const char *restrict mode) {
     int flags = str_to_flags(mode);
     FILE *ret = (FILE*) malloc(sizeof(FILE));
     ret->fd = open(pathname, flags, 0);
+    if (ret->fd < 0) return NULL;
     ret->bufmax = 4096;
     ret->buffer = (char*) malloc(ret->bufmax);
     ret->bufsz = 0;
@@ -155,8 +160,11 @@ size_t fwrite(const void *restrict ptr, size_t size, size_t nitems,
         case _IOLBF:
             // Line buffering
             if (memchr(ptr, '\n', bytes)) {
+                memcpy(&stream->buffer[stream->bufsz], ptr, bytes);
+                stream->bufsz += bytes;
+                size_t ret = write(stream->fd, stream->buffer, stream->bufsz);
                 stream->bufsz = 0;
-                return write(stream->fd, ptr, bytes);
+                return ret;
             } else {
                 memcpy(&stream->buffer[stream->bufsz], ptr, bytes);
                 stream->bufsz += bytes;
@@ -176,11 +184,16 @@ int fputs(const char *str, FILE *stream) {
     return 0;
 }
 
-int fflush(FILE *stream) {
-    write(stream->fd, stream->buffer, stream->bufsz);
-    return 0;
+char *fgets(char *str, int n, FILE *stream) {
+    fread(str, n, 1, stream);
+    return str;
 }
 
+int fflush(FILE *stream) {
+    write(stream->fd, stream->buffer, stream->bufsz);
+    stream->bufsz = 0;
+    return 0;
+}
 int setvbuf(FILE *stream, char *buffer, int mode, size_t size) {
     if (buffer) {
         stream->buffer = buffer;

@@ -1,4 +1,5 @@
 #include <string.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
 
@@ -9,13 +10,25 @@ size_t strlen(const char *str) {
 }
 
 int strcmp(const char *s1, const char *s2) {
-    while (*s1 && (*s1 != *s1))
+    while (*s1 && (*s1 == *s2))
         s1++, s2++;
     return *(const unsigned char*) s1 - *(const unsigned char*) s2;
 }
 
+int memcmp(const void *s1, const void *s2, size_t n) {
+    const unsigned char *p1 = s1;
+    const unsigned char *p2 = s2;
+    while (n--) {
+        if (*p1 != *p2)
+            return (int)(*p1 - *p2);
+        p1++;
+        p2++;
+    }
+    return 0;
+}
+
 int strncmp(const char *s1, const char *s2, size_t n) {
-    for (size_t i = 0; *s1 && (*s1 != *s1) && i < n; i++)
+    for (size_t i = 0; *s1 && (*s1 != *s2) && i < n; i++)
         s1++, s2++;
     return *(const unsigned char*) s1 - *(const unsigned char*) s2;
 }
@@ -30,14 +43,17 @@ void *memset(void *dest, int x, size_t n) {
     return dest;
 }
 
-char *strncpy(char *restrict dst, const char *restrict src, size_t n) {
-    size_t len = strlen(src);
-    size_t sz = (len > n) ? len : n;
-    return memcpy(dst, src, sz);
+char *strncpy(char *dest, const char *src, size_t n) {
+    size_t i;
+    for (i = 0; i < n && src[i] != '\0'; i++)
+        dest[i] = src[i];
+    for ( ; i < n; i++)
+        dest[i] = '\0';
+   return dest;
 }
 
 char *strcpy(char *restrict dst, const char *restrict src) {
-    return memcpy(dst, src, strlen(src));
+    return memcpy(dst, src, strlen(src) + 1);
 }
 
 void *memcpy(void *dest, const void *src, size_t n) {
@@ -89,12 +105,12 @@ char* strchr(char *s, int c) {
 
 char* memchr(const char *s, int c, size_t n) {
     for (size_t i = 0; i < n; i++) {
-        if (s[i] == c) return &s[i];
+        if (s[i] == (char) c) return &s[i];
     }
     return NULL;
 }
 
-char* strstr(char *str, const char *needle) {
+char* strstr(const char *str, const char *needle) {
     while (*str++) {
         if (!strcmp(needle, str)) return str;
     }
@@ -102,7 +118,9 @@ char* strstr(char *str, const char *needle) {
 }
 
 char* strdup(const char *s) {
-    char *ret = (char*) malloc(strlen(s) + 1);
-    strcpy(ret, s);
+    size_t len = strlen(s);
+    char *ret = (char*) malloc(len + 1);
+    memcpy(ret, s, len);
+    ret[len] = 0;
     return ret;
 }

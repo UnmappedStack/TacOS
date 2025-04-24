@@ -28,25 +28,29 @@ int sys_open(char *filename, int flags, int mode) {
     for (; file_descriptor < MAX_RESOURCES; file_descriptor++) {
         if (current_task->resources[file_descriptor].f) continue;
         current_task->resources[file_descriptor].f = open((char*) filename, flags);
+        if (!current_task->resources[file_descriptor].f) goto err;
         current_task->resources[file_descriptor].offset = 0;
         printf("Opened %s to file descriptor %i\n", filename, file_descriptor);
         return file_descriptor;
     }
+err:
     printf("Couldn't open file %s\n", filename);
     return -1;
 }
 
 int sys_close(int fd) {
+    printf("close fd = %b\n", fd);
     return close(CURRENT_TASK->resources[fd].f);
 }
 
-int sys_read(int fd, char *buf, size_t count) {
-    return vfs_read(CURRENT_TASK->resources[fd].f, buf, count, 0);
+size_t sys_read(int fd,char *buf,size_t count){
+    size_t resize = vfs_read(CURRENT_TASK->resources[fd].f,buf,count,CURRENT_TASK->resources[fd].offset);
+    CURRENT_TASK->resources[fd].offset += resize;
+    return resize;
 }
-
 size_t sys_write(int fd, char *buf, size_t count) {
-    printf("Args: %i, %p, %i\n", (uint64_t) fd, buf, count); 
-    return vfs_write(CURRENT_TASK->resources[fd].f, buf, count, 0);
+    return vfs_write(CURRENT_TASK->resources[fd].f, buf, count, 
+            CURRENT_TASK->resources[fd].offset);
 }
 
 void sys_exit(int status) {
@@ -67,8 +71,12 @@ int sys_getpid() {
     return CURRENT_TASK->pid;
 }
 
-int sys_execve(char *path) {
-    return execve(CURRENT_TASK, path);
+int sys_execve(char *path, char **argv, char **envp) {
+    DISABLE_INTERRUPTS();
+    int e;
+    if ((e=execve(CURRENT_TASK, path, argv, envp))) return e;
+    ENABLE_INTERRUPTS();
+    for (;;);
 }
 
 // TODO: Actually send a signal to the task and do clean up, report to it's parent
@@ -116,20 +124,34 @@ int sys_wait(int *status) {
     }
 }
 
+int sys_waitpid(int pid, int *status, int options) {
+    // TODO: Write status info to *status and take options into consideration
+    (void) status, (void) options;
+    if (pid <= 0) {
+        printf("TODO: waitpid does not yet support <=0 for the pid\n");
+        return -1;
+    }
+    // find child with needed pid
+    for (size_t i = 0; i < MAX_CHILDREN; i++) {
+        if (CURRENT_TASK->children[i].pid != (size_t) pid) continue;
+        while (!(task_from_pid(CURRENT_TASK->children[i].pid)->flags & TASK_DEAD))
+            IO_WAIT();
+        return 0;
+    }
+    return -1; // pid not found in children
+}
+
 uintptr_t sys_sbrk(intptr_t increment) {
     if (!increment) {
-        printf("sbrk return %p (inc 0)\n", CURRENT_TASK->program_break);
         return CURRENT_TASK->program_break;
     }
     uintptr_t previous_break = CURRENT_TASK->program_break;
-    CURRENT_TASK->program_break += increment;
-    if (!(CURRENT_TASK->program_break % PAGE_SIZE) ||
-         (PAGE_ALIGN_DOWN(CURRENT_TASK->program_break) > PAGE_ALIGN_DOWN(previous_break))) {
+    CURRENT_TASK->program_break += PAGE_ALIGN_UP(increment);
+    if (CURRENT_TASK->program_break > previous_break) {
         size_t num_new_pages = PAGE_ALIGN_UP(increment) / 4096;
-        alloc_pages((uint64_t*) (CURRENT_TASK->pml4 + kernel.hhdm), CURRENT_TASK->program_break, num_new_pages, KERNEL_PFLAG_WRITE | KERNEL_PFLAG_PRESENT | KERNEL_PFLAG_USER);
-        add_memregion(&CURRENT_TASK->memregion_list, CURRENT_TASK->program_break, num_new_pages, true, KERNEL_PFLAG_WRITE | KERNEL_PFLAG_PRESENT | KERNEL_PFLAG_USER);
+        alloc_pages((uint64_t*) (CURRENT_TASK->pml4 + kernel.hhdm), previous_break, num_new_pages, KERNEL_PFLAG_WRITE | KERNEL_PFLAG_PRESENT | KERNEL_PFLAG_USER);
+        add_memregion(&CURRENT_TASK->memregion_list, previous_break, num_new_pages, true, KERNEL_PFLAG_WRITE | KERNEL_PFLAG_PRESENT | KERNEL_PFLAG_USER);
     }
-    printf("sbrk return %p\n", previous_break);
     return previous_break;
 }
 
@@ -234,4 +256,66 @@ void* sys_mmap(void *addr, size_t length, int prot, int flags,
         return NULL;
     }
     return kernel.framebuffer.addr;
+}
+
+int sys_chdir(char *path) {
+    char buf[MAX_PATH_LEN];
+    if (path[0] != '/') {
+        strcpy(buf, CURRENT_TASK->cwd);
+        strcpy(buf + strlen(CURRENT_TASK->cwd), path);
+        path = buf;
+    }
+    size_t len = strlen(path);
+    memcpy(CURRENT_TASK->cwd, path, len + 1);
+    if (CURRENT_TASK->cwd[len - 1] != '/') {
+        CURRENT_TASK->cwd[len] = '/';
+        CURRENT_TASK->cwd[len + 1]     = '\0';
+    }
+    return 0;
+}
+
+char *sys_getcwd(char *buf, size_t n) {
+    memcpy(buf, CURRENT_TASK->cwd, (n > MAX_PATH_LEN) ? MAX_PATH_LEN : n);
+    return buf;
+}
+
+// returns fd of directory, creates a new diriter and stored it in buf.
+// opens dir from path given in `path`
+int sys_opendir(VfsDirIter *buf, char *filename) {
+    VfsFile *newfile;
+    if (opendir(buf, &newfile, filename, 0) < 0) goto err;
+    // find fd
+    uint64_t file_descriptor = 0;
+    Task *current_task = CURRENT_TASK;
+    for (; file_descriptor < MAX_RESOURCES; file_descriptor++) {
+        if (current_task->resources[file_descriptor].f) continue;
+        current_task->resources[file_descriptor].f = newfile;
+        if (!current_task->resources[file_descriptor].f) goto err;
+        current_task->resources[file_descriptor].offset = 0;
+        printf("Opened directory: %s\n", buf);
+        return file_descriptor;
+    }
+err:
+    printf("Couldn't open directory %s\n", filename);
+    return -1;
+}
+
+struct dirent {
+    char d_name[30];
+    bool d_isdir;
+    size_t d_fsize;
+};
+
+// reads the current entry in a DirIter to return then iterates
+int sys_readdir(VfsDirIter *iter, struct dirent *dp) {
+    VfsFile *entry = vfs_diriter(iter, &dp->d_isdir);
+    if (!entry)
+        return 1;
+    vfs_identify(entry, dp->d_name, NULL, &dp->d_fsize);
+    return 0;
+}
+
+void sys_get_fb_info(uint64_t *pitchbuf, uint64_t *bppbuf) {
+    *pitchbuf = kernel.framebuffer.pitch;
+    *bppbuf   = kernel.framebuffer.bytes_per_pix;
 }

@@ -5,9 +5,10 @@
 #include <stdbool.h>
 #include <limine.h>
  
-#define KERNEL_PFLAG_PRESENT 0b001
-#define KERNEL_PFLAG_WRITE   0b010
-#define KERNEL_PFLAG_USER    0b100
+#define KERNEL_PFLAG_PRESENT       0b00000001
+#define KERNEL_PFLAG_WRITE         0b00000010
+#define KERNEL_PFLAG_USER          0b00000100
+#define KERNEL_PFLAG_WRITE_COMBINE 0b10000000
 
 #define PAGE_SIZE 4096
 #define KERNEL_STACK_PAGES 10LL

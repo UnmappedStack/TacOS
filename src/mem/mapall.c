@@ -25,7 +25,7 @@ void map_sections(uint64_t pml4[], bool verbose) {
             if (verbose)
                 printf("Trying to map entry #%i (%i pages, vaddr = %p, paddr = %p)...", entry, kernel.memmap[entry].length / 4096, kernel.memmap[entry].base + kernel.hhdm, kernel.memmap[entry].base);
             size_t flags = KERNEL_PFLAG_PRESENT | KERNEL_PFLAG_WRITE;
-            if (entry_type == LIMINE_MEMMAP_FRAMEBUFFER) flags |= KERNEL_PFLAG_USER; // for when it's mmapped in
+            if (entry_type == LIMINE_MEMMAP_FRAMEBUFFER) flags |= KERNEL_PFLAG_USER | KERNEL_PFLAG_WRITE_COMBINE; // for when it's mmapped in
             map_pages(pml4, kernel.memmap[entry].base + kernel.hhdm, kernel.memmap[entry].base, kernel.memmap[entry].length / 4096, flags);
             if (verbose)
                 printf(" Success\n");

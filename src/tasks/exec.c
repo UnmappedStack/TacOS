@@ -36,8 +36,37 @@ Task *task_from_pid(pid_t pid) {
     return NULL; // none found
 }
 
-// TODO: Add argv and envp
-int execve(Task *task, char *filename) {
+void setup_program_args(Task *task, char **argv, uintptr_t usr_stack_paddr, size_t from_end) {
+    size_t argc = 0;
+    size_t before_vals_off = from_end;
+    for (; argv[argc]; argc++) {
+        size_t len = strlen(argv[argc]) + 1;
+        before_vals_off += len;
+        memcpy((void*) (usr_stack_paddr + PAGE_SIZE * USER_STACK_PAGES - before_vals_off + kernel.hhdm), argv[argc], len);
+        argv[argc] = (char*) (USER_STACK_PTR - before_vals_off);
+    }
+    // set up the actual array pointing to each string
+    size_t i = 1;
+    argv[argc] = NULL;
+    for (; i <= argc + 1; i++) {
+        *((char**)(usr_stack_paddr + PAGE_SIZE * USER_STACK_PAGES - before_vals_off - i * sizeof(char*) + kernel.hhdm)) = argv[argc + 1 - i];
+    }
+    i--;
+    if (from_end)
+        task->envp = (char**)(USER_STACK_PTR - before_vals_off - i * sizeof(char*));
+    else
+        task->argc = argc, task->argv = (char**)(USER_STACK_PTR - before_vals_off - i * sizeof(char*));
+}
+
+int execve(Task *task, char *filename, char **argv, char **envp) {
+    // get argc + copy argument strings to end of new stack
+    uintptr_t usr_stack_paddr = kmalloc(USER_STACK_PAGES);
+    setup_program_args(task, argv, usr_stack_paddr, /* stack end offset */ 0);
+    setup_program_args(task, envp, usr_stack_paddr,
+            /* stack end offset */ USER_STACK_PTR - (uintptr_t) task->argv);
+    task->first_rsp = task->rsp = (uintptr_t) task->envp - 16;
+    // parse and load the elf
+    task->flags = 0;
     VfsFile *f = open(filename, 0);
     if (!f) {
         printf("Failed to open file \"%s\".\n", filename);
@@ -75,16 +104,15 @@ int execve(Task *task, char *filename) {
         printf("Header with type = %i, num %i, vaddr = %p, off = %i, size_vmem = %i, is writable = %i\n", program_header.type, i, program_header.virtual_address, program_header.offset, program_header.size_in_memory, (uint64_t) (program_header.flags & ELF_FLAG_WRITABLE));
         offset += file_header.program_header_entry_size;
     }
-    alloc_pages((uint64_t*) (task->pml4 + kernel.hhdm), USER_STACK_ADDR, USER_STACK_PAGES, KERNEL_PFLAG_WRITE | KERNEL_PFLAG_USER | KERNEL_PFLAG_PRESENT);
+    map_pages((uint64_t*) (task->pml4 + kernel.hhdm), USER_STACK_ADDR, usr_stack_paddr, USER_STACK_PAGES, KERNEL_PFLAG_WRITE | KERNEL_PFLAG_USER | KERNEL_PFLAG_PRESENT);
     add_memregion(&task->memregion_list, USER_STACK_ADDR, USER_STACK_PAGES, true, KERNEL_PFLAG_WRITE | KERNEL_PFLAG_USER | KERNEL_PFLAG_PRESENT);
     task->entry = (void*) file_header.entry;
-    task->flags = TASK_FIRST_EXEC | TASK_PRESENT;
-    task->rsp   = USER_STACK_PTR;
     task->program_break = PAGE_ALIGN_UP(end_of_executable);
     alloc_pages((uint64_t*) (task->pml4 + kernel.hhdm), task->program_break, 1, KERNEL_PFLAG_WRITE | KERNEL_PFLAG_PRESENT | KERNEL_PFLAG_USER);
     add_memregion(&task->memregion_list, task->program_break, 1, true, KERNEL_PFLAG_WRITE | KERNEL_PFLAG_PRESENT | KERNEL_PFLAG_USER);
-    task->program_break++;
     close(f);
+    task->flags = TASK_FIRST_EXEC | TASK_PRESENT;
     printf("\n -> execve(): Task %i has flags 0b%b, task ptr = 0x%p\n", task->pid, task->flags, &task->flags);
+    printf("first rsp offset = %i\n", offsetof(Task, first_rsp));
     return 0;
 }

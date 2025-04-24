@@ -3,8 +3,14 @@
 #include <stdarg.h>
 #include <sprintf.h>
 #include <stdint.h>
-#define ssize_t long long   // TODO: Move these to their
+#define ssize_t int64_t // TODO: Move these to their
 #define mode_t uint32_t // relevant header files
+
+typedef enum {
+    SEEK_SET,
+    SEEK_CUR,
+    SEEK_END,
+} FileLocs;
 
 typedef enum {
     _IOFBF, // buffer when full
@@ -43,6 +49,7 @@ int fclose(FILE *stream);
 size_t fwrite(const void *restrict ptr, size_t size, size_t nitems,
     FILE *restrict stream);
 int fputs(const char *str, FILE *stream);
+char *fgets(char *str, int n, FILE *stream);
 int fflush(FILE *stream);
 int setvbuf(FILE *stream, char *buffer, int mode, size_t size);
 size_t fread(void *ptr, size_t size, size_t nmemb, FILE *stream);

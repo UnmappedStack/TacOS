@@ -41,7 +41,7 @@ void init_pmm() {
         } else {
             list_insert(kernel.pmm_chunklist, (struct list*) PAGE_ALIGN_UP(kernel.memmap[i].base + kernel.hhdm));
         }
-        init_chunk((void*) PAGE_ALIGN_UP(kernel.memmap[i].base), kernel.memmap[i].length);
+        init_chunk((void*) (PAGE_ALIGN_UP(kernel.memmap[i].base) + kernel.hhdm), kernel.memmap[i].length);
     }
     printf("|==================|==================|======================|\n");
     if (!list_len) {
@@ -69,6 +69,8 @@ uintptr_t kmalloc(size_t num_pages) {
         memset(chunk, 0, PAGE_SIZE);
         return (uintptr_t) chunk - kernel.hhdm;
     }
+    printf("\nPANIC: OUT OF MEMORY\n\n");
+    HALT_DEVICE();
     return 0;
 }
 
