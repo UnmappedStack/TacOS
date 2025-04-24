@@ -8,6 +8,8 @@ TacOS is a UNIX-like kernel which is able to run DOOM, among various other small
 
 Please note that TacOS is a hobby toy OS and is not complete enough for real usage. It has multiple known bugs.
 
+I have a Discord server for PotatOS where I will share most updates, and you can also get help with your own OSDev project or just have a chat. You can join [here](https://discord.gg/hPg9S2F2nD).
+
 ## Quickstart
 To build and run TacOS, simply run in your shell:
 ```
