@@ -38,8 +38,7 @@ int execvp(const char *path, char **argv) {
         return execve(path, argv, environ);
     char *pathlist = getenv("PATH");
     if (!pathlist) {
-        printf("execvp failed: $PATH environmental variable is not defined\n");
-        return 1;
+        return -1;
     }
     size_t start = 0;
     size_t end = 0;
@@ -59,7 +58,6 @@ int execvp(const char *path, char **argv) {
             start = end = end + 1;
         }
     }
-    printf("execvp failed: not found on $PATH\n");
     return -1;
 }
 

@@ -19,6 +19,7 @@ void run_program(char *program_file, char *argv[]) {
     if (pid == 0) {
         // hey... I'm not the original! I'm a child???
         execvp(program_file, argv);
+        printf("shell: command not found: %s\n", program_file);
         exit(127);
     } else {
         // I'm the original, suck it! (and wait)
