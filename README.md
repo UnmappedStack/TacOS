@@ -18,6 +18,7 @@ cd TacOS
 git clone https://github.com/limine-bootloader/limine
 cd limine
 git checkout v9.x-binary
+cd ..
 make
 ```
 You'll need to have Qemu, NASM, and Clang installed. It will automatically run in the Qemu emulator.
