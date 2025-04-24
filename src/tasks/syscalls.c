@@ -64,6 +64,7 @@ void sys_exit(int status) {
     remove_child(CURRENT_TASK->parent, CURRENT_TASK->pid, false, status);
     CURRENT_TASK->flags |= TASK_DEAD;
     CURRENT_TASK->flags &= ~TASK_PRESENT;
+    ENABLE_INTERRUPTS();
     for (;;);
 }
 

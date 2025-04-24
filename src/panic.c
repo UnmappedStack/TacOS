@@ -24,7 +24,7 @@ void stack_trace(uint64_t rbp, uint64_t rip) {
         stack = stack->rbp;
     }
 }
-
+extern void sys_exit(int);
 void exception_handler(IDTEFrame registers) {
     DISABLE_INTERRUPTS();
     if (in_panic) HALT_DEVICE();
@@ -56,28 +56,33 @@ void exception_handler(IDTEFrame registers) {
         printf("Exception occurred in ring %i\n", registers.ss & 0b11);
     }
     stack_trace(registers.rbp, registers.rip);
+    if (kernel.scheduler.current_task->pid > 0)  {
+        write_framebuffer_text("\nSegmentation fault\n");
+        in_panic = false;
+        sys_exit(139);
+    }
     printf(BWHT "\nFreezing the computer now. Please reboot your machine with the physical power button.\n" WHT);
     HALT_DEVICE();
 }
 
 void init_exceptions() {
-    set_IDT_entry(0,  (void*) &divideException, 0xEF, kernel.IDT);
-    set_IDT_entry(1,  (void*) &debugException, 0xEF, kernel.IDT);
-    set_IDT_entry(3,  (void*) &breakpointException, 0xEF, kernel.IDT);
-    set_IDT_entry(4,  (void*) &overflowException, 0xEF, kernel.IDT);
-    set_IDT_entry(5,  (void*) &boundRangeExceededException, 0xEF, kernel.IDT);
-    set_IDT_entry(6,  (void*) &invalidOpcodeException, 0xEF, kernel.IDT);
-    set_IDT_entry(7,  (void*) &deviceNotAvaliableException, 0xEF, kernel.IDT);
-    set_IDT_entry(8,  (void*) &doubleFaultException, 0xEF, kernel.IDT);
-    set_IDT_entry(9,  (void*) &coprocessorSegmentOverrunException, 0xEF, kernel.IDT);
-    set_IDT_entry(10, (void*) &invalidTSSException, 0xEF, kernel.IDT);
-    set_IDT_entry(11, (void*) &segmentNotPresentException, 0xEF, kernel.IDT);
-    set_IDT_entry(12, (void*) &stackSegmentFaultException, 0xEF, kernel.IDT);
-    set_IDT_entry(13, (void*) &generalProtectionFaultException, 0xEF, kernel.IDT);
-    set_IDT_entry(14, (void*) &pageFaultException, 0xEF, kernel.IDT);
-    set_IDT_entry(16, (void*) &floatingPointException, 0xEF, kernel.IDT);
-    set_IDT_entry(17, (void*) &alignmentCheckException, 0xEF, kernel.IDT);
-    set_IDT_entry(18, (void*) &machineCheckException, 0xEF, kernel.IDT);
-    set_IDT_entry(19, (void*) &simdFloatingPointException, 0xEF, kernel.IDT);
-    set_IDT_entry(20, (void*) &virtualisationException, 0xEF, kernel.IDT);
+    set_IDT_entry(0,  (void*) &divideException, 0x8E, kernel.IDT);
+    set_IDT_entry(1,  (void*) &debugException, 0x8E, kernel.IDT);
+    set_IDT_entry(3,  (void*) &breakpointException, 0x8E, kernel.IDT);
+    set_IDT_entry(4,  (void*) &overflowException, 0x8E, kernel.IDT);
+    set_IDT_entry(5,  (void*) &boundRangeExceededException, 0x8E, kernel.IDT);
+    set_IDT_entry(6,  (void*) &invalidOpcodeException, 0x8E, kernel.IDT);
+    set_IDT_entry(7,  (void*) &deviceNotAvaliableException, 0x8E, kernel.IDT);
+    set_IDT_entry(8,  (void*) &doubleFaultException, 0x8E, kernel.IDT);
+    set_IDT_entry(9,  (void*) &coprocessorSegmentOverrunException, 0x8E, kernel.IDT);
+    set_IDT_entry(10, (void*) &invalidTSSException, 0x8E, kernel.IDT);
+    set_IDT_entry(11, (void*) &segmentNotPresentException, 0x8E, kernel.IDT);
+    set_IDT_entry(12, (void*) &stackSegmentFaultException, 0x8E, kernel.IDT);
+    set_IDT_entry(13, (void*) &generalProtectionFaultException, 0x8E, kernel.IDT);
+    set_IDT_entry(14, (void*) &pageFaultException, 0x8E, kernel.IDT);
+    set_IDT_entry(16, (void*) &floatingPointException, 0x8E, kernel.IDT);
+    set_IDT_entry(17, (void*) &alignmentCheckException, 0x8E, kernel.IDT);
+    set_IDT_entry(18, (void*) &machineCheckException, 0x8E, kernel.IDT);
+    set_IDT_entry(19, (void*) &simdFloatingPointException, 0x8E, kernel.IDT);
+    set_IDT_entry(20, (void*) &virtualisationException, 0x8E, kernel.IDT);
 }

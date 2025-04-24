@@ -15,6 +15,9 @@ To build and run TacOS, simply run in your shell:
 ```
 git clone https://github.com/UnmappedStack/TacOS
 cd TacOS
+git clone https://github.com/limine-bootloader/limine
+cd limine
+git checkout v9.x-binary
 make
 ```
 You'll need to have Qemu, NASM, and Clang installed. It will automatically run in the Qemu emulator.
