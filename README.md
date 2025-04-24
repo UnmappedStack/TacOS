@@ -1,5 +1,5 @@
 # TacOS
-My from-scratch OS with it's own kernel written in C and assembly
+My from-scratch OS with its own kernel written in C and assembly
 
 TacOS is a UNIX-like kernel which is able to run DOOM, among various other smaller userspace programs. It has things like a VFS, scheduler, TempFS, devices, context switching, virtual memory management, physical page frame allocation, and a port of Doom. It runs both on real hardware (tested on my laptop) and in the Qemu emulator.
 
