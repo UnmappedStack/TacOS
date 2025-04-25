@@ -1,5 +1,6 @@
 #pragma once
 #include <tss.h>
+#include <tty.h>
 #include <pit.h>
 #include <framebuffer.h>
 #include <mem/slab.h>
@@ -35,8 +36,7 @@ typedef struct {
     SchedulerQueue  scheduler;
     Cache          *memregion_cache;
     Framebuffer     framebuffer;
-    uint64_t        char_x;
-    uint64_t        char_y;
+    TTY             tty;
     struct timespec global_clock;
 } Kernel;
 

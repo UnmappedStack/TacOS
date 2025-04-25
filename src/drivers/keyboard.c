@@ -52,7 +52,7 @@ KeyboardData current_input_data = {0};
 
 void draw_cursor(void) {
     write_framebuffer_char('_');
-    kernel.char_x -= 8;
+    kernel.tty.loc_x -= 8;
 }
 
 __attribute__((interrupt))
@@ -70,9 +70,9 @@ void keyboard_isr(void*) {
     if (scancode == 0x0E && current_input_data.input_len > 0) { // backspace
         // cover it up
         write_framebuffer_char(' ');
-        kernel.char_x -= 16;
+        kernel.tty.loc_x -= 16;
         write_framebuffer_char(' ');
-        kernel.char_x -= 8;
+        kernel.tty.loc_x -= 8;
         draw_cursor();
         // remove from buffer
         current_input_data.input_len--;
@@ -92,7 +92,7 @@ void keyboard_isr(void*) {
         current_input_data.currently_reading = false;
         // remove the cursor
         printf(" ");
-        kernel.char_x -= 8;
+        kernel.tty.loc_x -= 8;
         goto ret;
     }
     char ch;
@@ -149,9 +149,9 @@ int kb_read(void *f, char *buf, size_t len, size_t off) {
     current_input_data.current_buffer = 0;
     current_input_data.input_len      = 0;
     // clear the cursor
-    kernel.char_x += 8;
+    kernel.tty.loc_x += 8;
     write_framebuffer_char(' ');
-    kernel.char_x -= 8;
+    kernel.tty.loc_x -= 8;
     return 0;
 }
 

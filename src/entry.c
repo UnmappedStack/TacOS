@@ -1,4 +1,5 @@
 #include <mem/pmm.h>
+#include <tty.h>
 #include <keyboard.h>
 #include <string.h>
 #include <framebuffer.h>
@@ -111,6 +112,7 @@ void _start() {
     ls("/");
     ls("/home");
     init_framebuffer();
+    init_tty();
     init_keyboard();
     try_exec_init();
     unlock_pit();

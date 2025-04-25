@@ -1,4 +1,9 @@
 #pragma once
+#include <stdint.h>
+#include <stddef.h>
+
+#define BG_COLOUR 0x22262e
+#define FG_COLOUR 0xd7dae0
 
 typedef struct {
     void *addr;
@@ -10,5 +15,5 @@ typedef struct {
 } Framebuffer;
 
 void init_framebuffer();
-void write_framebuffer_text(const char *msg);
-void write_framebuffer_char(char ch);
+void scroll_pixels(size_t num_pix);
+void draw_char(char ch, uint64_t x_coord, uint64_t y_coord, uint32_t colour);

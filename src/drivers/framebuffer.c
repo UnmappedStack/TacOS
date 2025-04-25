@@ -6,40 +6,6 @@
 #include <framebuffer.h>
 #include <kernel.h>
 
-#define BG_COLOUR 0x22262e
-#define FG_COLOUR 0xd7dae0
-
-int fb_open(void *f) {
-    (void) f;
-    return 0;
-}
-
-int fb_close(void *f) {
-    (void) f;
-    return 0;
-}
-
-int fb_write(void *f, char *buf, size_t len, size_t off) {
-    (void) f;
-    if (!buf) return -1;
-    buf = &buf[off];
-    while (*buf && len) {
-        write_framebuffer_char(*buf);
-        len--;
-        buf++;
-    }
-    return 0;
-}
-
-int fb_read(void *f, char *buf, size_t len, size_t off) {
-    (void) f;
-    (void) buf;
-    (void) len;
-    (void) off;
-    printf("Framebuffer device is write-only!\n");
-    return -1;
-}
-
 static volatile struct limine_framebuffer_request limine_framebuffer_request = {
     .id = LIMINE_FRAMEBUFFER_REQUEST,
     .revision = 0, 
@@ -105,53 +71,12 @@ void scroll_pixels(size_t num_pix) {
     fill_rect(0, max_height, kernel.framebuffer.width, num_pix, BG_COLOUR);
 }
 
-void scroll_line() {
-    kernel.char_y -= 32;
-    scroll_pixels(32);
-}
-
-void newline() {
-    kernel.char_x = 0;
-    kernel.char_y += 16;
-    if (kernel.char_y >= kernel.framebuffer.height - 16) scroll_line();
-}
-
-void write_framebuffer_char(char ch) {
-    if (kernel.char_y >= kernel.framebuffer.height) {
-        kernel.char_x = 0;
-        kernel.char_y = 0;
-    }
-    if (ch == '\n') {
-        newline();
-        return;
-    }
-    draw_char(ch, kernel.char_x, kernel.char_y, FG_COLOUR);
-    kernel.char_x += 8;
-    if (kernel.char_x >= kernel.framebuffer.width) newline();
-}
-
-void write_framebuffer_text(const char *msg) {
-    while (*msg) {
-        write_framebuffer_char(*msg);
-        msg++;
-    }
-}
-
 void init_framebuffer() {
     kernel.framebuffer = boot_get_framebuffer();
-    // tty device
-    DeviceOps ttydev_ops = (DeviceOps) {
-        .read = &fb_read,
-        .write = &fb_write,
-        .open = &fb_open,
-        .close = &fb_close,
-        .is_term = true,
-    };
-    mkdevice("/dev/tty0", ttydev_ops);
     // raw framebuffer device
     DeviceOps fbdev_ops = {0};
     fbdev_ops.is_term = true;
-    mkdevice("/dev/fb0", ttydev_ops);
+    mkdevice("/dev/fb0", fbdev_ops);
     // Fill the screen and finish up
     fill_rect(0, 0, kernel.framebuffer.width, kernel.framebuffer.height, BG_COLOUR);
     printf("Framebuffer initialised.\n");
