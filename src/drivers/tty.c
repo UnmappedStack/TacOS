@@ -3,8 +3,8 @@
 #include <tty.h>
 #include <kernel.h>
 
-#define FG_DEFAULT 0xd7dae0
-#define BG_DEFAULT 0x22262e
+#define FG_DEFAULT 0xFFFFFF
+#define BG_DEFAULT 0x000000
 void scroll_line() {
     kernel.tty.loc_y -= 32;
     scroll_pixels(32);
