@@ -86,6 +86,7 @@ void *find_direntry(VfsDrive *drive, VfsDirIter *dir, char *name) {
 }
 
 VfsFile *vfs_access(char *path, int flags, VfsAccessType type) {
+    printf("vfs access for %s\n", path);
     char path_from_rel[MAX_PATH_LEN];
     if (*path != '/') {
         char *cwd = kernel.scheduler.current_task->cwd;
@@ -94,7 +95,7 @@ VfsFile *vfs_access(char *path, int flags, VfsAccessType type) {
         memcpy(path_from_rel + cwd_len, path, strlen(path) + 1);
         path = path_from_rel;
         printf("relative, new path = %s\n", path);
-    } else printf("not relative");
+    } else printf("not relative\n");
     if (strlen(path) >= MAX_PATH_LEN) {
         printf("Path is too long (max length is currently %i bytes)\n", MAX_PATH_LEN);
     }
@@ -106,6 +107,14 @@ VfsFile *vfs_access(char *path, int flags, VfsAccessType type) {
     }
     char path_cpy[MAX_PATH_LEN];
     strcpy(path_cpy, &path[new_path_start_idx]);
+    if (!path_cpy[0]) {
+        VfsFile *file_addr = slab_alloc(kernel.vfs_file_cache);
+        *file_addr = (VfsFile) {
+            .private = drive->fs.find_root_fn(drive->private),
+            .drive = *drive,
+        };
+        return file_addr;
+    }
     char *path_lag = &path_cpy[1];
     size_t pathlen = strlen(path) + 1;
     void *current_dir = drive->fs.find_root_fn(drive->private);
@@ -186,19 +195,6 @@ VfsFile *open(char *path, int flags) {
 
 int opendir(VfsDirIter *buf, VfsFile **first_entry_buf, char *path, int flags) {
     if (!buf) return -1;
-    if (!strcmp(path, "/")) {
-        size_t new_path_start_idx;
-        VfsDrive *drive = vfs_path_to_drive(path, &new_path_start_idx);
-        void *dir = drive->fs.find_root_fn(drive->private);
-        buf->private = drive->fs.opendir_fn(dir);
-        buf->drive = *drive;
-        *first_entry_buf = slab_alloc(kernel.vfs_file_cache);
-        **first_entry_buf = (VfsFile) {
-            .private = drive->fs.diriter_fn(buf->private),
-            .drive = *drive,
-        };
-        return 0;
-    }
     VfsFile *temp = vfs_access(path, flags, VAT_opendir);
     if (!temp) {
         return -1;
