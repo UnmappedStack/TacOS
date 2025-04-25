@@ -23,7 +23,7 @@ void write_framebuffer_char(char ch) {
         newline();
         return;
     }
-    draw_char(ch, kernel.tty.loc_x, kernel.tty.loc_y, FG_COLOUR);
+    draw_char(ch, kernel.tty.loc_x, kernel.tty.loc_y, kernel.tty.fg_colour);
     kernel.tty.loc_x += 8;
     if (kernel.tty.loc_x >= kernel.framebuffer.width) newline();
 }
@@ -75,4 +75,7 @@ void init_tty(void) {
         .is_term = true,
     };
     mkdevice("/dev/tty0", ttydev_ops);
+    kernel.tty.fg_colour = 0xd7dae0;
+    kernel.tty.bg_colour = 0x22262e;
+    fill_rect(0, 0, kernel.framebuffer.width, kernel.framebuffer.height, kernel.tty.bg_colour);
 }

@@ -2,9 +2,6 @@
 #include <stdint.h>
 #include <stddef.h>
 
-#define BG_COLOUR 0x22262e
-#define FG_COLOUR 0xd7dae0
-
 typedef struct {
     void *addr;
     uint64_t width;
@@ -17,3 +14,4 @@ typedef struct {
 void init_framebuffer();
 void scroll_pixels(size_t num_pix);
 void draw_char(char ch, uint64_t x_coord, uint64_t y_coord, uint32_t colour);
+void fill_rect(uint64_t x, uint64_t y, uint64_t width, uint64_t height, uint32_t colour);

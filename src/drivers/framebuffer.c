@@ -54,7 +54,7 @@ void draw_char(char ch, uint64_t x_coord, uint64_t y_coord, uint32_t colour) {
             if ((font[first_byte_idx + y] >> (7 - x)) & 1)
                 draw_pixel(x_coord + x, y_coord + y, colour);
             else
-                draw_pixel(x_coord + x, y_coord + y, BG_COLOUR);
+                draw_pixel(x_coord + x, y_coord + y, kernel.tty.bg_colour);
         }
     }
 }
@@ -68,7 +68,7 @@ void scroll_pixels(size_t num_pix) {
         new_row_loc += kernel.framebuffer.pitch;
         old_row_loc += kernel.framebuffer.pitch;
     }
-    fill_rect(0, max_height, kernel.framebuffer.width, num_pix, BG_COLOUR);
+    fill_rect(0, max_height, kernel.framebuffer.width, num_pix, kernel.tty.bg_colour);
 }
 
 void init_framebuffer() {
@@ -78,6 +78,5 @@ void init_framebuffer() {
     fbdev_ops.is_term = true;
     mkdevice("/dev/fb0", fbdev_ops);
     // Fill the screen and finish up
-    fill_rect(0, 0, kernel.framebuffer.width, kernel.framebuffer.height, BG_COLOUR);
     printf("Framebuffer initialised.\n");
 }

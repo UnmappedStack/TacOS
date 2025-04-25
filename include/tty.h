@@ -4,7 +4,8 @@
 
 typedef struct {
     size_t loc_x, loc_y;
-    uint32_t colour;
+    uint32_t fg_colour;
+    uint32_t bg_colour;
 } TTY;
 
 void init_tty(void);
