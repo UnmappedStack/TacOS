@@ -28,9 +28,64 @@ void write_framebuffer_char(char ch) {
     if (kernel.tty.loc_x >= kernel.framebuffer.width) newline();
 }
 
+void run_ansi_cmd(ANSICmd *cmd) {
+    switch (cmd->cmd) {
+    case 'H':
+    case 'f':
+        kernel.tty.loc_x = cmd->vals[0] * 8;
+        kernel.tty.loc_y = cmd->vals[1] * 16;
+        break;
+    default:
+        printf("Unknown ANSI escape CSI mode command: %c\n", cmd->cmd);
+    }
+}
+
+void escape_mode(char ch) {
+    ANSICmd *cmd = &kernel.tty.current_cmd;
+    if (ch == ';') {
+        cmd->vals[cmd->nvals++] = str_to_u64(cmd->thisval);
+        memset(cmd->thisval, 0, 5);
+        cmd->thisvallen = 0;
+    } else if (ch >= '0' && ch <= '9') {
+        cmd->thisval[cmd->thisvallen++] = ch;
+    } else if ((ch >= 'a' && ch <= 'z') || (ch >= 'A' && ch <= 'Z')) {
+        // save previous arg
+        cmd->vals[cmd->nvals++] = str_to_u64(cmd->thisval);
+        memset(cmd->thisval, 0, 5);
+        cmd->thisvallen = 0;
+        // run command and go back to normal mode
+        cmd->cmd = ch;
+        run_ansi_cmd(cmd);
+        kernel.tty.mode = TTYNormal;
+    }
+}
+
+void write_tty_char(char ch) {
+    switch (kernel.tty.mode) {
+    case TTYNormal:
+        if (ch == '\x1b' || ch == 27)
+            kernel.tty.mode = TTYEscape;
+        else
+            write_framebuffer_char(ch);
+        break;
+    case TTYEscape:
+        if (ch == '[') {
+            kernel.tty.mode = TTYCSI;
+            kernel.tty.current_cmd = (ANSICmd) {0};
+        } else {
+            printf("Only CSI mode ([) is supported in TTY0's ANSI parser (TODO)\n");
+            kernel.tty.mode = TTYNormal;
+        }
+        break;
+    case TTYCSI:
+        escape_mode(ch);
+        break;
+    }
+}
+
 void write_framebuffer_text(const char *msg) {
     while (*msg) {
-        write_framebuffer_char(*msg);
+        write_tty_char(*msg);
         msg++;
     }
 }
@@ -50,7 +105,7 @@ int fb_write(void *f, char *buf, size_t len, size_t off) {
     if (!buf) return -1;
     buf = &buf[off];
     while (*buf && len) {
-        write_framebuffer_char(*buf);
+        write_tty_char(*buf);
         len--;
         buf++;
     }
@@ -77,5 +132,6 @@ void init_tty(void) {
     mkdevice("/dev/tty0", ttydev_ops);
     kernel.tty.fg_colour = 0xd7dae0;
     kernel.tty.bg_colour = 0x22262e;
+    kernel.tty.mode = TTYNormal;
     fill_rect(0, 0, kernel.framebuffer.width, kernel.framebuffer.height, kernel.tty.bg_colour);
 }

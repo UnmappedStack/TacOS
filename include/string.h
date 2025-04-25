@@ -15,3 +15,4 @@ void uint64_to_hex_string(uint64_t num, char *str);
 void uint64_to_string(uint64_t num, char* str);
 void uint64_to_hex_string_padded(uint64_t num, char *str);
 int strcontains(char *s, char c);
+uint64_t str_to_u64(const char *str);
