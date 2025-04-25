@@ -32,6 +32,7 @@ void init_devices() {
         .fs = tempfs,
         .private = tempfs_new(),
     };
+    mkdir("/dev");
     vfs_mount("/dev", drive);
     printf("Initiated devices.\n");
 }

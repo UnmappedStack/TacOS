@@ -267,10 +267,7 @@ int sys_chdir(char *path) {
         path = buf;
     }
     // check dir exists
-    VfsFile *tmp;
-    VfsDirIter tmpbuf;
-    if (opendir(&tmpbuf, &tmp, path, 0) < 0) return -1;
-    closedir(&tmpbuf);
+    if (!vfs_dir_exists(path)) return -1;
     // set dir
     size_t len = strlen(path);
     memcpy(CURRENT_TASK->cwd, path, len + 1);

@@ -183,3 +183,10 @@ void uint64_to_string(uint64_t num, char* str) {
         num /= 10;
     } while (num > 0);
 }
+
+int strcontains(char *s, char c) {
+    while (*s) {
+        if (*(s++) == c) return 1;
+    }
+    return 0;
+}

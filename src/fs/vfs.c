@@ -18,14 +18,27 @@ void init_vfs() {
     printf("Inititated VFS.\n");
 }
 
+int vfs_dir_exists(char *path) {
+    VfsFile *tmp;
+    VfsDirIter tmpbuf;
+    if (opendir(&tmpbuf, &tmp, path, 0) < 0) return 0;
+    closedir(&tmpbuf);
+    return 1;
+}
+
 int vfs_mount(char *path, VfsDrive drive) {
     if (strlen(path) >= MAX_PATH_LEN) {
         printf("Cannot mount drive on this path, path is too long (max: %i characters)\n", MAX_PATH_LEN);
         return -1;
     }
+    if (!vfs_dir_exists(path) && strcmp(path, "/")) {
+        printf("Cannot mount: directory doesn't exist.\n");
+        return -1;
+    }
     VfsMountTableEntry *new_entry = slab_alloc(kernel.vfs_mount_table_cache);
     strcpy(new_entry->path, path);
     new_entry->drive = drive;
+    printf("new entry find root is %p\n", new_entry, new_entry->drive.fs.find_root_fn);
     list_insert(&kernel.vfs_mount_table_list, &new_entry->list);
     return 0;
 }
@@ -86,7 +99,6 @@ void *find_direntry(VfsDrive *drive, VfsDirIter *dir, char *name) {
 }
 
 VfsFile *vfs_access(char *path, int flags, VfsAccessType type) {
-    printf("vfs access for %s\n", path);
     char path_from_rel[MAX_PATH_LEN];
     if (*path != '/') {
         char *cwd = kernel.scheduler.current_task->cwd;
@@ -94,8 +106,7 @@ VfsFile *vfs_access(char *path, int flags, VfsAccessType type) {
         memcpy(path_from_rel, cwd, cwd_len);
         memcpy(path_from_rel + cwd_len, path, strlen(path) + 1);
         path = path_from_rel;
-        printf("relative, new path = %s\n", path);
-    } else printf("not relative\n");
+    }
     if (strlen(path) >= MAX_PATH_LEN) {
         printf("Path is too long (max length is currently %i bytes)\n", MAX_PATH_LEN);
     }
@@ -196,19 +207,18 @@ VfsFile *open(char *path, int flags) {
 int opendir(VfsDirIter *buf, VfsFile **first_entry_buf, char *path, int flags) {
     if (!buf) return -1;
     VfsFile *temp = vfs_access(path, flags, VAT_opendir);
-    if (!temp) {
-        return -1;
-    } else {
-        buf->private = temp->drive.fs.opendir_fn(temp->private);
-        buf->drive = temp->drive;
-        temp->drive.fs.close_fn(temp);
-        *first_entry_buf = slab_alloc(kernel.vfs_file_cache);
-        **first_entry_buf = (VfsFile) {
-            .private = temp->drive.fs.diriter_fn(buf->private),
-            .drive = temp->drive,
-        };
-        return 0;
-    }
+    if (!temp) return -1;
+    buf->private = temp->drive.fs.opendir_fn(temp->private);
+    buf->drive = temp->drive;
+    temp->drive.fs.close_fn(temp);
+    *first_entry_buf = slab_alloc(kernel.vfs_file_cache);
+    **first_entry_buf = (VfsFile) {
+        .private = temp->drive.fs.diriter_fn(buf->private),
+        .drive = temp->drive,
+    };
+    strcpy(buf->path, path);
+    printf("\nOPENDIR WITH PATH %s\n", path);
+    return 0;
 }
 
 int mkfile(char *path) {

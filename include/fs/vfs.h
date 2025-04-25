@@ -62,8 +62,10 @@ typedef struct {
 } VfsFile;
 
 typedef struct {
+    char path[MAX_PATH_LEN];
     void *private;
     VfsDrive drive;
+    size_t mntidx;
 } VfsDirIter;
 
 void init_vfs();
@@ -84,3 +86,4 @@ VfsFile *vfs_diriter(VfsDirIter *dir, bool *is_dir);
 VfsDirIter vfs_file_to_diriter(VfsFile *f);
 int vfs_read(VfsFile *file, char *buffer, size_t len, size_t offset);
 int vfs_write(VfsFile *file, char *buffer, size_t len, size_t offset);
+int vfs_dir_exists(char *path);

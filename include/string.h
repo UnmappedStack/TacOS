@@ -14,3 +14,4 @@ void uint64_to_binary_string(uint64_t num, char *buf);
 void uint64_to_hex_string(uint64_t num, char *str);
 void uint64_to_string(uint64_t num, char* str);
 void uint64_to_hex_string_padded(uint64_t num, char *str);
+int strcontains(char *s, char c);

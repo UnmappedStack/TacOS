@@ -92,6 +92,7 @@ int fprintf(FILE *stream, const char *fmt, ...) {
 
 int putchar(int ch) {
     write(stdout->fd, &ch, 1);
+    fflush(stdout);
     return ch;
 }
 

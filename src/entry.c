@@ -38,10 +38,12 @@ void ls(char *path) {
         HALT_DEVICE();
     }
     for (;;) {
+        printf("in here\n");
         vfs_identify(buf, fname, &is_dir, &fsize);
         char *label = (is_dir) ? " - Directory" : " - File";
         printf("%s (%i bytes): %s\n", label, fsize, fname);
         buf = vfs_diriter(&dir, &is_dir);
+        printf("did diriter\n");
         if (!buf) break;
     }
 }
