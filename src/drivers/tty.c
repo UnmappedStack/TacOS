@@ -28,6 +28,33 @@ void write_framebuffer_char(char ch) {
     if (kernel.tty.loc_x >= kernel.framebuffer.width) newline();
 }
 
+void tty_set_cell_graphics_mode(ANSICmd *cmd) {
+    // ANSI base colours except for default
+    uint32_t tty_colours[] = {
+        0x000000,
+        0xFF0000,
+        0x00FF00,
+        0xFFFF00,
+        0x0000FF,
+        0xFF00FF,
+        0x00FFFF,
+        0xFFFFFF,
+    };
+    uint32_t fg_default = 0xd7dae0;
+    uint32_t bg_default = 0x22262e;
+    for (size_t i = 0; i < cmd->nvals; i++) {
+        if (cmd->vals[i] >= 30 && cmd->vals[i] <= 39) {
+            uint32_t col = (cmd->vals[i] == 39) ? fg_default : tty_colours[cmd->vals[i] - 30];
+            kernel.tty.fg_colour = col;
+        } else if (cmd->vals[i] >= 40 && cmd->vals[i] <= 49) {
+            uint32_t col = (cmd->vals[i] == 49) ? bg_default : tty_colours[cmd->vals[i] - 40];
+            kernel.tty.bg_colour = col;
+        } else {
+            printf("Graphics mode in ANSI not yet supported: %i\n", cmd->vals[i]);
+        }
+    }
+}
+
 void run_ansi_cmd(ANSICmd *cmd) {
     switch (cmd->cmd) {
     case 'H':
@@ -41,6 +68,8 @@ void run_ansi_cmd(ANSICmd *cmd) {
         kernel.tty.loc_x = 0;
         kernel.tty.loc_y = 0;
         break;
+    case 'm':
+        tty_set_cell_graphics_mode(cmd);
     default:
         printf("Unknown ANSI escape CSI mode command: %c\n", cmd->cmd);
     }
