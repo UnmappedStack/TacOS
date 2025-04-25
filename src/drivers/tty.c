@@ -3,6 +3,8 @@
 #include <tty.h>
 #include <kernel.h>
 
+#define FG_DEFAULT 0xd7dae0
+#define BG_DEFAULT 0x22262e
 void scroll_line() {
     kernel.tty.loc_y -= 32;
     scroll_pixels(32);
@@ -40,15 +42,15 @@ void tty_set_cell_graphics_mode(ANSICmd *cmd) {
         0x00FFFF,
         0xFFFFFF,
     };
-    uint32_t fg_default = 0xd7dae0;
-    uint32_t bg_default = 0x22262e;
     for (size_t i = 0; i < cmd->nvals; i++) {
         if (cmd->vals[i] >= 30 && cmd->vals[i] <= 39) {
-            uint32_t col = (cmd->vals[i] == 39) ? fg_default : tty_colours[cmd->vals[i] - 30];
+            uint32_t col = (cmd->vals[i] == 39) ? FG_DEFAULT : tty_colours[cmd->vals[i] - 30];
             kernel.tty.fg_colour = col;
+            break;
         } else if (cmd->vals[i] >= 40 && cmd->vals[i] <= 49) {
-            uint32_t col = (cmd->vals[i] == 49) ? bg_default : tty_colours[cmd->vals[i] - 40];
+            uint32_t col = (cmd->vals[i] == 49) ? BG_DEFAULT : tty_colours[cmd->vals[i] - 40];
             kernel.tty.bg_colour = col;
+            break;
         } else {
             printf("Graphics mode in ANSI not yet supported: %i\n", cmd->vals[i]);
         }
@@ -70,6 +72,7 @@ void run_ansi_cmd(ANSICmd *cmd) {
         break;
     case 'm':
         tty_set_cell_graphics_mode(cmd);
+        break;
     default:
         printf("Unknown ANSI escape CSI mode command: %c\n", cmd->cmd);
     }
@@ -165,8 +168,8 @@ void init_tty(void) {
         .is_term = true,
     };
     mkdevice("/dev/tty0", ttydev_ops);
-    kernel.tty.fg_colour = 0xd7dae0;
-    kernel.tty.bg_colour = 0x22262e;
+    kernel.tty.fg_colour = FG_DEFAULT;
+    kernel.tty.bg_colour = BG_DEFAULT;
     kernel.tty.mode = TTYNormal;
     fill_rect(0, 0, kernel.framebuffer.width, kernel.framebuffer.height, kernel.tty.bg_colour);
 }

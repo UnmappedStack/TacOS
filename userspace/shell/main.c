@@ -30,8 +30,8 @@ void run_program(char *program_file, char *argv[]) {
 
 void run_cmd(char *cmd) {
     if (!*cmd || *cmd == '#') return;
-    char *argv[10];
-    memset(argv, 0, 10 * sizeof(char*));
+    char *argv[30];
+    memset(argv, 0, 30 * sizeof(char*));
     size_t argc = 0;
     char *start = cmd;
     char *end = cmd;
@@ -56,7 +56,7 @@ void shell_mode() {
     char cwd[200];
     for (;;) {
         getcwd(cwd, 200);
-        printf("[user@TacOS %s]$ ", cwd);
+        printf(GREEN "user@TacOS" RESET ":" BLUE "%s" RESET"$ ", cwd);
         fflush(stdout);
         memset(input, 0, 200);
         fgets(input, 200, stdin);
