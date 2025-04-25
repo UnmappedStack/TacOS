@@ -146,7 +146,6 @@ int kb_read(void *f, char *buf, size_t len, size_t off) {
     current_input_data.currently_reading = true;
     current_input_data.current_buffer    = buf;
     current_input_data.buffer_size       = len - 1;
-    lock_pit();
     unmask_irq(1);
     while (current_input_data.currently_reading) outb(0x80, 0);
     mask_irq(1);
