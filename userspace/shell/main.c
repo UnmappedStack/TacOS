@@ -43,11 +43,9 @@ void run_cmd(char *cmd) {
     }
     if (!strcmp(argv[0], "exit")) exit(0);
     else if (!strcmp(argv[0], "cd")) {
-        if (!argv[1] || argv[2]) {
-            printf("Shell: cd expects one argument being the new current working directory.\n");
-            return;
-        }
-        chdir(argv[1]);
+        if (!argv[1] || argv[2]) return;
+        if (chdir(argv[1]) < 0)
+            printf("cd: no such directory: %s\n", argv[1]);
         return;
     }
     run_program(argv[0], argv);
