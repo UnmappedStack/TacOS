@@ -13,7 +13,11 @@ void lsdir(char *dir) {
     }
     printf("%s:\n", dir);
     while ((entry = readdir(d)) != NULL) {
-        printf(" %s%s: %zu bytes\n", entry->d_name, (entry->d_isdir) ? " [DIR]" : "", entry->d_fsize);
+        printf(" %s", entry->d_name, (entry->d_isdir));
+        if (entry->d_isdir)
+            printf(" [DIR]\n");
+        else
+            printf(": %zu bytes\n", entry->d_fsize);
     }
 }
 
