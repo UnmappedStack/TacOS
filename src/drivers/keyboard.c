@@ -57,16 +57,15 @@ void draw_cursor(void) {
 
 __attribute__((interrupt))
 void keyboard_isr(void*) {
-    if (!current_input_data.currently_reading) return;
-    if (!(inb(PS2_STATUS_REGISTER) & 0x01)) return;
+    if (!(inb(PS2_STATUS_REGISTER) & 0x01)) goto ret;
     uint8_t scancode = inb(PS2_DATA_REGISTER);
+    if (!current_input_data.currently_reading) goto ret;
     // special cases
     // it's a release, not a press, OR an unprintable key
     if (scancode & 0x80 || scancode == 0x5B || scancode == 1) {
         if (scancode == 0xAA || scancode == 0xB6) // shift key is released
             current_input_data.shifted = false;
-        end_of_interrupt();
-        return;
+        goto ret;
     }
     if (scancode == 0x0E && current_input_data.input_len > 0) { // backspace
         // cover it up
@@ -78,18 +77,15 @@ void keyboard_isr(void*) {
         // remove from buffer
         current_input_data.input_len--;
         current_input_data.current_buffer[current_input_data.input_len] = 0;
-        end_of_interrupt();
-        return;
+        goto ret;
     }
     if (scancode == 0x3A) { // capslock key
         current_input_data.caps = !current_input_data.caps;
-        end_of_interrupt();
-        return;
+        goto ret;
     }
     if (scancode == 0x2A || scancode == 0x36) { // one of the shift keys
         current_input_data.shifted = true;
-        end_of_interrupt();
-        return;
+        goto ret;
     }
     if (scancode == 0x1C || current_input_data.buffer_size == current_input_data.input_len) { // enter
         current_input_data.current_buffer[current_input_data.input_len] = 0;
@@ -97,8 +93,7 @@ void keyboard_isr(void*) {
         // remove the cursor
         printf(" ");
         kernel.char_x -= 8;
-        end_of_interrupt();
-        return;
+        goto ret;
     }
     char ch;
     if (current_input_data.shifted && !current_input_data.caps) {
@@ -120,6 +115,7 @@ void keyboard_isr(void*) {
     current_input_data.current_buffer[current_input_data.input_len] = ch;
     current_input_data.input_len++;
     draw_cursor();
+ret:
     end_of_interrupt();
     return;
 }
@@ -141,13 +137,14 @@ int kb_write(void *f, char *buf, size_t len, size_t off) {
 }
 
 int kb_read(void *f, char *buf, size_t len, size_t off) {
-    (void) f, (void) buf, (void) len, (void) off;
+    (void) f, (void) off;
     draw_cursor();
     current_input_data.currently_reading = true;
     current_input_data.current_buffer    = buf;
     current_input_data.buffer_size       = len - 1;
+    if (inb(PS2_STATUS_REGISTER) & 0x01) inb(PS2_DATA_REGISTER);
     unmask_irq(1);
-    while (current_input_data.currently_reading) outb(0x80, 0);
+    while (current_input_data.currently_reading) IO_WAIT();
     mask_irq(1);
     current_input_data.current_buffer = 0;
     current_input_data.input_len      = 0;
@@ -159,13 +156,13 @@ int kb_read(void *f, char *buf, size_t len, size_t off) {
 }
 
 void init_keyboard() {
-    DeviceOps ttydev_ops = (DeviceOps) {
+    DeviceOps kbdev_ops = (DeviceOps) {
         .read  = &kb_read,
         .write = &kb_write,
         .open  = &kb_open,
         .close = &kb_close,
         .is_term = false,
     };
-    mkdevice("/dev/kb0", ttydev_ops);
+    mkdevice("/dev/kb0", kbdev_ops);
     set_IDT_entry(33, (void*) keyboard_isr, 0x8E, kernel.IDT);
 }
