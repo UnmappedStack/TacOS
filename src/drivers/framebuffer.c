@@ -71,11 +71,12 @@ void scroll_pixels(size_t num_pix) {
     fill_rect(0, max_height, kernel.framebuffer.width, num_pix, kernel.tty.bg_colour);
 }
 
+int fbdevopen(void *f) {(void)f;return 0;}
+int fbdevclose(void *f) {(void)f;return 0;}
 void init_framebuffer() {
     kernel.framebuffer = boot_get_framebuffer();
     // raw framebuffer device
-    DeviceOps fbdev_ops = {0};
-    fbdev_ops.is_term = true;
+    DeviceOps fbdev_ops = {.open=&fbdevopen,.close=&fbdevclose,.is_term=false};
     mkdevice("/dev/fb0", fbdev_ops);
     // Fill the screen and finish up
     printf("Framebuffer initialised.\n");
