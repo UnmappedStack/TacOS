@@ -35,6 +35,12 @@ void run_ansi_cmd(ANSICmd *cmd) {
         kernel.tty.loc_x = cmd->vals[0] * 8;
         kernel.tty.loc_y = cmd->vals[1] * 16;
         break;
+    case 'J':
+        // TODO: check how much of screen to clear
+        fill_rect(0, 0, kernel.framebuffer.width, kernel.framebuffer.height, kernel.tty.bg_colour);
+        kernel.tty.loc_x = 0;
+        kernel.tty.loc_y = 0;
+        break;
     default:
         printf("Unknown ANSI escape CSI mode command: %c\n", cmd->cmd);
     }
