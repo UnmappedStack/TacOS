@@ -153,11 +153,11 @@ size_t fwrite(const void *restrict ptr, size_t size, size_t nitems,
             if (stream->bufsz + bytes >= stream->bufmax) {
                 write(stream->fd, stream->buffer, stream->bufsz);
                 stream->bufsz = 0;
-                return write(stream->fd, ptr, bytes);
+                return write(stream->fd, ptr, bytes) / size;
             } else {
                 memcpy(&stream->buffer[stream->bufsz], ptr, bytes);
                 stream->bufsz += bytes;
-                return bytes;
+                return bytes / size;
             }
         case _IOLBF:
             // Line buffering
@@ -166,11 +166,11 @@ size_t fwrite(const void *restrict ptr, size_t size, size_t nitems,
                 stream->bufsz += bytes;
                 size_t ret = write(stream->fd, stream->buffer, stream->bufsz);
                 stream->bufsz = 0;
-                return ret;
+                return ret / size;
             } else {
                 memcpy(&stream->buffer[stream->bufsz], ptr, bytes);
                 stream->bufsz += bytes;
-                return bytes;
+                return bytes / size;
             }
         case _IONBF:
             // No buffering
@@ -205,7 +205,9 @@ int setvbuf(FILE *stream, char *buffer, int mode, size_t size) {
 }
 
 size_t fread(void *ptr, size_t size, size_t nmemb, FILE *stream) {
-    return read(stream->fd, ptr, size * nmemb);
+    size_t bytes;
+    if ((bytes=read(stream->fd, ptr, size * nmemb)) < 0) return -1;
+    return bytes / size;
 }
 
 int sscanf(const char *str, const char *format, ...) {

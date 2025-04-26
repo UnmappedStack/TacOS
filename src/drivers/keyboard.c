@@ -9,6 +9,9 @@
 #define PS2_STATUS_REGISTER  0x64
 #define PS2_COMMAND_REGISTER 0x64
 
+uint8_t scancode_event_queue[30]; // if it gets to 30 we shift everything back
+uint8_t nkbevents = 0;
+
 char character_table[] = {
     0,    0,    '1',  '2',  '3',  '4',  '5',  '6',  '7',  '8',  '9',  '0',
     '-',  '=',  0,    0x09, 'q',  'w',  'e',  'r',  't',  'y',  'u',  'i',
@@ -55,11 +58,20 @@ void draw_cursor(void) {
     kernel.tty.loc_x -= 8;
 }
 
+void add_kb_event_to_queue(uint8_t scancode) {
+    (void) scancode;
+    printf("add to queue: %d\n", scancode);
+}
+
 __attribute__((interrupt))
 void keyboard_isr(void*) {
+    printf("kb\n");
     if (!(inb(PS2_STATUS_REGISTER) & 0x01)) goto ret;
     uint8_t scancode = inb(PS2_DATA_REGISTER);
-    if (!current_input_data.currently_reading) goto ret;
+    if (!current_input_data.currently_reading) {
+        add_kb_event_to_queue(scancode);
+        goto ret;
+    }
     // special cases
     // it's a release, not a press, OR an unprintable key
     if (scancode & 0x80 || scancode == 0x5B || scancode == 1) {
