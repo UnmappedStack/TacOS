@@ -163,6 +163,6 @@ void init_keyboard() {
         .close = &kb_close,
         .is_term = false,
     };
-    mkdevice("/dev/kb0", kbdev_ops);
+    mkdevice("/dev/stdin0", kbdev_ops);
     set_IDT_entry(33, (void*) keyboard_isr, 0x8E, kernel.IDT);
 }

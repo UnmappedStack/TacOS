@@ -31,7 +31,7 @@ int main(int argc, char **argv, char **envp) {
         return -1;
     }
     is_init = 1;
-    stdin  = fopen("/dev/kb0", "r");
+    stdin  = fopen("/dev/stdin0", "r");
     stdout = fopen("/dev/tty0", "w");
     stderr = fopen("/dev/tty0", "w"); // same device, but no IO buffering
     setvbuf(stdin, NULL, _IOLBF, 0);
