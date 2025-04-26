@@ -34,7 +34,7 @@ int sys_open(char *filename, int flags, int mode) {
         return file_descriptor;
     }
 err:
-    printf("Couldn't open file %s\n", filename);
+    printf("Couldn't open file %s (fd = %i)\n", filename, file_descriptor);
     return -1;
 }
 
