@@ -3,6 +3,10 @@
 #include <stdlib.h>
 #include <stdint.h>
 
+char *strerror(int errnum) {
+    return "Unknown errno";
+}
+
 size_t strlen(const char *str) {
     size_t len = 0;
     while (str[len]) len++;

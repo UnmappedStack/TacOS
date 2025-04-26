@@ -4,6 +4,7 @@ global start_heap
 extern main
 extern init_environ
 extern init_streams
+extern exit
 
 %define HEAP_VERIFY_OFF        0
 %define HEAP_NEXT_OFF          1
@@ -22,15 +23,12 @@ _start:
     push rdx
     ; initiate everything the libc uses (streams, heap, etc)
     call init_libc
-    ; restore argc+argv+envp & call entry
+    ; restore argc+argv+envp, call entry, end exit
     pop rdx
     pop rsi
     pop rdi
     call main
-    ; exit
-    mov rdi, rax
-    mov rax, 4
-    int 0x80
+    call exit
     jmp $ ; in case exit failed, loop forever
 
 ; takes envp in rdx

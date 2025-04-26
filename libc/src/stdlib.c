@@ -5,14 +5,23 @@
 #include <unistd.h>
 #include <syscall.h>
 
+void *atexit_fns[32] = {0};
+size_t natexit_fns = 0;
 int is_init = 0;
 char **environ;
 
 __attribute__((noreturn))
 void exit(int status) {
+    for (size_t i = 0; i < natexit_fns; i++)
+        ((void (*)(void)) atexit_fns[i])();
     fflush(stdout);
     __syscall1(4, status);
     for (;;);
+}
+
+int atexit(void* fn) {
+    atexit_fns[natexit_fns++] = fn;
+    return 0;
 }
 
 // TODO: Move heap to another file

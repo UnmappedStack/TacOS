@@ -49,9 +49,13 @@ int fclose(FILE *stream);
 size_t fwrite(const void *restrict ptr, size_t size, size_t nitems,
     FILE *restrict stream);
 int fputs(const char *str, FILE *stream);
+int fputc(int ch, FILE *stream);
 char *fgets(char *str, int n, FILE *stream);
 int fflush(FILE *stream);
 int setvbuf(FILE *stream, char *buffer, int mode, size_t size);
 size_t fread(void *ptr, size_t size, size_t nmemb, FILE *stream);
 long ftell(FILE *stream);
 int fseek(FILE *stream, long offset, int whence);
+int fgetc(FILE *stream);
+int getchar();
+int fileno(FILE *stream);

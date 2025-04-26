@@ -24,3 +24,4 @@ int system(const char *command);
 char *getenv(char *key);
 int setenv(char *key, char *val, int overwrite);
 int abs(int j);
+int atexit(void* fn);

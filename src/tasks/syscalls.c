@@ -75,7 +75,7 @@ int sys_getpid() {
 int sys_execve(char *path, char **argv, char **envp) {
     DISABLE_INTERRUPTS();
     int e;
-    if ((e=execve(CURRENT_TASK, path, argv, envp))) return e;
+    if ((e=execve(CURRENT_TASK, path, argv, envp)) < 0) return e;
     ENABLE_INTERRUPTS();
     for (;;);
 }

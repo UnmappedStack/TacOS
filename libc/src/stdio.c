@@ -226,3 +226,22 @@ int fseek(FILE *stream, long offset, int whence) {
     lseek(stream->fd, offset, whence);
     return 0;
 }
+
+int fputc(int ch, FILE *stream) {
+    fwrite(&ch, 1, 1, stream);
+    return ch;
+}
+
+int fgetc(FILE *stream) {
+    char ret;
+    fread(&ret, 1, 1, stream);
+    return (int) ret;
+}
+
+int getchar() {
+    return fgetc(stdin);
+}
+
+int fileno(FILE *stream) {
+    return stream->fd;
+}

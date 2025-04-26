@@ -37,9 +37,7 @@ int execvp(const char *path, char **argv) {
     if (path[0] == '/' || contains_slash)
         return execve(path, argv, environ);
     char *pathlist = getenv("PATH");
-    if (!pathlist) {
-        return -1;
-    }
+    if (!pathlist) return -1;
     size_t start = 0;
     size_t end = 0;
     for (; !end || pathlist[end - 1]; end++) {
