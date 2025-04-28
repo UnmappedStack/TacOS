@@ -60,12 +60,10 @@ void draw_cursor(void) {
 
 void add_kb_event_to_queue(uint8_t scancode) {
     (void) scancode;
-    printf("add to queue: %d\n", scancode);
 }
 
 __attribute__((interrupt))
 void keyboard_isr(void*) {
-    printf("kb\n");
     if (!(inb(PS2_STATUS_REGISTER) & 0x01)) goto ret;
     uint8_t scancode = inb(PS2_DATA_REGISTER);
     if (!current_input_data.currently_reading) {

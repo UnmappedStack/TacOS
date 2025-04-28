@@ -18,6 +18,14 @@ TempfsInode *tempfs_new() {
     memcpy(newfs->name, "FSROOT", 7);
     newfs->type = Directory;
     newfs->parent = newfs;
+    // create . and .. entries
+    TempfsInode *prevdirentry, *thisdirentry;
+    if (!(prevdirentry = tempfs_create_entry(newfs))) return NULL;
+    if (!(thisdirentry = tempfs_create_entry(newfs))) return NULL;
+    strcpy(prevdirentry->name, "..");
+    strcpy(thisdirentry->name, ".");
+    thisdirentry->type = prevdirentry->type = Directory;
+    thisdirentry->first_dir_entry = prevdirentry->first_dir_entry = newfs->first_dir_entry;
     return newfs;
 }
 
@@ -70,6 +78,15 @@ TempfsInode *tempfs_mkdir(TempfsInode *parentdir, char *name) {
     }
     strcpy(new_inode->name, name);
     new_inode->type = Directory;
+    // create the .. and . entries
+    TempfsInode *prevdirentry, *thisdirentry;
+    if (!(prevdirentry = tempfs_create_entry(new_inode))) return NULL;
+    if (!(thisdirentry = tempfs_create_entry(new_inode))) return NULL;
+    strcpy(prevdirentry->name, "..");
+    strcpy(thisdirentry->name, ".");
+    thisdirentry->type = prevdirentry->type = Directory;
+    thisdirentry->first_dir_entry = new_inode->first_dir_entry;
+    prevdirentry->first_dir_entry = parentdir->first_dir_entry;
     return new_inode;
    
 }
