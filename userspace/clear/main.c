@@ -8,6 +8,6 @@ int main(int argc, char **argv) {
                "See LICENSE in the source repo for more information.\n");
         exit(-1);
     }
-    printf("\x1b[J");
+    printf("\x1b[2J");
     fflush(stdout);
 }
