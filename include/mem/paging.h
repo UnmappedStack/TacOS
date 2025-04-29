@@ -40,8 +40,8 @@
 
 void map_pages(uint64_t pml4_addr[], uint64_t virt_addr, uint64_t phys_addr, uint64_t num_pages, uint64_t flags);
 void alloc_pages(uint64_t pml4_addr[], uint64_t virt_addr, uint64_t num_pages, uint64_t flags);
-void init_paging();
-uint64_t* init_paging_task();
+void init_paging(void);
+uint64_t* init_paging_task(void);
 uint64_t virt_to_phys(uint64_t pml4_addr[], uint64_t virt_addr);
 void write_vmem(uint64_t *pml4_addr, uint64_t virt_addr, char *data, size_t len);
 void read_vmem(uint64_t *pml4_addr, uintptr_t virt_addr, char *buffer, size_t len);

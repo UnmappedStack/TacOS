@@ -46,7 +46,7 @@ typedef struct {
     bool is_first;
 } TempfsDirIter;
 
-TempfsInode *tempfs_new();
+TempfsInode *tempfs_new(void);
 TempfsInode *tempfs_find_root(TempfsInode *fs);
 TempfsInode *tempfs_create_entry(TempfsInode *dir);
 TempfsInode *tempfs_new_file(TempfsInode *dir, char *name);

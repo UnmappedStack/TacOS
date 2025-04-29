@@ -90,7 +90,7 @@ void try_exec_init() {
     }
 }
 
-void _start() {
+void _start(void) {
     DISABLE_INTERRUPTS();
     init_kernel_info();
     init_serial();
@@ -102,6 +102,7 @@ void _start() {
     init_exceptions();
     init_paging();
     switch_page_structures();
+    init_acpi();
     init_vfs();
     init_pic();
     unpack_initrd();

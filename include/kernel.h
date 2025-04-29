@@ -1,4 +1,5 @@
 #pragma once
+#include <acpi.h>
 #include <tss.h>
 #include <tty.h>
 #include <pit.h>
@@ -11,6 +12,7 @@
 #include <cpu/gdt.h>
 #include <fs/tempfs.h>
 #include <scheduler.h>
+#include <kernel.h>
 
 typedef struct limine_memmap_entry* Memmap;
 
@@ -37,9 +39,11 @@ typedef struct {
     Cache          *memregion_cache;
     Framebuffer     framebuffer;
     TTY             tty;
+    RSDP           *rsdp_table;
+    RSDT           *rsdt;
     struct timespec global_clock;
 } Kernel;
 
 extern Kernel kernel;
 
-void _start();
+void _start(void);

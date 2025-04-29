@@ -17,6 +17,11 @@ static volatile struct limine_kernel_address_request kernel_addr_request = {
     .revision = 0
 };
 
+static volatile struct limine_rsdp_request rsdp_request = {
+    .id = LIMINE_RSDP_REQUEST,
+    .revision = 0
+};
+
 static struct limine_internal_module initrd = {
     .path = "initrd",
     .flags = LIMINE_INTERNAL_MODULE_REQUIRED
@@ -36,4 +41,5 @@ static void init_kernel_info() {
     kernel.kernel_phys_addr   = kernel_addr_request.response->physical_base;
     kernel.kernel_virt_addr   = kernel_addr_request.response->virtual_base;
     kernel.initrd_addr        = initrd_request.response->modules[0]->address;
+    kernel.rsdp_table         = rsdp_request.response->address;
 }

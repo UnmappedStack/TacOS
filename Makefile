@@ -80,8 +80,7 @@ override KCFLAGS += \
     -Wall \
     -Wextra \
 	-Werror \
-	-Wpedantic \
-    -std=c23 \
+	-std=c23 \
 	-ffreestanding \
     -fno-stack-protector \
     -fno-stack-check \

@@ -12,7 +12,7 @@ typedef struct {
     bool        is_program_binary;
 } Memregion;
 
-void init_memregion();
+void init_memregion(void);
 // See the note in memregion.c
 Memregion *add_memregion(Memregion **list, uintptr_t addr, size_t num_pages, bool is_program_binary, uint64_t flags);
 void delete_memregion_list(Memregion **list);
