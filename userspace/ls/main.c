@@ -3,8 +3,10 @@
 #include <stdlib.h>
 #include <dirent.h>
 #include <sys/types.h>
+#include <stdbool.h>
+#include <string.h>
 
-void lsdir(char *dir) {
+void lsdir(char *dir, bool show_all) {
     struct dirent *entry;
     DIR *d = opendir(dir);
     if (!d) {
@@ -13,6 +15,7 @@ void lsdir(char *dir) {
     }
     printf("%s:\n", dir);
     while ((entry = readdir(d)) != NULL) {
+        if (entry->d_name[0] == '.' && !show_all) continue;
         if (entry->d_isdir) printf("\x1B[36m");
         printf("  %s", entry->d_name, (entry->d_isdir));
         if (entry->d_isdir)
@@ -22,19 +25,31 @@ void lsdir(char *dir) {
     }
 }
 
+int help() {
+    printf("GuacUtils ls: A simple shell utility for listing the files in a directory.\n"
+           "Copyright (C) 2025 Jake Steinburger (UnmappedStack) under the Mozilla Public License 2.0. "
+           "See LICENSE in the source repo for more information.\n");
+    return 0;
+}
+
 int main(int argc, char **argv) {
-    if (argc > 1 && argv[1][0] == '-') {
-        printf("GuacUtils ls: A simple shell utility for listing the files in a directory.\n"
-               "Copyright (C) 2025 Jake Steinburger (UnmappedStack) under the Mozilla Public License 2.0. "
-               "See LICENSE in the source repo for more information.\n");
-        exit(-1);
+    bool listed_in_args = false;
+    bool show_all = false;
+    for (size_t i = 1; i < argc; i++) {
+        if (argv[i][0] == '-') {
+            if (argv[i][1] == '-') argv[i]++;
+            // check the arg
+            if (!strcmp(argv[i], "-help") || !strcmp(argv[i], "-version")) {
+                return help();
+            } else if (!strcmp(argv[i], "-a")) {
+                show_all = true;
+            }
+        } else {
+            // list this dir
+            lsdir(argv[i], show_all);
+            listed_in_args = true;
+        }
     }
-    if (argc <= 1) {
-        char cwd[30];
-        getcwd(cwd, 30);
-        lsdir(cwd);
-        return 0;
-    }
-    for (size_t i = 1; i < argc; i++) lsdir(argv[i]);
+    if (!listed_in_args) lsdir(".", show_all);
     return 0;
 }
