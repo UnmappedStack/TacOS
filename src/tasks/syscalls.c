@@ -259,6 +259,26 @@ void* sys_mmap(void *addr, size_t length, int prot, int flags,
     return kernel.framebuffer.addr;
 }
 
+// kinda assumes the path is perfectly formatted etc. This is why you should use
+// vfs_dir_exists before calling this. Also the strlens could def be reduced to make this
+// faster.
+void expand_path_dots(char *path) {
+    for (int i = 0; path[i]; i++) {
+        if (!memcmp(&path[i], "/../", 4) || !memcmp(&path[i], "/..\0", 4)) {
+            size_t off = 0;
+            if (i > 1) {
+                off++;
+                while (path[i - off] != '/') off++;
+            }
+            memmove(&path[i-off], &path[i+3], strlen(&path[3] + 1));
+            i -= 4+off;
+        } else if (!memcmp(&path[i], "/./", 3) || !memcmp(&path[i], "/.\0", 3)) {
+            memmove(&path[i], &path[i+2], strlen(&path[2] + 1));
+            i -= 3;
+        }
+    }
+}
+
 int sys_chdir(char *path) {
     char buf[MAX_PATH_LEN];
     if (path[0] != '/') {
@@ -268,6 +288,7 @@ int sys_chdir(char *path) {
     }
     // check dir exists
     if (!vfs_dir_exists(path)) return -1;
+    expand_path_dots(path);
     // set dir
     size_t len = strlen(path);
     memcpy(CURRENT_TASK->cwd, path, len + 1);

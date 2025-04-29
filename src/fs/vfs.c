@@ -217,7 +217,6 @@ int opendir(VfsDirIter *buf, VfsFile **first_entry_buf, char *path, int flags) {
         .drive = temp->drive,
     };
     strcpy(buf->path, path);
-    printf("\nOPENDIR WITH PATH %s\n", path);
     return 0;
 }
 
