@@ -7,7 +7,7 @@
 void init_acpi(void) {
     printf("Initiating ACPI... ");
     map_pages((uint64_t*) (kernel.cr3 + kernel.hhdm), (uint64_t) kernel.rsdp_table, ((uint64_t) kernel.rsdp_table) - kernel.hhdm, 1, KERNEL_PFLAG_PRESENT);
-    if (kernel.rsdp_table->revision != 0) {
+    if (kernel.rsdp_table->revision) {
         printf("This device uses XSDP, but only RSDP is supported. Halting.\n");
         HALT_DEVICE();
     }
