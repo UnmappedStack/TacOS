@@ -1,10 +1,10 @@
 #include <mem/pmm.h>
+#include <apic.h>
 #include <tty.h>
 #include <keyboard.h>
 #include <string.h>
 #include <framebuffer.h>
 #include <fs/device.h>
-#include <pic.h>
 #include <pit.h>
 #include <exec.h>
 #include <cpu.h>
@@ -39,7 +39,6 @@ void ls(char *path) {
         HALT_DEVICE();
     }
     for (;;) {
-        printf("in here\n");
         vfs_identify(buf, fname, &is_dir, &fsize);
         char *label = (is_dir) ? " - Directory" : " - File";
         printf("%s (%i bytes): %s\n", label, fsize, fname);
@@ -104,19 +103,20 @@ void _start(void) {
     switch_page_structures();
     init_acpi();
     init_vfs();
-    init_pic();
+    init_apic();
     unpack_initrd();
     init_devices();
     init_memregion();
     init_scheduler();
     init_pit();
+    init_apic();
     ls("/");
     ls("/home");
     init_framebuffer();
     init_tty();
     init_keyboard();
     try_exec_init();
-    unlock_pit();
+    printf("Successful boot, init spawned, enabling scheduler to enter userspace\n");
     ENABLE_INTERRUPTS();
     for (;;);
 }

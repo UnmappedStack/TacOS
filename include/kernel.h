@@ -1,4 +1,5 @@
 #pragma once
+#include <apic.h>
 #include <acpi.h>
 #include <tss.h>
 #include <tty.h>
@@ -42,6 +43,10 @@ typedef struct {
     RSDP           *rsdp_table;
     RSDT           *rsdt;
     struct timespec global_clock;
+    uintptr_t       lapic_addr;
+    IOApic          ioapic_device;
+    uintptr_t       ioapic_addr;
+    size_t          pit_counter;
 } Kernel;
 
 extern Kernel kernel;

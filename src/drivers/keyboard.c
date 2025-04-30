@@ -1,4 +1,5 @@
 #include <kernel.h>
+#include <io.h>
 #include <pit.h>
 #include <cpu.h>
 #include <framebuffer.h>
@@ -153,9 +154,7 @@ int kb_read(void *f, char *buf, size_t len, size_t off) {
     current_input_data.current_buffer    = buf;
     current_input_data.buffer_size       = len - 1;
     if (inb(PS2_STATUS_REGISTER) & 0x01) inb(PS2_DATA_REGISTER);
-    unmask_irq(1);
     while (current_input_data.currently_reading) IO_WAIT();
-    mask_irq(1);
     current_input_data.current_buffer = 0;
     current_input_data.input_len      = 0;
     // clear the cursor

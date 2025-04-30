@@ -27,3 +27,9 @@
     __asm__ volatile ( \
         "outb %%al, $0x80" : : : "al" \
     )
+
+
+#define CPUID(code, a, d) \
+    __asm__ volatile( \
+        "cpuid" : "=a"(*a), "=d"(*d) : "0"(code) : "ebx", "ecx" \
+    )
