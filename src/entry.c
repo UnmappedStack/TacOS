@@ -102,8 +102,8 @@ void _start(void) {
     init_paging();
     switch_page_structures();
     init_acpi();
-    init_vfs();
     init_apic();
+    init_vfs();
     unpack_initrd();
     init_devices();
     init_memregion();

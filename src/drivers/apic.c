@@ -166,6 +166,11 @@ void init_apic() {
     outb(0x21, 0xff);
     outb(0xA1, 0xff);
     MADT *madt = (MADT*) find_MADT(kernel.rsdt);
+    if (!madt) {
+        printf("MADT entry not found in ACPI tables, halting.\n");
+        HALT_DEVICE();
+    }
+    printf("MADT at %p\n", madt);
     printf("Local APIC paddr: 0x%x\n", madt->local_apic_addr);
     // map the lapic addr
     map_pages((uint64_t*) (kernel.cr3 + kernel.hhdm), (uint64_t) madt->local_apic_addr + kernel.hhdm, (uint64_t) madt->local_apic_addr, 1, KERNEL_PFLAG_PRESENT | KERNEL_PFLAG_WRITE);
@@ -174,7 +179,7 @@ void init_apic() {
     init_local_apic(lapic_registers_virt);
     MADTEntryHeader *entry = (MADTEntryHeader*) (((uint64_t) madt) + sizeof(MADT));
     uint64_t incremented = sizeof(MADT);
-    printf("Enumerating %i MADT entries...\n", madt->header.length);
+    printf("Enumerating %i bytes of MADT entries...\n", madt->header.length);
     while (incremented < madt->header.length) {
         if (entry->entry_type == IOAPIC) {
             IOApic *this_ioapic = (IOApic*) entry;
@@ -193,8 +198,7 @@ void init_apic() {
         }
         entry = (MADTEntryHeader*) (((uint64_t) entry) + entry->record_length);
         incremented += entry->record_length;
-        printf("Increment by %i\n", entry->record_length);
-        HALT_DEVICE();
+        printf("Increment by %i, entry is %p\n", entry->record_length, entry);
     }
     printf("APIC set up successfully.\n");
 }
