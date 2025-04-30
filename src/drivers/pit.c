@@ -5,8 +5,6 @@
 #include <io.h>
 #include <printf.h>
 
-extern void context_switch(void);
-
 __attribute__((interrupt))
 void decrement_pit_counter(void*) {
     kernel.pit_counter--;
