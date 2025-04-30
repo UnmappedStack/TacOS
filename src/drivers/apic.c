@@ -114,7 +114,9 @@ void init_lapic_timer() {
     write_lapic(lapic_addr, LAPIC_TIMER_DIVIDER_REGISTER, 3);
     write_lapic(lapic_addr, LAPIC_TIMER_INITIAL_COUNT_REGISTER, 0xFFFFFFFF);
     pit_wait(10); // wait & calibrate to 10 ms
+    printf("Back here, reading from lapic...\n");
     uint32_t current_count = read_lapic(lapic_addr, LAPIC_TIMER_CURRENT_COUNT_REGISTER);
+    printf("done, Writing to lapic...\n");
     write_lapic(lapic_addr, LAPIC_TIMER_INITIAL_COUNT_REGISTER, 0);
     uint32_t num_ticks = 0xFFFFFFFF - current_count;
     printf("Previous LVT register value: 0b%b\n", read_lapic(lapic_addr, LAPIC_TIMER_LVT_REGISTER));

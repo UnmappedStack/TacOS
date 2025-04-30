@@ -94,7 +94,7 @@ override KCFLAGS += \
     -mno-sse2 \
 	-fno-omit-frame-pointer \
     -mno-red-zone \
-	-O3 \
+	-O0 \
 	-mcmodel=kernel
 
 # Internal C preprocessor flags that should not be changed by the user.

@@ -108,8 +108,9 @@ void _start(void) {
     init_devices();
     init_memregion();
     init_scheduler();
-    init_pit();
     init_apic();
+    init_pit();
+    init_lapic_timer();
     ls("/");
     ls("/home");
     init_framebuffer();
