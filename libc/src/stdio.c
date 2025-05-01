@@ -205,6 +205,7 @@ int setvbuf(FILE *stream, char *buffer, int mode, size_t size) {
 }
 
 size_t fread(void *ptr, size_t size, size_t nmemb, FILE *stream) {
+    if (!size) return 0;
     size_t bytes;
     if ((bytes=read(stream->fd, ptr, size * nmemb)) < 0) return -1;
     return bytes / size;

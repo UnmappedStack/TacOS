@@ -12,5 +12,3 @@ typedef enum {
     KeyCapsLock, KeyEscape, KeyBackspace, KeyLeftArrow, KeyRightArrow,
     KeyUpArrow, KeyDownArrow, KeyControl, KeyUnknown, KeyNoPress,
 } Key;
-
-Key getkey_nonblocking();
