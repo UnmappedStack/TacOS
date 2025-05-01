@@ -20,7 +20,7 @@ typedef enum {
     KeySingleQuote, KeySemiColon, KeyLeftSquareBracket, KeyRightSquareBracket,
     KeyEquals, KeyMinus, KeyBackTick, KeyAlt, KeySuper, KeyTab,
     KeyCapsLock, KeyEscape, KeyBackspace, KeyLeftArrow, KeyRightArrow,
-    KeyUpArrow, KeyDownArrow, KeyRelease, KeyUnknown, KeyNoPress,
+    KeyUpArrow, KeyDownArrow, KeyControl, KeyUnknown, KeyNoPress,
 } Key;
 
 Key scancode_event_queue[30]; // if it gets to 30 we shift everything back
@@ -74,42 +74,47 @@ void draw_cursor(void) {
 }
 
 Key scancode_to_key(uint8_t scancode) {
+    scancode &= 0x7f;
     char as_char = character_table[scancode];
     if      (as_char >= 'a' && as_char <= 'z') return as_char - 'a';
     else if (as_char >= '0' && as_char <= '9')
         return ('z' - 'a' + 1) + as_char - '0';
-    else if (scancode & 0x80 || scancode == 0x5B) return KeyRelease;
+    int release_flag = (scancode & 0x80) ? 0x80 : 0;
     switch (scancode) {
-    case 0x5a: return KeyEnter;
+    case 0x5a:
+    case 0x1c: return release_flag | KeyEnter;
     case 0x2a:
-    case 0x36: return KeyShift;
-    case 0x39: return KeySpace;
-    case 0x35: return KeyForwardSlash;
-    case 0x2b: return KeyBackSlash;
-    case 0x33: return KeyComma;
-    case 0x52: return KeySingleQuote;
-    case 0x27: return KeySemiColon;
-    case 0x54: return KeyLeftSquareBracket;
-    case 0x1b: return KeyRightSquareBracket;
-    case 0x0d: return KeyEquals;
-    case 0x0c: return KeyMinus;
-    case 0x29: return KeyBackTick;
-    case 0x38: return KeyAlt;
-    case 0x5b: return KeySuper;
-    case 0x0f: return KeyTab;
-    case 0x3a: return KeyCapsLock;
-    case 0x01: return KeyEscape;
-    case 0x0e: return KeyBackspace;
-    case 0x4b: return KeyLeftArrow;
-    case 0x4d: return KeyRightArrow;
-    case 0x48: return KeyUpArrow;
-    case 0x50: return KeyDownArrow;
-    default:   return KeyUnknown;
+    case 0x36: return release_flag | KeyShift;
+    case 0x39: return release_flag | KeySpace;
+    case 0x35: return release_flag | KeyForwardSlash;
+    case 0x2b: return release_flag | KeyBackSlash;
+    case 0x33: return release_flag | KeyComma;
+    case 0x52: return release_flag | KeySingleQuote;
+    case 0x27: return release_flag | KeySemiColon;
+    case 0x54: return release_flag | KeyLeftSquareBracket;
+    case 0x1b: return release_flag | KeyRightSquareBracket;
+    case 0x0d: return release_flag | KeyEquals;
+    case 0x0c: return release_flag | KeyMinus;
+    case 0x29: return release_flag | KeyBackTick;
+    case 0x38: return release_flag | KeyAlt;
+    case 0x5b: return release_flag | KeySuper;
+    case 0x0f: return release_flag | KeyTab;
+    case 0x3a: return release_flag | KeyCapsLock;
+    case 0x01: return release_flag | KeyEscape;
+    case 0x0e: return release_flag | KeyBackspace;
+    case 0x4b: return release_flag | KeyLeftArrow;
+    case 0x4d: return release_flag | KeyRightArrow;
+    case 0x1d:
+    case 0xe0: return release_flag | KeyControl;
+    case 0x48: return release_flag | KeyUpArrow;
+    case 0x50: return release_flag | KeyDownArrow;
+    default:   return release_flag | KeyUnknown;
     }
 }
 
 void add_kb_event_to_queue(uint8_t scancode) {
     Key key = scancode_to_key(scancode);
+    if (scancode & 0x80) key |= 0x80;
     scancode_event_queue[nkbevents++] = key;
     if (nkbevents > 29) {
         // shift everything back
@@ -128,7 +133,7 @@ void keyboard_isr(void*) {
     }
     // special cases
     // it's a release, not a press, OR an unprintable key
-    if (scancode & 0x80 || scancode == 0x5B || scancode == 1) {
+    if (scancode & 0x80 || scancode == 1) {
         if (scancode == 0xAA || scancode == 0xB6) // shift key is released
             current_input_data.shifted = false;
         goto ret;

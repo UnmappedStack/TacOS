@@ -10,7 +10,7 @@ typedef enum {
     KeySingleQuote, KeySemiColon, KeyLeftSquareBracket, KeyRightSquareBracket,
     KeyEquals, KeyMinus, KeyBackTick, KeyAlt, KeySuper, KeyTab,
     KeyCapsLock, KeyEscape, KeyBackspace, KeyLeftArrow, KeyRightArrow,
-    KeyUpArrow, KeyDownArrow, KeyRelease, KeyUnknown, KeyNoPress,
+    KeyUpArrow, KeyDownArrow, KeyControl, KeyUnknown, KeyNoPress,
 } Key;
 
 Key getkey_nonblocking();
