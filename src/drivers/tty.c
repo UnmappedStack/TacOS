@@ -61,8 +61,8 @@ void run_ansi_cmd(ANSICmd *cmd) {
     switch (cmd->cmd) {
     case 'H':
     case 'f':
-        kernel.tty.loc_x = cmd->vals[0] * 8;
-        kernel.tty.loc_y = cmd->vals[1] * 16;
+        kernel.tty.loc_x = cmd->vals[1] * 8;
+        kernel.tty.loc_y = cmd->vals[0] * 16;
         break;
     case 'J':
         // TODO: check how much of screen to clear
