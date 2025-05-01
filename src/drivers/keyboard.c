@@ -43,12 +43,13 @@ char shifted_character_table[] = {
     0,    0,    0,    0,    0,    0,    0,    0x2C,
 };
 
+#define KB_MAX_LEN 200
 typedef struct {
     uint64_t input_len;
     bool     currently_reading;
     bool     shifted;
     bool     caps;
-    char     *current_buffer;
+    char     current_buffer[KB_MAX_LEN];
     uint64_t buffer_size;
 } KeyboardData;
 
@@ -61,6 +62,7 @@ void draw_cursor(void) {
 
 void add_kb_event_to_queue(uint8_t scancode) {
     (void) scancode;
+    printf("oof it's being added to queue\n");
 }
 
 __attribute__((interrupt))
@@ -123,12 +125,10 @@ void keyboard_isr(void*) {
         ch = character_table[scancode];
     }
     write_framebuffer_char(ch);
-    current_input_data.current_buffer[current_input_data.input_len] = ch;
-    current_input_data.input_len++;
+    current_input_data.current_buffer[current_input_data.input_len++] = ch;
     draw_cursor();
 ret:
     end_of_interrupt();
-    return;
 }
 
 
@@ -147,17 +147,16 @@ int kb_write(void *f, char *buf, size_t len, size_t off) {
     return -1;
 }
 
+// TODO: off param needs to be taken into account
 int kb_read(void *f, char *buf, size_t len, size_t off) {
     (void) f, (void) off;
     draw_cursor();
     current_input_data.currently_reading = true;
-    current_input_data.current_buffer    = buf;
     current_input_data.buffer_size       = len - 1;
     if (inb(PS2_STATUS_REGISTER) & 0x01) inb(PS2_DATA_REGISTER);
-    unlock_lapic_timer(); // Just in case it's disabled somewhere by mistake or smth
     while (current_input_data.currently_reading) IO_WAIT();
-    current_input_data.current_buffer = 0;
-    current_input_data.input_len      = 0;
+    memcpy(buf, current_input_data.current_buffer, current_input_data.input_len);
+    current_input_data.input_len = 0;
     // clear the cursor
     kernel.tty.loc_x += 8;
     write_framebuffer_char(' ');
