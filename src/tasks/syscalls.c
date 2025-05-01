@@ -191,15 +191,12 @@ size_t sys_lseek(int fd, size_t offset, int whence) {
     size_t fsize;
     switch (whence) {
         case SEEK_SET:
-            printf("lseek gets SET\n");
             CURRENT_TASK->resources[fd].offset = offset;
             return offset;
         case SEEK_CUR:
-            printf("lseek gets CUR\n");
             CURRENT_TASK->resources[fd].offset += offset;
             return CURRENT_TASK->resources[fd].offset;
         case SEEK_END:
-            printf("lseek gets END\n");
             vfs_identify(CURRENT_TASK->resources[fd].f, NULL, NULL, &fsize);
             CURRENT_TASK->resources[fd].offset = fsize + offset;
             return CURRENT_TASK->resources[fd].offset;
