@@ -10,7 +10,20 @@
 #define PS2_STATUS_REGISTER  0x64
 #define PS2_COMMAND_REGISTER 0x64
 
-uint8_t scancode_event_queue[30]; // if it gets to 30 we shift everything back
+// this should also have a copy in the libc
+typedef enum {
+    CharA, CharB, CharC, CharD, CharE, CharF, CharG, CharH, CharI, CharJ, CharK,
+    CharL, CharM, CharN, CharO, CharP, CharQ, CharR, CharS, CharT, CharU, CharV,
+    CharW, CharX, CharY, CharZ,
+    Dec0, Dec1, Dec2, Dec3, Dec4, Dec5, Dec6, Dec7, Dec8, Dec9,
+    KeyEnter, KeyShift, KeySpace, KeyForwardSlash, KeyBackSlash, KeyComma,
+    KeySingleQuote, KeySemiColon, KeyLeftSquareBracket, KeyRightSquareBracket,
+    KeyEquals, KeyMinus, KeyBackTick, KeyAlt, KeySuper, KeyTab,
+    KeyCapsLock, KeyEscape, KeyBackspace, KeyLeftArrow, KeyRightArrow,
+    KeyUpArrow, KeyDownArrow, KeyRelease, KeyUnknown,
+} Key;
+
+Key scancode_event_queue[30]; // if it gets to 30 we shift everything back
 uint8_t nkbevents = 0;
 
 char character_table[] = {
@@ -60,9 +73,45 @@ void draw_cursor(void) {
     kernel.tty.loc_x -= 8;
 }
 
+Key scancode_to_key(uint8_t scancode) {
+    char as_char = character_table[scancode];
+    if      (as_char >= 'a' && as_char <= 'z') return as_char - 'a';
+    else if (as_char >= '0' && as_char <= '9')
+        return ('z' - 'a' + 1) + as_char - '0';
+    else if (scancode & 0x80 || scancode == 0x5B) return KeyRelease;
+    switch (scancode) {
+    case 0x5a: return KeyEnter;
+    case 0x2a:
+    case 0x36: return KeyShift;
+    case 0x39: return KeySpace;
+    case 0x35: return KeyForwardSlash;
+    case 0x2b: return KeyBackSlash;
+    case 0x33: return KeyComma;
+    case 0x52: return KeySingleQuote;
+    case 0x27: return KeySemiColon;
+    case 0x54: return KeyLeftSquareBracket;
+    case 0x1b: return KeyRightSquareBracket;
+    case 0x0d: return KeyEquals;
+    case 0x0c: return KeyMinus;
+    case 0x29: return KeyBackTick;
+    case 0x38: return KeyAlt;
+    case 0x5b: return KeySuper;
+    case 0x0f: return KeyTab;
+    case 0x3a: return KeyCapsLock;
+    case 0x01: return KeyEscape;
+    case 0x0e: return KeyBackspace;
+    case 0x4b: return KeyLeftArrow;
+    case 0x4d: return KeyRightArrow;
+    case 0x48: return KeyUpArrow;
+    case 0x50: return KeyDownArrow;
+    default:   return KeyUnknown;
+    }
+}
+
 void add_kb_event_to_queue(uint8_t scancode) {
-    (void) scancode;
-    printf("oof it's being added to queue\n");
+    Key key = scancode_to_key(scancode);
+    printf("Key enum offset: %i\n", key);
+    printf("Scancode: %i\n", scancode);
 }
 
 __attribute__((interrupt))
