@@ -174,4 +174,5 @@ void init_keyboard() {
     };
     mkdevice("/dev/stdin0", kbdev_ops);
     set_IDT_entry(33, (void*) keyboard_isr, 0x8E, kernel.IDT);
+    map_ioapic(33, 1, 0, POLARITY_HIGH, TRIGGER_EDGE);
 }
