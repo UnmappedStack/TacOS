@@ -10,7 +10,7 @@
 #define PS2_STATUS_REGISTER  0x64
 #define PS2_COMMAND_REGISTER 0x64
 
-// this should also have a copy in the libc
+// this should also have a copy in the libc (see /libc/include/TacOS.h)
 typedef enum {
     CharA, CharB, CharC, CharD, CharE, CharF, CharG, CharH, CharI, CharJ, CharK,
     CharL, CharM, CharN, CharO, CharP, CharQ, CharR, CharS, CharT, CharU, CharV,
@@ -20,7 +20,7 @@ typedef enum {
     KeySingleQuote, KeySemiColon, KeyLeftSquareBracket, KeyRightSquareBracket,
     KeyEquals, KeyMinus, KeyBackTick, KeyAlt, KeySuper, KeyTab,
     KeyCapsLock, KeyEscape, KeyBackspace, KeyLeftArrow, KeyRightArrow,
-    KeyUpArrow, KeyDownArrow, KeyRelease, KeyUnknown,
+    KeyUpArrow, KeyDownArrow, KeyRelease, KeyUnknown, KeyNoPress,
 } Key;
 
 Key scancode_event_queue[30]; // if it gets to 30 we shift everything back
@@ -110,8 +110,12 @@ Key scancode_to_key(uint8_t scancode) {
 
 void add_kb_event_to_queue(uint8_t scancode) {
     Key key = scancode_to_key(scancode);
-    printf("Key enum offset: %i\n", key);
-    printf("Scancode: %i\n", scancode);
+    scancode_event_queue[nkbevents++] = key;
+    if (nkbevents > 29) {
+        // shift everything back
+        memmove(scancode_event_queue, &scancode_event_queue[1], 29);
+        nkbevents--;
+    }
 }
 
 __attribute__((interrupt))
@@ -181,23 +185,23 @@ ret:
 }
 
 
-int kb_open(void *f) {
+int stdin_open(void *f) {
     (void) f;
     return 0;
 }
 
-int kb_close(void *f) {
+int stdin_close(void *f) {
     (void) f;
     return 0;
 }
 
-int kb_write(void *f, char *buf, size_t len, size_t off) {
+int stdin_write(void *f, char *buf, size_t len, size_t off) {
     (void) f, (void) buf, (void) len, (void) off;
     return -1;
 }
 
 // TODO: off param needs to be taken into account
-int kb_read(void *f, char *buf, size_t len, size_t off) {
+int stdin_read(void *f, char *buf, size_t len, size_t off) {
     (void) f, (void) off;
     draw_cursor();
     current_input_data.currently_reading = true;
@@ -213,15 +217,31 @@ int kb_read(void *f, char *buf, size_t len, size_t off) {
     return 0;
 }
 
+int kb_read(void *f, Key *buf, size_t len, size_t off) {
+    (void) f, (void) off;
+    if (len < 1) return 0;
+    if (!nkbevents) return KeyNoPress;
+    *buf = scancode_event_queue[--nkbevents];
+    return 0;
+}
+
 void init_keyboard() {
-    DeviceOps kbdev_ops = (DeviceOps) {
-        .read  = &kb_read,
-        .write = &kb_write,
-        .open  = &kb_open,
-        .close = &kb_close,
+    DeviceOps stdindev_ops = (DeviceOps) {
+        .read  = &stdin_read,
+        .write = &stdin_write,
+        .open  = &stdin_open,
+        .close = &stdin_close,
         .is_term = false,
     };
-    mkdevice("/dev/stdin0", kbdev_ops);
+    DeviceOps kbdev_ops = (DeviceOps) {
+        .read  = (void*) &kb_read,
+        .write = &stdin_write,
+        .open  = &stdin_open,
+        .close = &stdin_close,
+        .is_term = false,
+    };
+    mkdevice("/dev/stdin0", stdindev_ops);
+    mkdevice("/dev/kb0", kbdev_ops);
     set_IDT_entry(33, (void*) keyboard_isr, 0x8E, kernel.IDT);
     map_ioapic(33, 1, 0, POLARITY_HIGH, TRIGGER_EDGE);
 }
