@@ -222,7 +222,7 @@ int __isoc99_sscanf(const char *str, const char *format, ...) {
 }
 
 long ftell(FILE *stream) {
-    return lseek(stream->fd, 0, SEEK_SET);
+    return lseek(stream->fd, 0, SEEK_CUR);
 }
 
 int fseek(FILE *stream, long offset, int whence) {
