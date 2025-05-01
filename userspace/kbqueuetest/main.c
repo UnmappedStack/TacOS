@@ -9,13 +9,15 @@ int main(int argc, char **argv) {
         exit(-1);
     }
     int f = open("/dev/kb0", 0, 0);
-    printf("Waiting for a key...");
+    printf("Waiting for a key...\n");
     for (;;) {
         Key key;
         if (read(f, &key, 1) < 0) {
             printf("Failed to get key\n");
             close(f);
             return -1;
+        } else if (key == KeyRelease) {
+            printf("Key released.\n");
         } else if (key != KeyNoPress) {
             printf("Key pressed! Val: %d\n", key);
         }

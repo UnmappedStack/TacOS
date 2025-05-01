@@ -220,7 +220,10 @@ int stdin_read(void *f, char *buf, size_t len, size_t off) {
 int kb_read(void *f, Key *buf, size_t len, size_t off) {
     (void) f, (void) off;
     if (len < 1) return 0;
-    if (!nkbevents) return KeyNoPress;
+    if (!nkbevents) {
+        *buf = KeyNoPress;
+        return 0;
+    }
     *buf = scancode_event_queue[--nkbevents];
     return 0;
 }
