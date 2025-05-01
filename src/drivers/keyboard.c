@@ -154,6 +154,7 @@ int kb_read(void *f, char *buf, size_t len, size_t off) {
     current_input_data.current_buffer    = buf;
     current_input_data.buffer_size       = len - 1;
     if (inb(PS2_STATUS_REGISTER) & 0x01) inb(PS2_DATA_REGISTER);
+    unlock_lapic_timer(); // Just in case it's disabled somewhere by mistake or smth
     while (current_input_data.currently_reading) IO_WAIT();
     current_input_data.current_buffer = 0;
     current_input_data.input_len      = 0;
