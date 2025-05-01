@@ -87,6 +87,7 @@ void try_exec_init() {
         printf("Failed to run init program, halting device (expected init program at /usr/bin/init).\n");
         HALT_DEVICE();
     }
+    printf("task ptr = 0x%p", task);
 }
 
 void _start(void) {
@@ -110,14 +111,15 @@ void _start(void) {
     init_scheduler();
     init_apic();
     init_pit();
-    init_lapic_timer();
     ls("/");
     ls("/home");
     init_framebuffer();
     init_tty();
     init_keyboard();
     try_exec_init();
+    init_lapic_timer();
     printf("Successful boot, init spawned, enabling scheduler to enter userspace\n");
     ENABLE_INTERRUPTS();
+    unlock_lapic_timer();
     for (;;);
 }

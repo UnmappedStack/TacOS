@@ -140,7 +140,6 @@ void unlock_lapic_timer() {
 
 void end_of_interrupt() {
     write_lapic(kernel.lapic_addr, LAPIC_END_OF_INTERRUPT_REGISTER, 0);
-    ENABLE_INTERRUPTS();
 }
 
 bool verify_apic() {

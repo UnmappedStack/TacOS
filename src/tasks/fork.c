@@ -73,6 +73,7 @@ pid_t fork(CallFrame *callframe) {
         push_gprs_in_task(new_task, new_task_rsp - 5 * 8, callframe);
         printf(" -> new task rsp after =  0x%p\n", new_task->rsp);
     }
+    map_apic_into_task(new_task->pml4);
     new_task->flags = kernel.scheduler.current_task->flags; /* Flags are set last so that it's only 
                                                              * ever run after everything else is set up
                                                              * (because of the TASK_PRESENT flag) */

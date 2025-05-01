@@ -4,6 +4,7 @@ global iretq_msg
 global context_switch
 extern get_current_task
 extern task_select
+extern end_of_interrupt
 extern printf
 extern increment_global_clock
 
@@ -20,8 +21,10 @@ extern increment_global_clock
 %define TASK_ENVP_OFF        744
 
 context_switch:
+    cli
     pushall
     call increment_global_clock
+    call end_of_interrupt
     ;; Save current rsp of *this* task
     call get_current_task
     mov [rax + TASK_RSP_OFF], rsp
@@ -72,8 +75,7 @@ context_switch:
     push rbx
     mov rbx, [r15 + TASK_ENVP_OFF]
     push rbx
-    ;; clear all general purpose registers, send EOI to interrupt controller, and iretq
-    eoi
+    ;; clear all general purpose registers and iretq
     clearall
     pop rdx
     pop rsi
@@ -81,8 +83,6 @@ context_switch:
     iretq
 .previously_executed:
     ;; Restore SSE stuff of this task
-    cli
-    eoi
     popall
 ;    ;; copy into regs
 ;    pop rsi

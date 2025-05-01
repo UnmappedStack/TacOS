@@ -45,7 +45,7 @@ Task *task_select() {
     kernel.scheduler.current_task = (Task*) kernel.scheduler.current_task->list.next;
     while (!(kernel.scheduler.current_task->flags & TASK_PRESENT)) {
         if (first_task == (Task*) kernel.scheduler.current_task) {
-            printf("No avaliable task!\n");
+            printf("No avaliable task! Was init killed?\n");
             HALT_DEVICE();
         }
         kernel.scheduler.current_task = (Task*) kernel.scheduler.current_task->list.next;
