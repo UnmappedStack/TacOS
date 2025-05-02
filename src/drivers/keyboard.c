@@ -68,10 +68,10 @@ typedef struct {
 
 KeyboardData current_input_data = {0};
 
-void draw_cursor(void) {
+void draw_cursor(bool override) {
     // kinda hacky but until there's canonical mode, we just return immediately
     // if only reading one key
-    if (!current_input_data.buffer_size) return;
+    if (!current_input_data.buffer_size && !override) return;
     write_framebuffer_char('_');
     kernel.tty.loc_x -= 8;
 }
@@ -139,7 +139,7 @@ void keyboard_isr(void*) {
     if (!current_input_data.input_len && scancode == 0x0E) {
         // don't draw it but add 127 to the buffer
         current_input_data.current_buffer[current_input_data.input_len++] = 127;
-        draw_cursor();
+        draw_cursor(false);
         goto finishup;
     }
     // if it's an arrow key, return the appropriate code
@@ -160,7 +160,7 @@ void keyboard_isr(void*) {
             break;
         }
         current_input_data.current_buffer[current_input_data.input_len++] = ret;
-        draw_cursor();
+        draw_cursor(false);
         goto finishup;
     }
     // it's a release, not a press, OR an unprintable key
@@ -175,7 +175,7 @@ void keyboard_isr(void*) {
         kernel.tty.loc_x -= 16;
         write_framebuffer_char(' ');
         kernel.tty.loc_x -= 8;
-        draw_cursor();
+        draw_cursor(false);
         // remove from buffer
         current_input_data.input_len--;
         current_input_data.current_buffer[current_input_data.input_len] = 0;
@@ -221,8 +221,9 @@ finishup:
     if (current_input_data.buffer_size <= current_input_data.input_len) {
         current_input_data.current_buffer[current_input_data.input_len] = 0;
         current_input_data.currently_reading = false;
+        kernel.tty.loc_x -= 8;
     } else {
-        draw_cursor();
+        draw_cursor(false);
     }
 ret:
     end_of_interrupt();
@@ -247,10 +248,10 @@ int stdin_write(void *f, char *buf, size_t len, size_t off) {
 // TODO: off param needs to be taken into account
 int stdin_read(void *f, char *buf, size_t len, size_t off) {
     (void) f, (void) off;
-    draw_cursor();
     current_input_data.currently_reading = true;
     current_input_data.buffer_size       = len - 1;
     if (inb(PS2_STATUS_REGISTER) & 0x01) inb(PS2_DATA_REGISTER);
+    draw_cursor(true);
     while (current_input_data.currently_reading) IO_WAIT();
     memcpy(buf, current_input_data.current_buffer, current_input_data.input_len + 1);
     size_t ret = current_input_data.input_len;
