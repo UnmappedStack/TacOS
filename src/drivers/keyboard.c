@@ -136,7 +136,7 @@ void keyboard_isr(void*) {
     }
     // special cases
     // if it's the first character and the backspace key is pressed
-    if (!current_input_data.input_len && scancode == 0x0E) {
+    if (!current_input_data.input_len && scancode == 0x0E && current_input_data.buffer_size < 1) {
         // don't draw it but add 127 to the buffer
         current_input_data.current_buffer[current_input_data.input_len++] = 127;
         goto finishup;
