@@ -158,7 +158,7 @@ void keyboard_isr(void*) {
         current_input_data.shifted = true;
         goto ret;
     }
-    if (scancode == 0x1C || current_input_data.buffer_size == current_input_data.input_len) { // enter
+    if (scancode == 0x1C) { // enter
         current_input_data.current_buffer[current_input_data.input_len] = 0;
         current_input_data.currently_reading = false;
         // remove the cursor
@@ -184,7 +184,13 @@ void keyboard_isr(void*) {
     }
     write_framebuffer_char(ch);
     current_input_data.current_buffer[current_input_data.input_len++] = ch;
-    draw_cursor();
+    // if it's too long, finish up
+    if (current_input_data.buffer_size <= current_input_data.input_len) {
+        current_input_data.current_buffer[current_input_data.input_len] = 0;
+        current_input_data.currently_reading = false;
+    } else {
+        draw_cursor();
+    }
 ret:
     end_of_interrupt();
 }
@@ -213,13 +219,14 @@ int stdin_read(void *f, char *buf, size_t len, size_t off) {
     current_input_data.buffer_size       = len - 1;
     if (inb(PS2_STATUS_REGISTER) & 0x01) inb(PS2_DATA_REGISTER);
     while (current_input_data.currently_reading) IO_WAIT();
-    memcpy(buf, current_input_data.current_buffer, current_input_data.input_len);
+    memcpy(buf, current_input_data.current_buffer, current_input_data.input_len + 1);
+    size_t ret = current_input_data.input_len;
     current_input_data.input_len = 0;
     // clear the cursor
     kernel.tty.loc_x += 8;
     write_framebuffer_char(' ');
     kernel.tty.loc_x -= 8;
-    return 0;
+    return ret + 1;
 }
 
 int kb_read(void *f, Key *buf, size_t len, size_t off) {
