@@ -69,6 +69,9 @@ typedef struct {
 KeyboardData current_input_data = {0};
 
 void draw_cursor(void) {
+    // kinda hacky but until there's canonical mode, we just return immediately
+    // if only reading one key
+    if (!current_input_data.buffer_size) return;
     write_framebuffer_char('_');
     kernel.tty.loc_x -= 8;
 }
@@ -210,7 +213,8 @@ void keyboard_isr(void*) {
     } else {
         ch = character_table[scancode];
     }
-    write_framebuffer_char(ch);
+    if (current_input_data.buffer_size)
+        write_framebuffer_char(ch);
     current_input_data.current_buffer[current_input_data.input_len++] = ch;
     // if it's too long, finish up
 finishup:
