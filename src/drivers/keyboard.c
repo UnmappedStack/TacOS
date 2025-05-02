@@ -72,7 +72,7 @@ void draw_cursor(bool override) {
     // kinda hacky but until there's canonical mode, we just return immediately
     // if only reading one key
     if (!current_input_data.buffer_size && !override) return;
-    write_framebuffer_char('_');
+    write_framebuffer_char_nocover('_');
     kernel.tty.loc_x -= 8;
 }
 
@@ -251,15 +251,17 @@ int stdin_read(void *f, char *buf, size_t len, size_t off) {
     current_input_data.currently_reading = true;
     current_input_data.buffer_size       = len - 1;
     if (inb(PS2_STATUS_REGISTER) & 0x01) inb(PS2_DATA_REGISTER);
-    draw_cursor(true);
+    draw_cursor(false);
     while (current_input_data.currently_reading) IO_WAIT();
     memcpy(buf, current_input_data.current_buffer, current_input_data.input_len + 1);
     size_t ret = current_input_data.input_len;
     current_input_data.input_len = 0;
     // clear the cursor
-    kernel.tty.loc_x += 8;
-    write_framebuffer_char(' ');
-    kernel.tty.loc_x -= 8;
+    if (len > 1) {
+        kernel.tty.loc_x += 8;
+        write_framebuffer_char(' ');
+        kernel.tty.loc_x -= 8;
+    }
     return ret + 1;
 }
 

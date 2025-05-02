@@ -27,3 +27,4 @@ typedef struct {
 void init_tty(void);
 void write_framebuffer_text(const char *msg);
 void write_framebuffer_char(char ch);
+void write_framebuffer_char_nocover(char ch);

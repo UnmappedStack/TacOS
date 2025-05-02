@@ -30,6 +30,20 @@ void write_framebuffer_char(char ch) {
     if (kernel.tty.loc_x >= kernel.framebuffer.width) newline();
 }
 
+void write_framebuffer_char_nocover(char ch) {
+    if (kernel.tty.loc_y >= kernel.framebuffer.height) {
+        kernel.tty.loc_x = 0;
+        kernel.tty.loc_y = 0;
+    }
+    if (ch == '\n') {
+        newline();
+        return;
+    }
+    draw_char_nocover(ch, kernel.tty.loc_x, kernel.tty.loc_y, kernel.tty.fg_colour);
+    kernel.tty.loc_x += 8;
+    if (kernel.tty.loc_x >= kernel.framebuffer.width) newline();
+}
+
 void tty_set_cell_graphics_mode(ANSICmd *cmd) {
     // ANSI base colours except for default
     uint32_t tty_colours[] = {
