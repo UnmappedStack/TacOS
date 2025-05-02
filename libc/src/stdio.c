@@ -238,7 +238,7 @@ int fputc(int ch, FILE *stream) {
 int fgetc(FILE *stream) {
     char ret;
     fread(&ret, 1, 1, stream);
-    return (int) ret;
+    return (ret) ? (int) ret : '\n';
 }
 
 int getchar() {
