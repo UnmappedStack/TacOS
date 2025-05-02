@@ -139,7 +139,6 @@ void keyboard_isr(void*) {
     if (!current_input_data.input_len && scancode == 0x0E) {
         // don't draw it but add 127 to the buffer
         current_input_data.current_buffer[current_input_data.input_len++] = 127;
-        draw_cursor(false);
         goto finishup;
     }
     // if it's an arrow key, return the appropriate code
@@ -221,7 +220,6 @@ finishup:
     if (current_input_data.buffer_size <= current_input_data.input_len) {
         current_input_data.current_buffer[current_input_data.input_len] = 0;
         current_input_data.currently_reading = false;
-        kernel.tty.loc_x -= 8;
     } else {
         draw_cursor(false);
     }
@@ -257,7 +255,7 @@ int stdin_read(void *f, char *buf, size_t len, size_t off) {
     size_t ret = current_input_data.input_len;
     current_input_data.input_len = 0;
     // clear the cursor
-    if (len > 1) {
+    if (len > 1 && buf[0] != 127) {
         kernel.tty.loc_x += 8;
         write_framebuffer_char(' ');
         kernel.tty.loc_x -= 8;
