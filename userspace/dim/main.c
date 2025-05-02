@@ -99,7 +99,7 @@ const char* mode_to_str(uint32_t mode) {
 }
 enum {
     BACKSPACE=127,
-    KEY_UP=256,
+    KEY_UP=123,
     KEY_DOWN,
     KEY_RIGHT,
     KEY_LEFT,

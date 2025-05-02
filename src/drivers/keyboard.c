@@ -132,6 +132,34 @@ void keyboard_isr(void*) {
         goto ret;
     }
     // special cases
+    // if it's the first character and the backspace key is pressed
+    if (!current_input_data.input_len && scancode == 0x0E) {
+        // don't draw it but add 127 to the buffer
+        current_input_data.current_buffer[current_input_data.input_len++] = 127;
+        draw_cursor();
+        goto finishup;
+    }
+    // if it's an arrow key, return the appropriate code
+    if (scancode == 0x4b || scancode == 0x4d || scancode == 0x48 || scancode == 0x50) {
+        int ret;
+        switch (scancode) {
+        case 0x4b:
+            ret = 126;
+            break;
+        case 0x4d:
+            ret = 125;
+            break;
+        case 0x48:
+            ret = 123;
+            break;
+        case 0x50:
+            ret = 124;
+            break;
+        }
+        current_input_data.current_buffer[current_input_data.input_len++] = ret;
+        draw_cursor();
+        goto finishup;
+    }
     // it's a release, not a press, OR an unprintable key
     if (scancode & 0x80 || scancode == 1) {
         if (scancode == 0xAA || scancode == 0xB6) // shift key is released
@@ -185,6 +213,7 @@ void keyboard_isr(void*) {
     write_framebuffer_char(ch);
     current_input_data.current_buffer[current_input_data.input_len++] = ch;
     // if it's too long, finish up
+finishup:
     if (current_input_data.buffer_size <= current_input_data.input_len) {
         current_input_data.current_buffer[current_input_data.input_len] = 0;
         current_input_data.currently_reading = false;
