@@ -1,4 +1,5 @@
 #include <string.h>
+#include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
@@ -127,4 +128,37 @@ char* strdup(const char *s) {
     memcpy(ret, s, len);
     ret[len] = 0;
     return ret;
+}
+
+char *strpbrk(const char *s, const char *accept) {
+    size_t naccept = strlen(accept);
+    for (; *s; s++) {
+        for (size_t i = 0; i < naccept; i++) {
+            if (accept[i] == *s) return s;
+        }
+    }
+    return NULL;
+}
+
+size_t strspn(const char *s, const char *accept) {
+    size_t naccept = strlen(accept);
+    size_t ret = 0;
+    char *cpy = s;
+    for (; *s; s++) {
+        bool found = false;
+        for (size_t i = 0; i < naccept; i++) {
+            if (accept[i] == *s) {
+                found = true;
+                continue;
+            }
+        }
+        if (!found) return ret;
+        ret++;
+    }
+    return strlen(cpy);
+}
+
+// TODO this is a stub cos it's meant to properly convert locales and all that stuff
+int strcoll(const char *s1, const char *s2) {
+    return strcmp(s1, s2);
 }

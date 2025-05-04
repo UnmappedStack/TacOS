@@ -16,3 +16,6 @@ char* strdup(const char *s);
 char* memchr(const char *s, int c, size_t n);
 int memcmp(const void *s1, const void *s2, size_t n);
 char *strerror(int errnum);
+char *strpbrk(const char *s, const char *accept);
+size_t strspn(const char *s, const char *accept);
+int strcoll(const char *s1, const char *s2);

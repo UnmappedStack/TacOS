@@ -35,8 +35,8 @@ void run_cmd(char *cmd) {
     size_t argc = 0;
     char *start = cmd;
     char *end = cmd;
-    for (; end == cmd || *(end - 1) != '\0'; end++) {
-        if (*end != ' ' && *end != '\0') continue;
+    for (; end == cmd || (*(end - 1) != '\0' && *(end - 1) != '\n'); end++) {
+        if (*end != ' ' && *end != '\n') continue;
         *end = 0;
         argv[argc++] = start;
         start = ++end;

@@ -114,17 +114,17 @@ int tempfs_identify(TempfsInode *inode, char *namebuf, bool *is_dir_buf, size_t 
 }
 
 int tempfs_access(TempfsInode *file, char *buf, size_t len, size_t offset, bool write) {
-    if (file->type != RegularFile) return -1;
+    if (file->type != RegularFile) return 0;
     if (write) {
         if (!file->first_file_node) file->first_file_node = (TempfsFileNode*) (kmalloc(1) + kernel.hhdm);
     } else {
-        if (!file->first_file_node) return -1;
+        if (!file->first_file_node) return 0;
     }
     TempfsFileNode *this_fnode = file->first_file_node;
     size_t len_left = len;
     size_t off = 0;
     while (len_left > 0) {
-        if (!this_fnode && !write) return -2; // EOF
+        if (!this_fnode && !write) return 0; // EOF
         if (offset < FILE_DATA_BLOCK_LEN) {
             size_t bytes_to_copy = (len_left > (FILE_DATA_BLOCK_LEN-offset)) ? (FILE_DATA_BLOCK_LEN-offset) : len_left;
             if (write) // accessing as write?

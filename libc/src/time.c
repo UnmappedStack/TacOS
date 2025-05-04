@@ -2,6 +2,7 @@
 #include <sched.h>
 #include <stdio.h>
 #include <syscall.h>
+#include <stdlib.h>
 
 int clock_gettime(ClockID clockid, struct timespec *tp) {
     return __syscall2(16, clockid, (size_t) tp);
@@ -27,4 +28,10 @@ int nanosleep(struct timespec *duration) {
     }
     printf("Done\n");
     return 0;
+}
+
+time_t time(time_t *tloc) {
+    (void) tloc;
+    printf("TODO: time() is not yet implemented in LibC\n");
+    exit(-1);
 }

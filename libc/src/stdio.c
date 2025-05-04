@@ -122,15 +122,26 @@ static int str_to_flags(const char *restrict mode) {
     return ret;
 }
 
-FILE* fopen(const char *restrict pathname, const char *restrict mode) {
+int __fopen_internal(const char *restrict pathname, const char *restrict mode, FILE *ret) {
+    ret->fname = (char*) malloc(strlen(pathname) + 1);
+    strcpy(ret->fname, pathname);
     int flags = str_to_flags(mode);
-    FILE *ret = (FILE*) malloc(sizeof(FILE));
     ret->fd = open(pathname, flags, 0);
-    if (ret->fd < 0) return NULL;
+    if (ret->fd < 0) return -1;
     ret->bufmax = 4096;
     ret->buffer = (char*) malloc(ret->bufmax);
     ret->bufsz = 0;
     ret->bufmode = _IOFBF;
+    ret->err=ret->eof=false;
+    return 0;
+}
+
+FILE *fopen(const char *restrict pathname, const char *restrict mode) {
+    FILE *ret = (FILE*) malloc(sizeof(FILE));
+    if (__fopen_internal(pathname, mode, ret) < 0) {
+        free(ret);
+        return NULL;
+    }
     return ret;
 }
 
@@ -140,6 +151,7 @@ int fclose(FILE *stream) {
     }
     if (close(stream->fd)) return -1;
     free(stream->buffer);
+    free(stream->fname);
     free(stream);
     return 0;
 }
@@ -187,7 +199,12 @@ int fputs(const char *str, FILE *stream) {
 }
 
 char *fgets(char *str, int n, FILE *stream) {
-    fread(str, n, 1, stream);
+    size_t bytes;
+    if ((bytes=read(stream->fd, str, n)) < n) {
+        // we'll assume this means end of file for now. Probably not the smartest assumption to make.
+        stream->eof = true;
+    }
+    str[bytes] = 0;
     return str;
 }
 
@@ -196,6 +213,7 @@ int fflush(FILE *stream) {
     stream->bufsz = 0;
     return 0;
 }
+
 int setvbuf(FILE *stream, char *buffer, int mode, size_t size) {
     if (buffer) {
         stream->buffer = buffer;
@@ -207,7 +225,10 @@ int setvbuf(FILE *stream, char *buffer, int mode, size_t size) {
 size_t fread(void *ptr, size_t size, size_t nmemb, FILE *stream) {
     if (!size) return 0;
     size_t bytes;
-    if ((bytes=read(stream->fd, ptr, size * nmemb)) < 0) return -1;
+    if ((bytes=read(stream->fd, ptr, size * nmemb)) < size * nmemb) {
+        // we'll assume this means end of file for now. Probably not the smartest assumption to make.
+        stream->eof = true;
+    }
     return bytes / size;
 }
 
@@ -238,13 +259,29 @@ int fputc(int ch, FILE *stream) {
 int fgetc(FILE *stream) {
     char ret;
     fread(&ret, 1, 1, stream);
-    return (ret) ? (int) ret : '\n';
+    return (ret) ? (int) ret : EOF;
 }
 
 int getchar() {
-    return fgetc(stdin);
+    return getc(stdin);
 }
 
 int fileno(FILE *stream) {
     return stream->fd;
+}
+
+int feof(FILE *stream) {
+    return stream->eof;
+}
+
+int ferror(FILE *stream) {
+    return stream->err;
+}
+
+FILE *freopen(const char *pathname, const char *mode, FILE *stream) {
+    fflush(stream);
+    close(stream->fd);
+    char *fname = (pathname) ? pathname : stream->fname;
+    __fopen_internal(fname, mode, stream);
+    return stream;
 }

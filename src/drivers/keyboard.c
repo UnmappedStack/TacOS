@@ -189,7 +189,7 @@ void keyboard_isr(void*) {
         goto ret;
     }
     if (scancode == 0x1C) { // enter
-        current_input_data.current_buffer[current_input_data.input_len] = 0;
+        current_input_data.current_buffer[current_input_data.input_len] = '\n';
         current_input_data.currently_reading = false;
         // remove the cursor
         printf(" ");

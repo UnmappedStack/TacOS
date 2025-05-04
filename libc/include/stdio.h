@@ -3,8 +3,13 @@
 #include <stdarg.h>
 #include <sprintf.h>
 #include <stdint.h>
+#include <stdbool.h>
 #define ssize_t int64_t // TODO: Move these to their
 #define mode_t uint32_t // relevant header files
+#define BUFSIZ 8192
+#define EOF -1
+
+#define getc fgetc
 
 typedef enum {
     SEEK_SET,
@@ -24,6 +29,8 @@ typedef struct {
     size_t bufsz;
     size_t bufmax;
     BufMode bufmode;
+    bool eof, err;
+    char *fname;
 } FILE;
 
 extern FILE *stdin;
@@ -57,5 +64,9 @@ size_t fread(void *ptr, size_t size, size_t nmemb, FILE *stream);
 long ftell(FILE *stream);
 int fseek(FILE *stream, long offset, int whence);
 int fgetc(FILE *stream);
+int getc(FILE *stream);
 int getchar();
 int fileno(FILE *stream);
+int feof(FILE *stream);
+int ferror(FILE *stream);
+FILE *freopen(const char *pathname, const char *mode, FILE *stream);

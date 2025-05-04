@@ -83,7 +83,7 @@ int atoi(const char *nptr) {
 // TODO: make this actually do signal stuff
 __attribute__((noreturn))
 void abort(void) {
-    exit(1);
+    exit(-1);
 }
 
 int system(const char *command) {
