@@ -2,157 +2,250 @@
 MAKEFLAGS += -rR
 .SUFFIXES:
 
-# This is the name that our final executable will have.
-# Change as needed.
-override OUTPUT := tacos
-
 # Convenience macro to reliably declare user overridable variables.
 override USER_VARIABLE = $(if $(filter $(origin $(1)),default undefined),$(eval override $(1) := $(2)))
 
-override XORRISO_FLAGS += \
-						  -as mkisofs -b boot/limine/limine-bios-cd.bin \
-						  -no-emul-boot -boot-load-size 4 -boot-info-table \
-						  --efi-boot boot/limine/limine-uefi-cd.bin \
-						  -efi-boot-part --efi-boot-image --protective-msdos-label \
-						  sysroot -o tacos.iso
+# Target architecture to build for. Default to x86_64.
+$(call USER_VARIABLE,KARCH,x86_64)
 
-# User controllable C compiler command.
-$(call USER_VARIABLE,KCC,clang)
+# Default user QEMU flags. These are appended to the QEMU command calls.
+$(call USER_VARIABLE,QEMUFLAGS,-m 2G)
 
-# User controllable linker command.
-$(call USER_VARIABLE,KLD,ld)
+override IMAGE_NAME := tacos-$(KARCH)
 
-# User controllable C flags.
-$(call USER_VARIABLE,KCFLAGS,-g -pipe)
+.PHONY: all
+all: $(IMAGE_NAME).iso
 
-# User controllable C preprocessor flags. We set none by default.
-$(call USER_VARIABLE,KCPPFLAGS,)
+.PHONY: all-hdd
+all-hdd: $(IMAGE_NAME).hdd
 
-# User controllable nasm flags.
-$(call USER_VARIABLE,KNASMFLAGS,-F dwarf -g)
+.PHONY: run
+run: run-$(KARCH)
 
-# User controllable linker flags. We set none by default.
-$(call USER_VARIABLE,KLDFLAGS,)
+.PHONY: run-hdd
+run-hdd: run-hdd-$(KARCH)
 
-all: bootloader kernel libc userspace initrd disk qemu
+.PHONY: run-x86_64
+run-x86_64: ovmf/ovmf-code-$(KARCH).fd ovmf/ovmf-vars-$(KARCH).fd $(IMAGE_NAME).iso
+	qemu-system-$(KARCH) \
+		-M q35 \
+		-drive if=pflash,unit=0,format=raw,file=ovmf/ovmf-code-$(KARCH).fd,readonly=on \
+		-drive if=pflash,unit=1,format=raw,file=ovmf/ovmf-vars-$(KARCH).fd \
+		-cdrom $(IMAGE_NAME).iso \
+		$(QEMUFLAGS)
 
-bootloader:
-	make -C limine
+.PHONY: run-hdd-x86_64
+run-hdd-x86_64: ovmf/ovmf-code-$(KARCH).fd ovmf/ovmf-vars-$(KARCH).fd $(IMAGE_NAME).hdd
+	qemu-system-$(KARCH) \
+		-M q35 \
+		-drive if=pflash,unit=0,format=raw,file=ovmf/ovmf-code-$(KARCH).fd,readonly=on \
+		-drive if=pflash,unit=1,format=raw,file=ovmf/ovmf-vars-$(KARCH).fd \
+		-hda $(IMAGE_NAME).hdd \
+		$(QEMUFLAGS)
 
-USER_PROGRAMS := $(wildcard userspace/*)
-.PHONY: userspace $(USER_PROGRAMS)
-userspace: $(USER_PROGRAMS)
-$(USER_PROGRAMS):
-	$(MAKE) -C $@
+.PHONY: run-aarch64
+run-aarch64: ovmf/ovmf-code-$(KARCH).fd ovmf/ovmf-vars-$(KARCH).fd $(IMAGE_NAME).iso
+	qemu-system-$(KARCH) \
+		-M virt \
+		-cpu cortex-a72 \
+		-device ramfb \
+		-device qemu-xhci \
+		-device usb-kbd \
+		-device usb-mouse \
+		-drive if=pflash,unit=0,format=raw,file=ovmf/ovmf-code-$(KARCH).fd,readonly=on \
+		-drive if=pflash,unit=1,format=raw,file=ovmf/ovmf-vars-$(KARCH).fd \
+		-cdrom $(IMAGE_NAME).iso \
+		$(QEMUFLAGS)
 
-.PHONY: libc
-libc:
-	make -C libc
+.PHONY: run-hdd-aarch64
+run-hdd-aarch64: ovmf/ovmf-code-$(KARCH).fd ovmf/ovmf-vars-$(KARCH).fd $(IMAGE_NAME).hdd
+	qemu-system-$(KARCH) \
+		-M virt \
+		-cpu cortex-a72 \
+		-device ramfb \
+		-device qemu-xhci \
+		-device usb-kbd \
+		-device usb-mouse \
+		-drive if=pflash,unit=0,format=raw,file=ovmf/ovmf-code-$(KARCH).fd,readonly=on \
+		-drive if=pflash,unit=1,format=raw,file=ovmf/ovmf-vars-$(KARCH).fd \
+		-hda $(IMAGE_NAME).hdd \
+		$(QEMUFLAGS)
 
-.PHONY: initrd
-initrd:
-	mkdir -p sysroot/boot
-	tar --create --file=sysroot/boot/initrd --format=ustar -C initrd home usr
+.PHONY: run-riscv64
+run-riscv64: ovmf/ovmf-code-$(KARCH).fd ovmf/ovmf-vars-$(KARCH).fd $(IMAGE_NAME).iso
+	qemu-system-$(KARCH) \
+		-M virt \
+		-cpu rv64 \
+		-device ramfb \
+		-device qemu-xhci \
+		-device usb-kbd \
+		-device usb-mouse \
+		-drive if=pflash,unit=0,format=raw,file=ovmf/ovmf-code-$(KARCH).fd,readonly=on \
+		-drive if=pflash,unit=1,format=raw,file=ovmf/ovmf-vars-$(KARCH).fd \
+		-cdrom $(IMAGE_NAME).iso \
+		$(QEMUFLAGS)
 
-.PHONY: disk
-disk:
-	cp -v bin/tacos sysroot/boot/
-	mkdir -p sysroot/boot/limine
-	cp -v limine.conf limine/limine-bios.sys limine/limine-bios-cd.bin \
-    	limine/limine-uefi-cd.bin sysroot/boot/limine/
-	mkdir -p sysroot/EFI/BOOT
-	cp -v limine/BOOTX64.EFI sysroot/EFI/BOOT/
-	cp -v limine/BOOTIA32.EFI sysroot/EFI/BOOT/
-	xorriso ${XORRISO_FLAGS}
-	./limine/limine bios-install tacos.iso
+.PHONY: run-hdd-riscv64
+run-hdd-riscv64: ovmf/ovmf-code-$(KARCH).fd ovmf/ovmf-vars-$(KARCH).fd $(IMAGE_NAME).hdd
+	qemu-system-$(KARCH) \
+		-M virt \
+		-cpu rv64 \
+		-device ramfb \
+		-device qemu-xhci \
+		-device usb-kbd \
+		-device usb-mouse \
+		-drive if=pflash,unit=0,format=raw,file=ovmf/ovmf-code-$(KARCH).fd,readonly=on \
+		-drive if=pflash,unit=1,format=raw,file=ovmf/ovmf-vars-$(KARCH).fd \
+		-hda $(IMAGE_NAME).hdd \
+		$(QEMUFLAGS)
 
-qemu:
-	qemu-system-x86_64 tacos.iso -serial stdio -no-shutdown -no-reboot -monitor telnet:127.0.0.1:8000,server,nowait -d int,cpu_reset,in_asm -D log.txt -m 4G -accel kvm
+.PHONY: run-loongarch64
+run-loongarch64: ovmf/ovmf-code-$(KARCH).fd ovmf/ovmf-vars-$(KARCH).fd $(IMAGE_NAME).iso
+	qemu-system-$(KARCH) \
+		-M virt \
+		-cpu la464 \
+		-device ramfb \
+		-device qemu-xhci \
+		-device usb-kbd \
+		-device usb-mouse \
+		-drive if=pflash,unit=0,format=raw,file=ovmf/ovmf-code-$(KARCH).fd,readonly=on \
+		-drive if=pflash,unit=1,format=raw,file=ovmf/ovmf-vars-$(KARCH).fd \
+		-cdrom $(IMAGE_NAME).iso \
+		$(QEMUFLAGS)
+
+.PHONY: run-hdd-loongarch64
+run-hdd-loongarch64: ovmf/ovmf-code-$(KARCH).fd ovmf/ovmf-vars-$(KARCH).fd $(IMAGE_NAME).hdd
+	qemu-system-$(KARCH) \
+		-M virt \
+		-cpu la464 \
+		-device ramfb \
+		-device qemu-xhci \
+		-device usb-kbd \
+		-device usb-mouse \
+		-drive if=pflash,unit=0,format=raw,file=ovmf/ovmf-code-$(KARCH).fd,readonly=on \
+		-drive if=pflash,unit=1,format=raw,file=ovmf/ovmf-vars-$(KARCH).fd \
+		-hda $(IMAGE_NAME).hdd \
+		$(QEMUFLAGS)
 
 
-qemu-gdb:
-	qemu-system-x86_64 tacos.iso -serial stdio -no-shutdown -no-reboot -monitor telnet:127.0.0.1:8000,server,nowait -d int,cpu_reset,in_asm -D log.txt -S -s 
+.PHONY: run-bios
+run-bios: $(IMAGE_NAME).iso
+	qemu-system-$(KARCH) \
+		-M q35 \
+		-cdrom $(IMAGE_NAME).iso \
+		-boot d \
+		$(QEMUFLAGS)
 
-# everything below here is the kernel
+.PHONY: run-hdd-bios
+run-hdd-bios: $(IMAGE_NAME).hdd
+	qemu-system-$(KARCH) \
+		-M q35 \
+		-hda $(IMAGE_NAME).hdd \
+		$(QEMUFLAGS)
 
-# Internal C flags that should not be changed by the user.
-override KCFLAGS += \
-    -Wall \
-    -Wextra \
-	-Werror \
-	-std=c23 \
-	-ffreestanding \
-    -fno-stack-protector \
-    -fno-stack-check \
-    -fPIE \
-    -m64 \
-    -march=x86-64 \
-    -mno-80387 \
-    -mno-mmx \
-	-g \
-    -mno-sse \
-    -mno-sse2 \
-	-fno-omit-frame-pointer \
-    -mno-red-zone \
-	-O0 \
-	-mcmodel=kernel
+ovmf/ovmf-code-$(KARCH).fd:
+	mkdir -p ovmf
+	curl -Lo $@ https://github.com/osdev0/edk2-ovmf-nightly/releases/latest/download/ovmf-code-$(KARCH).fd
+	case "$(KARCH)" in \
+		aarch64) dd if=/dev/zero of=$@ bs=1 count=0 seek=67108864 2>/dev/null;; \
+		loongarch64) dd if=/dev/zero of=$@ bs=1 count=0 seek=5242880 2>/dev/null;; \
+		riscv64) dd if=/dev/zero of=$@ bs=1 count=0 seek=33554432 2>/dev/null;; \
+	esac
 
-# Internal C preprocessor flags that should not be changed by the user.
-override KCPPFLAGS := \
-    -I include \
-    $(KCPPFLAGS) \
-    -MMD \
-    -MP
+ovmf/ovmf-vars-$(KARCH).fd:
+	mkdir -p ovmf
+	curl -Lo $@ https://github.com/osdev0/edk2-ovmf-nightly/releases/latest/download/ovmf-vars-$(KARCH).fd
+	case "$(KARCH)" in \
+		aarch64) dd if=/dev/zero of=$@ bs=1 count=0 seek=67108864 2>/dev/null;; \
+		loongarch64) dd if=/dev/zero of=$@ bs=1 count=0 seek=5242880 2>/dev/null;; \
+		riscv64) dd if=/dev/zero of=$@ bs=1 count=0 seek=33554432 2>/dev/null;; \
+	esac
 
-# Internal nasm flags that should not be changed by the user.
-override KNASMFLAGS += \
-    -Wall \
-    -f elf64
+limine/limine:
+	rm -rf limine
+	git clone https://github.com/limine-bootloader/limine.git --branch=v9.x-binary --depth=1
+	$(MAKE) -C limine
 
-# Internal linker flags that should not be changed by the user.
-override KLDFLAGS += \
-    -m elf_x86_64 \
-    -nostdlib \
-    -static \
-    -z max-page-size=0x1000 \
-    -T linker.ld
-
-# Use "find" to glob all *.c, *.S, and *.asm files in the tree and obtain the
-# object and header dependency file names.
-override CFILES := $(shell cd src && find -L * -type f -name '*.c' | LC_ALL=C sort)
-override ASFILES := $(shell cd src && find -L * -type f -name '*.S' | LC_ALL=C sort)
-override NASMFILES := $(shell cd src && find -L * -type f -name '*.asm' | LC_ALL=C sort)
-override OBJ := $(addprefix obj/,$(CFILES:.c=.c.o) $(ASFILES:.S=.S.o) $(NASMFILES:.asm=.asm.o))
-override HEADER_DEPS := $(addprefix obj/,$(CFILES:.c=.c.d) $(ASFILES:.S=.S.d))
-
-# Default target.
 .PHONY: kernel
-kernel: bin/$(OUTPUT)
+kernel:
+	$(MAKE) -C kernel
 
-# Link rules for the final executable.
-bin/$(OUTPUT): linker.ld $(OBJ)
-	mkdir -p "$$(dirname $@)"
-	$(KLD) $(OBJ) $(KLDFLAGS) -o $@
+$(IMAGE_NAME).iso: limine/limine kernel
+	rm -rf iso_root
+	mkdir -p iso_root/boot
+	cp -v kernel/kernel iso_root/boot/
+	mkdir -p iso_root/boot/limine
+	cp -v limine.conf iso_root/boot/limine/
+	mkdir -p iso_root/EFI/BOOT
+ifeq ($(KARCH),x86_64)
+	cp -v limine/limine-bios.sys limine/limine-bios-cd.bin limine/limine-uefi-cd.bin iso_root/boot/limine/
+	cp -v limine/BOOTX64.EFI iso_root/EFI/BOOT/
+	cp -v limine/BOOTIA32.EFI iso_root/EFI/BOOT/
+	xorriso -as mkisofs -b boot/limine/limine-bios-cd.bin \
+		-no-emul-boot -boot-load-size 4 -boot-info-table \
+		--efi-boot boot/limine/limine-uefi-cd.bin \
+		-efi-boot-part --efi-boot-image --protective-msdos-label \
+		iso_root -o $(IMAGE_NAME).iso
+	./limine/limine bios-install $(IMAGE_NAME).iso
+endif
+ifeq ($(KARCH),aarch64)
+	cp -v limine/limine-uefi-cd.bin iso_root/boot/limine/
+	cp -v limine/BOOTAA64.EFI iso_root/EFI/BOOT/
+	xorriso -as mkisofs \
+		--efi-boot boot/limine/limine-uefi-cd.bin \
+		-efi-boot-part --efi-boot-image --protective-msdos-label \
+		iso_root -o $(IMAGE_NAME).iso
+endif
+ifeq ($(KARCH),riscv64)
+	cp -v limine/limine-uefi-cd.bin iso_root/boot/limine/
+	cp -v limine/BOOTRISCV64.EFI iso_root/EFI/BOOT/
+	xorriso -as mkisofs \
+		--efi-boot boot/limine/limine-uefi-cd.bin \
+		-efi-boot-part --efi-boot-image --protective-msdos-label \
+		iso_root -o $(IMAGE_NAME).iso
+endif
+ifeq ($(KARCH),loongarch64)
+	cp -v limine/limine-uefi-cd.bin iso_root/boot/limine/
+	cp -v limine/BOOTLOONGARCH64.EFI iso_root/EFI/BOOT/
+	xorriso -as mkisofs \
+		--efi-boot boot/limine/limine-uefi-cd.bin \
+		-efi-boot-part --efi-boot-image --protective-msdos-label \
+		iso_root -o $(IMAGE_NAME).iso
+endif
+	rm -rf iso_root
 
-# Include header dependencies.
--include $(HEADER_DEPS)
+$(IMAGE_NAME).hdd: limine/limine kernel
+	rm -f $(IMAGE_NAME).hdd
+	dd if=/dev/zero bs=1M count=0 seek=64 of=$(IMAGE_NAME).hdd
+	sgdisk $(IMAGE_NAME).hdd -n 1:2048 -t 1:ef00
+ifeq ($(KARCH),x86_64)
+	./limine/limine bios-install $(IMAGE_NAME).hdd
+endif
+	mformat -i $(IMAGE_NAME).hdd@@1M
+	mmd -i $(IMAGE_NAME).hdd@@1M ::/EFI ::/EFI/BOOT ::/boot ::/boot/limine
+	mcopy -i $(IMAGE_NAME).hdd@@1M kernel/bin-$(KARCH)/kernel ::/boot
+	mcopy -i $(IMAGE_NAME).hdd@@1M limine.conf ::/boot/limine
+ifeq ($(KARCH),x86_64)
+	mcopy -i $(IMAGE_NAME).hdd@@1M limine/limine-bios.sys ::/boot/limine
+	mcopy -i $(IMAGE_NAME).hdd@@1M limine/BOOTX64.EFI ::/EFI/BOOT
+	mcopy -i $(IMAGE_NAME).hdd@@1M limine/BOOTIA32.EFI ::/EFI/BOOT
+endif
+ifeq ($(KARCH),aarch64)
+	mcopy -i $(IMAGE_NAME).hdd@@1M limine/BOOTAA64.EFI ::/EFI/BOOT
+endif
+ifeq ($(KARCH),riscv64)
+	mcopy -i $(IMAGE_NAME).hdd@@1M limine/BOOTRISCV64.EFI ::/EFI/BOOT
+endif
+ifeq ($(KARCH),loongarch64)
+	mcopy -i $(IMAGE_NAME).hdd@@1M limine/BOOTLOONGARCH64.EFI ::/EFI/BOOT
+endif
 
-# Compilation rules for *.c files.
-obj/%.c.o: src/%.c
-	mkdir -p "$$(dirname $@)"
-	$(KCC) $(KCFLAGS) $(KCPPFLAGS) -c $< -o $@
-
-# Compilation rules for *.S files.
-obj/%.S.o: src/%.S 
-	mkdir -p "$$(dirname $@)"
-	$(KCC) $(KCFLAGS) $(KCPPFLAGS) -c $< -o $@
-
-# Compilation rules for *.asm (nasm) files.
-obj/%.asm.o: src/%.asm
-	mkdir -p "$$(dirname $@)"
-	nasm $(KNASMFLAGS) $< -o $@
-
-# Remove object files and the final executable.
 .PHONY: clean
 clean:
-	rm -rf obj bin
+	$(MAKE) -C kernel clean
+	rm -rf iso_root $(IMAGE_NAME).iso $(IMAGE_NAME).hdd
+
+.PHONY: distclean
+distclean: clean
+	$(MAKE) -C kernel distclean
+	rm -rf limine ovmf

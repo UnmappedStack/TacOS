@@ -1,9 +1,5 @@
 *.iso
-bin/
-obj/
-*.o
-limine/
-sysroot/
-log.txt
-initrd/usr/bin
-userspace/doom/tacos-doomgeneric
+/ovmf/
+/kernel/kernel
+/kernel/Cargo.lock
+/kernel/target/
