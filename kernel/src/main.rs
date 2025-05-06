@@ -4,7 +4,6 @@
 mod bootloader;
 mod cpu;
 mod drivers;
-mod gdt;
 use core::fmt::Write;
 use drivers::serial;
 
@@ -12,7 +11,6 @@ use drivers::serial;
 unsafe extern "C" fn kmain() -> ! {
     assert!(bootloader::BASE_REVISION.is_supported());
     serial::init_serial();
-    gdt::init_gdt();
     cpu::halt_device();
 }
 

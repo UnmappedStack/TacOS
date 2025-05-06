@@ -5,5 +5,6 @@ fn main() {
     // ..and to re-run if it changes.
     println!("cargo:rerun-if-changed=linker-{arch}.ld");
     // Also, link object files generated from assembly separate to the Rust
-    println!("cargo:rustc-link-arg=./obj/reload_gdt.o");
+    // The following if how you'd do that
+    //println!("cargo:rustc-link-arg=./obj/<object name>.o");
 }
