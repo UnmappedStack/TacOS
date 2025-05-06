@@ -34,6 +34,7 @@ run-x86_64: ovmf/ovmf-code-$(KARCH).fd ovmf/ovmf-vars-$(KARCH).fd $(IMAGE_NAME).
 		-cdrom $(IMAGE_NAME).iso \
 		-accel kvm \
 		-serial stdio \
+		-no-shutdown -no-reboot \
 		$(QEMUFLAGS)
 
 .PHONY: run-hdd-x86_64
@@ -45,6 +46,7 @@ run-hdd-x86_64: ovmf/ovmf-code-$(KARCH).fd ovmf/ovmf-vars-$(KARCH).fd $(IMAGE_NA
 		-hda $(IMAGE_NAME).hdd \
 		-accel kvm \
 		-serial stdio \
+		-no-shutdown -no-reboot \
 		$(QEMUFLAGS)
 
 .PHONY: run-aarch64

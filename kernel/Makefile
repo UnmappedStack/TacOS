@@ -28,17 +28,27 @@ ifeq ($(RUST_PROFILE),dev)
     override RUST_PROFILE_SUBDIR := debug
 endif
 
+ASM_FILES := $(wildcard src/asm/*.S)
+ASM_OBJ_FILES := $(patsubst src/asm/%.S,obj/%.o,$(ASM_FILES))
+
 # Default target.
 .PHONY: all
-all:
+all: makeobj $(ASM_OBJ_FILES)
 	RUSTFLAGS="-C relocation-model=static" cargo build --target $(RUST_TARGET) --profile $(RUST_PROFILE)
 	cp target/$(RUST_TARGET)/$(RUST_PROFILE_SUBDIR)/$$(cd target/$(RUST_TARGET)/$(RUST_PROFILE_SUBDIR) && find -maxdepth 1 -perm -111 -type f) kernel
+
+makeobj:
+	mkdir -p obj
+
+obj/%.o: src/asm/%.S
+	gcc -c $< -o $@
 
 # Remove object files and the final executable.
 .PHONY: clean
 clean:
 	cargo clean
 	rm -rf kernel
+	rm -rf obj
 
 .PHONY: distclean
 distclean: clean

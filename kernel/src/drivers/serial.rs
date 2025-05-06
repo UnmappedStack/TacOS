@@ -1,5 +1,6 @@
 use crate::cpu;
 use core::fmt::{self, Write};
+use crate::println;
 
 const COM1: u16 = 0x3f8;
 
@@ -14,6 +15,7 @@ pub fn init_serial() {
     cpu::outb(COM1 + 0, 0xAE);
     if cpu::inb(COM1 + 0) != 0xAE { return }
     cpu::outb(COM1 + 4, 0x0F);
+    println!("Serial output initialised.");
 }
 
 fn is_transmit_empty() -> bool {
