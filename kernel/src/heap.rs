@@ -11,5 +11,5 @@ pub fn init(kernel: &mut kernel::Kernel) {
     unsafe {
         ALLOCATOR.lock().init(heap_start, heap_size);
     }
-    println!("Kernel heap initialised.\n");
+    println!("Kernel heap initialised.");
 }
