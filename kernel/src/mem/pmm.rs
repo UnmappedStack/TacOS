@@ -3,7 +3,7 @@ use crate::kernel;
 use core::fmt::Write;
 use limine::memory_map::EntryType;
 
-struct PMMNode {
+pub struct PMMNode {
     next: *mut PMMNode,
     prev: *mut PMMNode,
     size: u64,
@@ -40,7 +40,8 @@ fn pmm_list_insert(new_node: *mut PMMNode, list: *mut PMMNode) {
     }
 }
 
-pub fn init_pmm(kernel: kernel::Kernel) {
+pub fn init_pmm(kernel: &mut kernel::Kernel) {
+    assert!(kernel.pmmlist == None, "Cannot initialise PMM twice!");
     let entries = kernel.memmap.entries();
     let mut first_node: Option<*mut PMMNode> = None;
     for entry in entries {
@@ -54,5 +55,7 @@ pub fn init_pmm(kernel: kernel::Kernel) {
         }
         unsafe { (*node).size = entry.length; }
     }
+    assert!(first_node != None, "No avaliable memory for PMM to init!");
+    kernel.pmmlist = first_node;
     println!("PMM Allocator initialised.");
 }

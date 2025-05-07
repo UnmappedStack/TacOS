@@ -15,14 +15,15 @@ fn init_kernel_info() -> kernel::Kernel<'static> {
     kernel::Kernel {
         hhdm: bootloader::HHDM_REQUEST.get_response().unwrap().offset(),
         memmap: bootloader::MEMMAP_REQUEST.get_response().unwrap(),
+        pmmlist: None, // not initialised yet
     }
 }
 
 #[unsafe(no_mangle)]
 unsafe extern "C" fn kmain() -> ! {
-    let kernel = init_kernel_info();
+    let mut kernel = init_kernel_info();
     serial::init_serial();
-    pmm::init_pmm(kernel);
+    pmm::init_pmm(&mut kernel);
     cpu::halt_device();
 }
 
