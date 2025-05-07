@@ -23,6 +23,23 @@ const fn entrytype_as_str(e: EntryType) -> &'static str {
     }
 }
 
+fn init_pmm_list(list_node: *mut PMMNode, store_at: &mut Option<*mut PMMNode>) {
+    unsafe {
+        (*list_node).prev = list_node;
+        (*list_node).next = list_node;
+    }
+    *store_at = Some(list_node);
+}
+
+fn pmm_list_insert(new_node: *mut PMMNode, list: *mut PMMNode) {
+    unsafe {
+        (*new_node).prev = (*list).prev;
+        (*new_node).next = list;
+        (*(*new_node).prev).next = new_node;
+        (*(*new_node).next).prev = new_node;
+    }
+}
+
 pub fn init_pmm(kernel: kernel::Kernel) {
     let entries = kernel.memmap.entries();
     let mut first_node: Option<*mut PMMNode> = None;
@@ -32,27 +49,10 @@ pub fn init_pmm(kernel: kernel::Kernel) {
         if entry.entry_type != EntryType::USABLE { continue }
         let node = (entry.base + kernel.hhdm) as *mut PMMNode;
         match first_node {
-            Some(v) => {
-                // insert
-                unsafe {
-                    (*node).prev = (*v).prev;
-                    (*node).next = v;
-                    (*(*node).prev).next = node;
-                    (*(*node).next).prev = node;
-                }
-            },
-            None => {
-                // init the list
-                unsafe {
-                    (*node).prev = node;
-                    (*node).next = node;
-                }
-                first_node = Some(node);
-            }
+            Some(v) => pmm_list_insert(node, v),
+            None => init_pmm_list(node, &mut first_node),
         }
-        unsafe {
-            (*node).size = entry.length;
-        }
+        unsafe { (*node).size = entry.length; }
     }
     println!("PMM Allocator initialised.");
 }
