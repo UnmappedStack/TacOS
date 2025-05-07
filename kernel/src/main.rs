@@ -22,8 +22,8 @@ fn init_kernel_info() -> kernel::Kernel<'static> {
 #[unsafe(no_mangle)]
 unsafe extern "C" fn kmain() -> ! {
     let mut kernel = init_kernel_info();
-    serial::init_serial();
-    pmm::init_pmm(&mut kernel);
+    serial::init();
+    pmm::init(&mut kernel);
     cpu::halt_device();
 }
 

@@ -4,7 +4,7 @@ use crate::println;
 
 const COM1: u16 = 0x3f8;
 
-pub fn init_serial() {
+pub fn init() {
     cpu::outb(COM1 + 3, 0x80);
     cpu::outb(COM1 + 0, 0x03);
     cpu::outb(COM1 + 1, 0x00);

@@ -1,3 +1,5 @@
+#![allow(dead_code)]
+
 use crate::println;
 use crate::kernel;
 use core::fmt::Write;
@@ -6,10 +8,10 @@ use limine::memory_map::EntryType;
 pub struct PMMNode {
     next: *mut PMMNode,
     prev: *mut PMMNode,
-    size: u64,
+    size: usize,
 }
 
-const fn entrytype_as_str(e: EntryType) -> &'static str {
+fn entrytype_as_str(e: EntryType) -> &'static str {
     match e {
         EntryType::USABLE => "Usable",
         EntryType::RESERVED => "Reserved",
@@ -40,7 +42,17 @@ fn pmm_list_insert(new_node: *mut PMMNode, list: *mut PMMNode) {
     }
 }
 
-pub fn init_pmm(kernel: &mut kernel::Kernel) {
+fn pmm_list_remove(kernel: &mut kernel::Kernel, node: *mut PMMNode) {
+    unsafe {
+        (*(*node).prev).next = (*node).next;
+        (*(*node).next).prev = (*node).prev;
+        if kernel.pmmlist == Some(node) {
+            kernel.pmmlist = Some((*node).next);
+        }
+    }
+}
+
+pub fn init(kernel: &mut kernel::Kernel) {
     assert!(kernel.pmmlist == None, "Cannot initialise PMM twice!");
     let entries = kernel.memmap.entries();
     let mut first_node: Option<*mut PMMNode> = None;
@@ -53,9 +65,32 @@ pub fn init_pmm(kernel: &mut kernel::Kernel) {
             Some(v) => pmm_list_insert(node, v),
             None => init_pmm_list(node, &mut first_node),
         }
-        unsafe { (*node).size = entry.length; }
+        unsafe { (*node).size = entry.length as usize / 4096; }
     }
-    assert!(first_node != None, "No avaliable memory for PMM to init!");
     kernel.pmmlist = first_node;
     println!("PMM Allocator initialised.");
+}
+
+pub fn valloc(kernel: &mut kernel::Kernel, num_pages: usize) -> *mut usize {
+    let mut entry = kernel.pmmlist.unwrap(); 
+    let first_entry = entry;
+    loop {
+        unsafe {
+            if (*entry).size <= num_pages {
+                entry = (*entry).next;
+                if entry == first_entry { break }
+                continue;
+            }
+            pmm_list_remove(kernel, entry);
+            let new_entry = (entry as usize + num_pages * 4096) as *mut PMMNode;
+            pmm_list_insert(new_entry, (*entry).next);
+            (*new_entry).size = (*entry).size - num_pages;
+            return entry as *mut usize;
+        }
+    }
+    panic!("Out of Memory");
+}
+
+pub fn palloc(kernel: &mut kernel::Kernel, num_pages: usize) -> usize {
+    valloc(kernel, num_pages) as usize - kernel.hhdm as usize
 }
