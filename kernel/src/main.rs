@@ -32,7 +32,12 @@ unsafe extern "C" fn kmain() -> ! {
     pmm::init(&mut kernel);
     heap::init(&mut kernel);
     tty::init(&mut kernel);
-    tty::write(kernel.tty, "Kernel initiation complete (see serial for logs)");
+    tty::write(kernel.tty,
+        "Kernel initiation complete (see serial for logs)\n\n\
+         WARNING: You are in the Rust rewrite of TacOS, \
+         which is not as complete as the original version written in C (and \
+         doesn't have the Doom port). If you want a semi-functioning system, \
+         switch to the main branch then build and run again.");
     cpu::halt_device();
 }
 
