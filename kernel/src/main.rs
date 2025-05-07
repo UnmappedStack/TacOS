@@ -7,9 +7,12 @@ mod drivers;
 mod mem;
 mod kernel;
 mod tty;
+mod heap;
+mod utils;
 use core::fmt::Write;
 use drivers::serial;
 use mem::pmm;
+extern crate alloc;
 
 fn init_kernel_info() -> kernel::Kernel<'static> {
     assert!(bootloader::BASE_REVISION.is_supported());
@@ -27,6 +30,7 @@ unsafe extern "C" fn kmain() -> ! {
     let mut kernel = init_kernel_info();
     serial::init();
     pmm::init(&mut kernel);
+    heap::init(&mut kernel);
     tty::init(&mut kernel);
     tty::write(kernel.tty, "Kernel initiation complete (see serial for logs)");
     cpu::halt_device();

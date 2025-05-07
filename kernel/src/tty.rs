@@ -1,15 +1,10 @@
 use flanterm::sys::{flanterm_fb_init, flanterm_write, flanterm_context};
-use crate::kernel;
+use crate::{kernel, println, utils};
 use core::ptr::null_mut;
 use core::fmt::Write;
-use crate::println;
 
 pub fn write(ctx: Option<*mut flanterm_context>, msg: &str) {
-    // quick and dirty &str->C string conversion without the heap
-    let mut buf: [i8; 128] = [0; 128];
-    for c in 0..msg.len() {
-        buf[c] = msg.chars().nth(c).unwrap() as i8;
-    }
+    let buf = utils::str_as_cstr(msg);
     unsafe {
         flanterm_write(ctx.unwrap(), buf.as_ptr(), msg.len());
     }
