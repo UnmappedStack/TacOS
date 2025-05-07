@@ -6,6 +6,7 @@ mod cpu;
 mod drivers;
 mod mem;
 mod kernel;
+mod tty;
 use core::fmt::Write;
 use drivers::serial;
 use mem::pmm;
@@ -16,6 +17,8 @@ fn init_kernel_info() -> kernel::Kernel<'static> {
         hhdm: bootloader::HHDM_REQUEST.get_response().unwrap().offset(),
         memmap: bootloader::MEMMAP_REQUEST.get_response().unwrap(),
         pmmlist: None, // not initialised yet
+        fb: bootloader::FRAMEBUFFER_REQUEST.get_response().unwrap(),
+        tty: None,
     }
 }
 
@@ -24,6 +27,8 @@ unsafe extern "C" fn kmain() -> ! {
     let mut kernel = init_kernel_info();
     serial::init();
     pmm::init(&mut kernel);
+    tty::init(&mut kernel);
+    tty::write(kernel.tty, "Kernel initiation complete (see serial for logs)");
     cpu::halt_device();
 }
 

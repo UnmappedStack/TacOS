@@ -5,3 +5,4 @@ edition = "2024"
 
 [dependencies]
 limine = "0.4"
+flanterm = "0.0.2"
