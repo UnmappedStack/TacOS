@@ -42,12 +42,27 @@ pub unsafe fn page_map_vmem(kernel: &mut kernel::Kernel, pml4: *mut u64,
     *pml1.add(pml1idx) = paddr | flags;
 }
 
+/* Again I'm aware this isn't very fast, it's for readability not speed */
+pub unsafe fn map_consecutive_pages(kernel: &mut kernel::Kernel,
+                                    pml4: *mut u64,
+                                    paddr_start: u64, vaddr_start: u64,
+                                    num_pages: usize, flags: u64) {
+    for i in 0..num_pages {
+        unsafe {
+            page_map_vmem(kernel, pml4,
+                            paddr_start + ((i * 4096) as u64),
+                            vaddr_start + ((i * 4096) as u64),
+                            flags);
+        }
+    }
+}
+
 pub fn init(kernel: &mut kernel::Kernel) {
     let pml4 = pmm::valloc(kernel, 1) as *mut u64;
     /* map a test page (this isn't yet actually loaded into cr3) */
     unsafe {
         pml4.write_bytes(0, 512);
-        page_map_vmem(kernel, pml4, 0, kernel.hhdm,
+        map_consecutive_pages(kernel, pml4, 0, kernel.hhdm, 4,
                             PAGE_WRITE | PAGE_PRESENT);
     }
     println!("Page tree initialised.");
