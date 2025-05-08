@@ -75,8 +75,14 @@ pub fn init(kernel: &mut kernel::Kernel) {
     println!("Exceptions initialised");
 }
 
+static mut IN_PANIC: bool = false;
+
 #[unsafe(no_mangle)]
 pub fn exception_handler(_regs: IDTEFrame) -> ! {
+    unsafe {
+        if IN_PANIC { cpu::halt_device(); }
+        IN_PANIC = true;
+    }
     println!("Panic ):");
     cpu::halt_device();
 }
