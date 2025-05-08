@@ -11,6 +11,7 @@ mod heap;
 mod utils;
 mod gdt;
 mod idt;
+mod panic;
 use core::{fmt::Write, ptr::null_mut};
 use drivers::serial;
 use mem::pmm;
@@ -37,6 +38,7 @@ unsafe extern "C" fn kmain() -> ! {
     heap::init(&mut kernel);
     gdt::init(&mut kernel);
     idt::init(&mut kernel);
+    panic::init(&mut kernel);
     tty::init(&mut kernel);
     tty::write(kernel.tty,
         "\x1B[1;32mKernel initiation complete \x1B[22;39m\
