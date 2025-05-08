@@ -12,6 +12,7 @@ mod utils;
 mod gdt;
 mod idt;
 mod panic;
+mod paging;
 use core::{fmt::Write, ptr::null_mut};
 use drivers::serial;
 use mem::pmm;
@@ -35,10 +36,11 @@ unsafe extern "C" fn kmain() -> ! {
     let mut kernel = init_kernel_info();
     serial::init();
     pmm::init(&mut kernel);
-    heap::init(&mut kernel);
     gdt::init(&mut kernel);
     idt::init(&mut kernel);
     panic::init(&mut kernel);
+    paging::init(&mut kernel);
+    heap::init(&mut kernel);
     tty::init(&mut kernel);
     tty::write(kernel.tty,
         "\x1B[1;32mKernel initiation complete \x1B[22;39m\
