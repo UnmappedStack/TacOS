@@ -1,5 +1,5 @@
 use core::{fmt::Write, mem, arch::asm, ptr::null_mut};
-use crate::{println, kernel, pmm, cpu};
+use crate::{println, kernel, pmm};
 
 #[repr(C, packed)]
 pub struct IDTEntry {
@@ -42,13 +42,6 @@ pub fn map_isr(kernel: &mut kernel::Kernel,
     }
 }
 
-#[unsafe(no_mangle)]
-pub fn test_isr_handler() {
-    println!("Hi this was printed from an interrupt :)");
-    crate::cpu::halt_device();
-}
-
-unsafe extern "C" { fn test_isr(); }
 pub fn init(kernel: &mut kernel::Kernel) {
     kernel.idt = pmm::valloc(kernel, 8) as *mut IDTEntry;
     let idtr = IDTR {
@@ -60,9 +53,4 @@ pub fn init(kernel: &mut kernel::Kernel) {
         asm!("lidt [rax]", in("rax") &raw const idtr);
     }
     println!("IDT initialised.");
-    map_isr(kernel, 0, test_isr as u64, 0x8E);
-    cpu::enable_interrupts();
-    unsafe {
-        asm!("int 0");
-    }
 }

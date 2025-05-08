@@ -12,12 +12,6 @@ pub fn disable_interrupts() {
     }
 }
 
-pub fn enable_interrupts() {
-    unsafe {
-        asm!("sti");
-    }
-}
-
 pub fn halt_device() -> ! {
     disable_interrupts();
     loop {

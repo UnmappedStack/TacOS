@@ -30,6 +30,7 @@ fn init_kernel_info() -> kernel::Kernel<'static> {
 
 #[unsafe(no_mangle)]
 unsafe extern "C" fn kmain() -> ! {
+    cpu::disable_interrupts();
     let mut kernel = init_kernel_info();
     serial::init();
     pmm::init(&mut kernel);
