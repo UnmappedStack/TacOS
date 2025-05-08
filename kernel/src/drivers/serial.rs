@@ -5,26 +5,32 @@ use crate::println;
 const COM1: u16 = 0x3f8;
 
 pub fn init() {
-    cpu::outb(COM1 + 3, 0x80);
-    cpu::outb(COM1 + 0, 0x03);
-    cpu::outb(COM1 + 1, 0x00);
-    cpu::outb(COM1 + 3, 0x03);
-    cpu::outb(COM1 + 2, 0xC7);
-    cpu::outb(COM1 + 4, 0x0B);
-    cpu::outb(COM1 + 4, 0x1E);
-    cpu::outb(COM1 + 0, 0xAE);
-    if cpu::inb(COM1 + 0) != 0xAE { return }
-    cpu::outb(COM1 + 4, 0x0F);
+    unsafe {
+        cpu::outb(COM1 + 3, 0x80);
+        cpu::outb(COM1 + 0, 0x03);
+        cpu::outb(COM1 + 1, 0x00);
+        cpu::outb(COM1 + 3, 0x03);
+        cpu::outb(COM1 + 2, 0xC7);
+        cpu::outb(COM1 + 4, 0x0B);
+        cpu::outb(COM1 + 4, 0x1E);
+        cpu::outb(COM1 + 0, 0xAE);
+        if cpu::inb(COM1 + 0) != 0xAE { return }
+        cpu::outb(COM1 + 4, 0x0F);
+    }
     println!("Serial output initialised.");
 }
 
 fn is_transmit_empty() -> bool {
-    (cpu::inb(COM1 + 5) & 0x20) != 0
+    unsafe {
+        (cpu::inb(COM1 + 5) & 0x20) != 0
+    }
 }
 
 pub fn serial_writechar(ch: char) {
     while !is_transmit_empty() {}
-    cpu::outb(COM1, ch as u8);
+    unsafe {
+        cpu::outb(COM1, ch as u8);
+    }
 }
 
 pub fn serial_writestring(s: &str) {
