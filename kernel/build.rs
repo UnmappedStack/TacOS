@@ -6,4 +6,5 @@ fn main() {
     println!("cargo:rerun-if-changed=linker-{arch}.ld");
     // link needed objects from assembly files
     println!("cargo:rustc-link-arg=./obj/gdt.o");
+    println!("cargo:rustc-link-arg=./obj/exceptions.o");
 }

@@ -10,7 +10,8 @@ mod tty;
 mod heap;
 mod utils;
 mod gdt;
-use core::fmt::Write;
+mod idt;
+use core::{fmt::Write, ptr::null_mut};
 use drivers::serial;
 use mem::pmm;
 extern crate alloc;
@@ -23,6 +24,7 @@ fn init_kernel_info() -> kernel::Kernel<'static> {
         pmmlist: None,
         fb:      bootloader::FRAMEBUFFER_REQUEST.get_response().unwrap(),
         tty:     None,
+        idt:     null_mut(),
     }
 }
 
@@ -33,6 +35,7 @@ unsafe extern "C" fn kmain() -> ! {
     pmm::init(&mut kernel);
     heap::init(&mut kernel);
     gdt::init(&mut kernel);
+    idt::init(&mut kernel);
     tty::init(&mut kernel);
     tty::write(kernel.tty,
         "\x1B[1;32mKernel initiation complete \x1B[22;39m\

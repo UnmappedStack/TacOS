@@ -57,8 +57,9 @@ pub fn init(kernel: &mut kernel::Kernel) {
     let entries = kernel.memmap.entries();
     let mut first_node: Option<*mut PMMNode> = None;
     for entry in entries {
-        println!(" -> Base: 0x{:0X}, Length: 0x{:0X}, Type: {}",
-            entry.base, entry.length, entrytype_as_str(entry.entry_type));
+        println!(" -> Base: {:p}, Length: 0x{:0x}, Type: {}",
+            entry.base as *const u8,
+            entry.length, entrytype_as_str(entry.entry_type));
         if entry.entry_type != EntryType::USABLE { continue }
         let node = (entry.base + kernel.hhdm) as *mut PMMNode;
         match first_node {
