@@ -26,16 +26,16 @@ fn is_transmit_empty() -> bool {
     }
 }
 
-pub fn serial_writechar(ch: char) {
+pub fn writechar(ch: char) {
     while !is_transmit_empty() {}
     unsafe {
         cpu::outb(COM1, ch as u8);
     }
 }
 
-pub fn serial_writestring(s: &str) {
+pub fn writestring(s: &str) {
     for c in s.chars() {
-        serial_writechar(c);
+        writechar(c);
     }
 }
 
@@ -43,15 +43,17 @@ pub struct SerialWriter {}
 
 impl Write for SerialWriter {
     fn write_str(&mut self, s: &str) -> fmt::Result {
-        serial_writestring(s);
+        writestring(s);
         Ok(())
     }
 }
 
 #[macro_export] macro_rules! println {
     ($($arg:tt)*) => {
-        let mut writer = $crate::serial::SerialWriter {};
-        writer.write_fmt(format_args!($($arg)*)).unwrap();
-        $crate::serial::serial_writechar('\n');
+        {
+            let mut writer = $crate::serial::SerialWriter {};
+            writer.write_fmt(format_args!($($arg)*)).unwrap();
+            $crate::serial::writechar('\n');
+        }
     };
 }

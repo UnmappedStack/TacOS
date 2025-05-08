@@ -125,8 +125,10 @@ base_handler:
     mov %rax, %rdi
     mov %cr2, %rax
     push %rax
+    mov %cr3, %rax
+    push %rax
     cld
-    mov %rdi, %rsp
+    mov %rsp, %rdi
     call exception_handler 
     add %rsp, 8
     pop %r15
