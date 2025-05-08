@@ -9,6 +9,7 @@ mod kernel;
 mod tty;
 mod heap;
 mod utils;
+mod gdt;
 use core::fmt::Write;
 use drivers::serial;
 use mem::pmm;
@@ -17,11 +18,11 @@ extern crate alloc;
 fn init_kernel_info() -> kernel::Kernel<'static> {
     assert!(bootloader::BASE_REVISION.is_supported());
     kernel::Kernel {
-        hhdm: bootloader::HHDM_REQUEST.get_response().unwrap().offset(),
-        memmap: bootloader::MEMMAP_REQUEST.get_response().unwrap(),
-        pmmlist: None, // not initialised yet
-        fb: bootloader::FRAMEBUFFER_REQUEST.get_response().unwrap(),
-        tty: None,
+        hhdm:    bootloader::HHDM_REQUEST.get_response().unwrap().offset(),
+        memmap:  bootloader::MEMMAP_REQUEST.get_response().unwrap(),
+        pmmlist: None,
+        fb:      bootloader::FRAMEBUFFER_REQUEST.get_response().unwrap(),
+        tty:     None,
     }
 }
 
@@ -31,6 +32,7 @@ unsafe extern "C" fn kmain() -> ! {
     serial::init();
     pmm::init(&mut kernel);
     heap::init(&mut kernel);
+    gdt::init(&mut kernel);
     tty::init(&mut kernel);
     tty::write(kernel.tty,
         "\x1B[1;32mKernel initiation complete \x1B[22;39m\

@@ -35,6 +35,7 @@ run-x86_64: ovmf/ovmf-code-$(KARCH).fd ovmf/ovmf-vars-$(KARCH).fd $(IMAGE_NAME).
 		-accel kvm \
 		-serial stdio \
 		-no-shutdown -no-reboot \
+		-monitor telnet:127.0.0.1:8000,server,nowait \
 		$(QEMUFLAGS)
 
 .PHONY: run-hdd-x86_64
@@ -47,6 +48,7 @@ run-hdd-x86_64: ovmf/ovmf-code-$(KARCH).fd ovmf/ovmf-vars-$(KARCH).fd $(IMAGE_NA
 		-accel kvm \
 		-serial stdio \
 		-no-shutdown -no-reboot \
+		-monitor telnet:127.0.0.1:8000,server,nowait \
 		$(QEMUFLAGS)
 
 .PHONY: run-aarch64

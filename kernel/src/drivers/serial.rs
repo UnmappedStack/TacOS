@@ -44,8 +44,8 @@ impl Write for SerialWriter {
 
 #[macro_export] macro_rules! println {
     ($($arg:tt)*) => {
-        let mut writer = crate::serial::SerialWriter {};
+        let mut writer = $crate::serial::SerialWriter {};
         writer.write_fmt(format_args!($($arg)*)).unwrap();
-        crate::serial::serial_writechar('\n');
+        $crate::serial::serial_writechar('\n');
     };
 }
