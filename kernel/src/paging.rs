@@ -58,6 +58,10 @@ pub unsafe fn map_consecutive_pages(kernel: &mut kernel::Kernel,
     }
 }
 
+fn map_kernel(kernel: &mut kernel::Kernel, pml4: *mut u64) {
+    
+}
+
 pub fn init(kernel: &mut kernel::Kernel) {
     let pml4 = pmm::valloc(kernel, 1) as *mut u64;
     unsafe {
@@ -76,5 +80,6 @@ pub fn init(kernel: &mut kernel::Kernel) {
                                     PAGE_WRITE | PAGE_PRESENT);
         }
     }
+    map_kernel(kernel, pml4);
     println!("Page tree initialised.");
 }
