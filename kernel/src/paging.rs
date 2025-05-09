@@ -1,5 +1,6 @@
 use crate::{kernel, println, pmm};
 use core::{fmt::Write};
+use limine::memory_map::EntryType;
 
 const   PAGE_WRITE: u64 = 0b001;
 const PAGE_PRESENT: u64 = 0b010;
@@ -59,11 +60,21 @@ pub unsafe fn map_consecutive_pages(kernel: &mut kernel::Kernel,
 
 pub fn init(kernel: &mut kernel::Kernel) {
     let pml4 = pmm::valloc(kernel, 1) as *mut u64;
-    /* map a test page (this isn't yet actually loaded into cr3) */
     unsafe {
         pml4.write_bytes(0, 512);
-        map_consecutive_pages(kernel, pml4, 0, kernel.hhdm, 4,
-                            PAGE_WRITE | PAGE_PRESENT);
+    }
+    let entries = kernel.memmap.entries();
+    for entry in entries {
+        match entry.entry_type {
+            EntryType::RESERVED | EntryType::BAD_MEMORY => continue,
+            _ => {},
+        };
+        unsafe {
+            map_consecutive_pages(kernel, pml4, entry.base,
+                                    entry.base + kernel.hhdm,
+                                    (entry.length / 4096) as usize,
+                                    PAGE_WRITE | PAGE_PRESENT);
+        }
     }
     println!("Page tree initialised.");
 }

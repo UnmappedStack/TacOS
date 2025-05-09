@@ -8,5 +8,5 @@ pub struct Kernel<'a> {
     pub pmmlist: Option<*mut pmm::PMMNode>,
     pub fb: &'a FramebufferResponse,
     pub tty: Option<*mut flanterm_context>,
-    pub idt: *mut idt::IDTEntry
+    pub idt: *mut idt::IDTEntry,
 }
