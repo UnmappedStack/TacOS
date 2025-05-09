@@ -20,6 +20,7 @@ extern crate alloc;
 
 fn init_kernel_info() -> kernel::Kernel<'static> {
     assert!(bootloader::BASE_REVISION.is_supported());
+    let kernel_addr = bootloader::KERNEL_LOC_REQUEST.get_response().unwrap();
     kernel::Kernel {
         hhdm:    bootloader::HHDM_REQUEST.get_response().unwrap().offset(),
         memmap:  bootloader::MEMMAP_REQUEST.get_response().unwrap(),
@@ -27,6 +28,8 @@ fn init_kernel_info() -> kernel::Kernel<'static> {
         fb:      bootloader::FRAMEBUFFER_REQUEST.get_response().unwrap(),
         tty:     None,
         idt:     null_mut(),
+        kernel_phys_base: kernel_addr.physical_base(),
+        kernel_virt_base: kernel_addr.virtual_base(),
     }
 }
 

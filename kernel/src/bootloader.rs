@@ -1,6 +1,9 @@
+// Sorry there are some kinda long lines in this file
+
 use limine::BaseRevision;
-use limine::request::{FramebufferRequest, RequestsEndMarker, RequestsStartMarker, 
-                        MemoryMapRequest, HhdmRequest};
+use limine::request::{FramebufferRequest, RequestsEndMarker, HhdmRequest,
+                        RequestsStartMarker, MemoryMapRequest,
+                        ExecutableAddressRequest};
 
 #[used]
 #[unsafe(link_section = ".requests")]
@@ -17,6 +20,10 @@ pub static HHDM_REQUEST: HhdmRequest = HhdmRequest::new();
 #[used]
 #[unsafe(link_section = ".requests")]
 pub static MEMMAP_REQUEST: MemoryMapRequest = MemoryMapRequest::new();
+
+#[used]
+#[unsafe(link_section = ".requests")]
+pub static KERNEL_LOC_REQUEST: ExecutableAddressRequest = ExecutableAddressRequest::new();
 
 #[used]
 #[unsafe(link_section = ".requests_start_marker")]

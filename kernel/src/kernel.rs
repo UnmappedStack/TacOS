@@ -9,4 +9,6 @@ pub struct Kernel<'a> {
     pub fb: &'a FramebufferResponse,
     pub tty: Option<*mut flanterm_context>,
     pub idt: *mut idt::IDTEntry,
+    pub kernel_phys_base: u64,
+    pub kernel_virt_base: u64,
 }

@@ -7,6 +7,14 @@ const PAGE_PRESENT: u64 = 0b010;
 const   _PAGE_USER: u64 = 0b100;
 const   PADDR_MASK: u64 = !(0xfff | (1 << 63));
 
+fn page_align_down(addr: u64) -> usize {
+    ((addr / 4096) * 4096) as usize
+}
+
+fn page_align_up(addr: u64) -> usize {
+    (((addr + 4095) / 4096) * 4096) as usize
+}
+
 const fn addr_to_idx(addr: u64, level: u8) -> usize {
     ((addr >> (9 * (level as u64) + 12)) & 0x1ff) as usize
 }
@@ -58,8 +66,36 @@ pub unsafe fn map_consecutive_pages(kernel: &mut kernel::Kernel,
     }
 }
 
+unsafe extern "C" {
+    static ld_kernel_ro_start: [u64; 1];
+    static ld_kernel_writable_start: [u64; 1];
+    static ld_kernel_end: [u64; 1];
+}
 fn map_kernel(kernel: &mut kernel::Kernel, pml4: *mut u64) {
-    
+    let kernel_ro_start       = (&raw const ld_kernel_ro_start) as u64;
+    let kernel_writable_start = (&raw const ld_kernel_writable_start) as u64;
+    let kernel_end            = (&raw const ld_kernel_end) as u64;
+    println!("Kernel ELF layout:");
+    println!("\t- RO start       = {:p}\n\
+              \t- Writable start = {:p}\n\
+              \t- Kernel end     = {:p}",
+              kernel_ro_start       as *const i8,
+              kernel_writable_start as *const i8,
+              kernel_end            as *const i8);
+    unsafe {
+        let len = page_align_up(kernel_writable_start - kernel_ro_start) / 4096;
+        let phys = kernel.kernel_phys_base +
+                                    (kernel_ro_start - kernel.kernel_virt_base);
+        map_consecutive_pages(kernel, pml4, phys, kernel_ro_start,
+                                                        len, PAGE_PRESENT);
+    }
+    unsafe {
+        let len = page_align_up(kernel_end - kernel_writable_start) / 4096;
+        let phys = kernel.kernel_phys_base +
+                              (kernel_writable_start - kernel.kernel_virt_base);
+        map_consecutive_pages(kernel, pml4, phys, kernel_ro_start,
+                                                len, PAGE_PRESENT | PAGE_WRITE);
+    }
 }
 
 pub fn init(kernel: &mut kernel::Kernel) {

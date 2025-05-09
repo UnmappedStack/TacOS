@@ -12,7 +12,7 @@ PHDRS
 SECTIONS
 {
     . = 0xffffffff80000000;
-    kernel_ro_start = .;
+    ld_kernel_ro_start = .;
 
     .text : {
         *(.text .text.*)
@@ -25,7 +25,7 @@ SECTIONS
     } :rodata
 
     . = ALIGN(CONSTANT(MAXPAGESIZE));
-    kernel_writable_start = .;
+    ld_kernel_writable_start = .;
 
     .data : {
         *(.data .data.*)
@@ -41,7 +41,7 @@ SECTIONS
     } :data
 
     . = ALIGN(CONSTANT(MAXPAGESIZE));
-    kernel_end = .;
+    ld_kernel_end = .;
     /DISCARD/ : {
         *(.eh_frame*)
         *(.note .note.*)

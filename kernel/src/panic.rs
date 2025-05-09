@@ -134,8 +134,8 @@ unsafe extern "C" fn exception_handler(regs: IDTEFrame) -> ! {
         the system cannot continue.\n\x1B[39m");
     println!(" === Debug Information: ===\x1B[22m");
     match regs.typ {
+        13 => println!("Exception type: General protection fault"),
         14 => println!("Exception type: Page fault"),
-        15 => println!("Exception type: General protection fault"),
         _  => println!("Exception type: {}", regs.typ),
     };
     println!("Error code: 0b{:b}", regs.code as u16);
