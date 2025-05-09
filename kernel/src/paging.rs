@@ -7,10 +7,10 @@ const PAGE_PRESENT: u64 = 0b010;
 const   _PAGE_USER: u64 = 0b100;
 const   PADDR_MASK: u64 = !(0xfff | (1 << 63));
 
-fn page_align_down(addr: u64) -> usize {
-    ((addr / 4096) * 4096) as usize
-}
-
+const KERNEL_STACK_NPAGES: usize = 10;
+const KERNEL_STACK_HIGH: u64 = 0xFFFFFFFFFFFFF000;
+const KERNEL_STACK_LOW:  u64 = KERNEL_STACK_HIGH - 
+                                            (KERNEL_STACK_NPAGES as u64* 4096);
 fn page_align_up(addr: u64) -> usize {
     (((addr + 4095) / 4096) * 4096) as usize
 }
@@ -71,6 +71,7 @@ unsafe extern "C" {
     static ld_kernel_writable_start: [u64; 1];
     static ld_kernel_end: [u64; 1];
 }
+
 fn map_kernel(kernel: &mut kernel::Kernel, pml4: *mut u64) {
     let kernel_ro_start       = (&raw const ld_kernel_ro_start) as u64;
     let kernel_writable_start = (&raw const ld_kernel_writable_start) as u64;
@@ -98,6 +99,15 @@ fn map_kernel(kernel: &mut kernel::Kernel, pml4: *mut u64) {
     }
 }
 
+fn map_kstack(kernel: &mut kernel::Kernel, pml4: *mut u64) {
+    unsafe {
+        let stack_paddr = pmm::palloc(kernel, KERNEL_STACK_NPAGES) as u64;
+        map_consecutive_pages(kernel, pml4,
+            stack_paddr, KERNEL_STACK_LOW,
+            KERNEL_STACK_NPAGES, PAGE_WRITE | PAGE_PRESENT);
+    }
+}
+
 pub fn init(kernel: &mut kernel::Kernel) {
     let pml4 = pmm::valloc(kernel, 1) as *mut u64;
     unsafe {
@@ -105,7 +115,7 @@ pub fn init(kernel: &mut kernel::Kernel) {
     }
     let entries = kernel.memmap.entries();
     for entry in entries {
-        if entry.entry_type == EntryType::RESERVED   ||
+        if entry.entry_type == EntryType::RESERVED ||
            entry.entry_type == EntryType::BAD_MEMORY {
             continue;
         }
@@ -117,5 +127,6 @@ pub fn init(kernel: &mut kernel::Kernel) {
         }
     }
     map_kernel(kernel, pml4);
+    map_kstack(kernel, pml4);
     println!("Page tree initialised.");
 }
