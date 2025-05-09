@@ -2,17 +2,16 @@ use crate::{kernel, println, pmm};
 use core::{fmt::Write};
 use limine::memory_map::EntryType;
 
-const   PAGE_WRITE: u64 = 0b001;
-const PAGE_PRESENT: u64 = 0b010;
-const   _PAGE_USER: u64 = 0b100;
-const   PADDR_MASK: u64 = !(0xfff | (1 << 63));
+const PAGE_PRESENT: u64 = 0b0001;
+const   PAGE_WRITE: u64 = 0b0010;
+const    PAGE_USER: u64 = 0b0100;
 
-const KERNEL_STACK_NPAGES: usize = 10;
-const KERNEL_STACK_HIGH: u64 = 0xFFFFFFFFFFFFF000;
-const KERNEL_STACK_LOW:  u64 = KERNEL_STACK_HIGH - 
-                                            (KERNEL_STACK_NPAGES as u64* 4096);
 fn page_align_up(addr: u64) -> usize {
     (((addr + 4095) / 4096) * 4096) as usize
+}
+
+fn page_align_down(addr: u64) -> usize {
+    ((addr / 4096) * 4096) as usize
 }
 
 const fn addr_to_idx(addr: u64, level: u8) -> usize {
@@ -25,29 +24,30 @@ const fn addr_to_idx(addr: u64, level: u8) -> usize {
  * rather than speed. */
 #[allow(unsafe_op_in_unsafe_fn)]
 pub unsafe fn page_map_vmem(kernel: &mut kernel::Kernel, pml4: *mut u64,
-                                    paddr: u64, vaddr: u64, flags: u64) {
-    let pml1idx = addr_to_idx(vaddr, 1);
-    let pml2idx = addr_to_idx(vaddr, 2);
-    let pml3idx = addr_to_idx(vaddr, 3);
-    let pml4idx = addr_to_idx(vaddr, 4);
+                                    paddr: u64, mut vaddr: u64, flags: u64) {
+    vaddr &= !0xFFFF000000000000;
+    assert!(vaddr & 0x111 == 0);
+    let pml1idx = addr_to_idx(vaddr, 0);
+    let pml2idx = addr_to_idx(vaddr, 1);
+    let pml3idx = addr_to_idx(vaddr, 2);
+    let pml4idx = addr_to_idx(vaddr, 3);
     if *pml4.add(pml4idx) == 0 {
         let paddr = pmm::palloc(kernel, 1) as u64;
-        *pml4.add(pml4idx) = PAGE_WRITE | PAGE_PRESENT | paddr;
+        *pml4.add(pml4idx) = PAGE_WRITE | PAGE_PRESENT | PAGE_USER | paddr;
         ((paddr + kernel.hhdm) as *mut u64).write_bytes(0, 512);
     }
-    let pml3 = ((*pml4.add(pml4idx) & PADDR_MASK) + kernel.hhdm) as *mut u64;
+    let pml3 = page_align_down(*pml4.add(pml4idx) + kernel.hhdm) as *mut u64;
     if *pml3.add(pml3idx) == 0 {
         let paddr = pmm::palloc(kernel, 1) as u64;
-        *pml3.add(pml3idx) = PAGE_WRITE | PAGE_PRESENT | paddr;
+        *pml3.add(pml3idx) = PAGE_WRITE | PAGE_PRESENT | PAGE_USER | paddr;
         ((paddr + kernel.hhdm) as *mut u64).write_bytes(0, 512);
     }
-    let pml2 = ((*pml3.add(pml3idx) & PADDR_MASK) + kernel.hhdm) as *mut u64;
+    let pml2 = page_align_down(*pml3.add(pml3idx) + kernel.hhdm) as *mut u64;
     if *pml2.add(pml2idx) == 0 {
         let paddr = pmm::palloc(kernel, 1) as u64;
-        *pml2.add(pml2idx) = PAGE_WRITE | PAGE_PRESENT | paddr;
-        ((paddr + kernel.hhdm) as *mut u64).write_bytes(0, 512);
+        *pml2.add(pml2idx) = PAGE_WRITE | PAGE_PRESENT | PAGE_USER | paddr;
     }
-    let pml1 = ((*pml2.add(pml2idx) & PADDR_MASK) + kernel.hhdm) as *mut u64;
+    let pml1 = page_align_down(*pml2.add(pml2idx) + kernel.hhdm) as *mut u64;
     *pml1.add(pml1idx) = paddr | flags;
 }
 
@@ -94,17 +94,8 @@ fn map_kernel(kernel: &mut kernel::Kernel, pml4: *mut u64) {
         let len = page_align_up(kernel_end - kernel_writable_start) / 4096;
         let phys = kernel.kernel_phys_base +
                               (kernel_writable_start - kernel.kernel_virt_base);
-        map_consecutive_pages(kernel, pml4, phys, kernel_ro_start,
+        map_consecutive_pages(kernel, pml4, phys, kernel_writable_start,
                                                 len, PAGE_PRESENT | PAGE_WRITE);
-    }
-}
-
-fn map_kstack(kernel: &mut kernel::Kernel, pml4: *mut u64) {
-    unsafe {
-        let stack_paddr = pmm::palloc(kernel, KERNEL_STACK_NPAGES) as u64;
-        map_consecutive_pages(kernel, pml4,
-            stack_paddr, KERNEL_STACK_LOW,
-            KERNEL_STACK_NPAGES, PAGE_WRITE | PAGE_PRESENT);
     }
 }
 
@@ -121,12 +112,16 @@ pub fn init(kernel: &mut kernel::Kernel) {
         }
         unsafe {
             map_consecutive_pages(kernel, pml4, entry.base,
-                                    entry.base + kernel.hhdm,
-                                    (entry.length / 4096) as usize,
-                                    PAGE_WRITE | PAGE_PRESENT);
+                                  entry.base + kernel.hhdm,
+                                  (page_align_up(entry.length) / 4096) as usize,
+                                  PAGE_WRITE | PAGE_PRESENT);
         }
     }
     map_kernel(kernel, pml4);
-    map_kstack(kernel, pml4);
-    println!("Page tree initialised.");
+    unsafe {
+        let cr3 = (pml4 as u64) - kernel.hhdm;
+        core::arch::asm!("mov cr3, rax",
+                in("rax") cr3);
+    }
+    println!("New page tree initialised.");
 }
