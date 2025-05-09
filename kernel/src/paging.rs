@@ -105,10 +105,10 @@ pub fn init(kernel: &mut kernel::Kernel) {
     }
     let entries = kernel.memmap.entries();
     for entry in entries {
-        match entry.entry_type {
-            EntryType::RESERVED | EntryType::BAD_MEMORY => continue,
-            _ => {},
-        };
+        if entry.entry_type == EntryType::RESERVED   ||
+           entry.entry_type == EntryType::BAD_MEMORY {
+            continue;
+        }
         unsafe {
             map_consecutive_pages(kernel, pml4, entry.base,
                                     entry.base + kernel.hhdm,
