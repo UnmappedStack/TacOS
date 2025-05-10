@@ -6,14 +6,13 @@ mod cpu;
 mod drivers;
 mod mem;
 mod kernel;
-mod tty;
 mod heap;
 mod utils;
 mod gdt;
 mod idt;
 mod panic;
 use core::{fmt::Write, ptr::null_mut};
-use drivers::serial;
+use drivers::{serial, tty};
 use mem::{pmm, paging};
 extern crate alloc;
 
