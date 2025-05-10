@@ -32,8 +32,6 @@ fn init_kernel_info() -> kernel::Kernel<'static> {
     }
 }
 
-static TEST: u64 = 12;
-
 #[unsafe(no_mangle)]
 unsafe extern "C" fn kmain() -> ! {
     cpu::disable_interrupts();
@@ -43,9 +41,7 @@ unsafe extern "C" fn kmain() -> ! {
     gdt::init(&mut kernel);
     idt::init(&mut kernel);
     panic::init(&mut kernel);
-    println!("test val before is {}", TEST);
     paging::init(&mut kernel);
-    println!("test val after is {}", TEST);
     heap::init(&mut kernel);
     tty::init(&mut kernel);
     tty::write(kernel.tty,
