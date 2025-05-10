@@ -4,3 +4,4 @@
 /kernel/Cargo.lock
 /kernel/target/
 kernel/obj/
+/limine/
