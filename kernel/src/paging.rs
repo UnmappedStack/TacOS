@@ -6,7 +6,7 @@ const PAGE_PRESENT: u64 = 0b0001;
 const   PAGE_WRITE: u64 = 0b0010;
 const    PAGE_USER: u64 = 0b0100;
 
-fn page_align_up(addr: u64) -> usize {
+pub fn page_align_up(addr: u64) -> usize {
     (((addr + 4095) / 4096) * 4096) as usize
 }
 
@@ -45,6 +45,7 @@ pub unsafe fn page_map_vmem(kernel: &mut kernel::Kernel, pml4: *mut u64,
     let pml2 = page_align_down(*pml3.add(pml3idx) + kernel.hhdm) as *mut u64;
     if *pml2.add(pml2idx) == 0 {
         let paddr = pmm::palloc(kernel, 1) as u64;
+        ((paddr + kernel.hhdm) as *mut u64).write_bytes(0, 512);
         *pml2.add(pml2idx) = PAGE_WRITE | PAGE_PRESENT | PAGE_USER | paddr;
     }
     let pml1 = page_align_down(*pml2.add(pml2idx) + kernel.hhdm) as *mut u64;

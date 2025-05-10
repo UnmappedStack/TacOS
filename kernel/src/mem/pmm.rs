@@ -1,7 +1,6 @@
 #![allow(dead_code)]
 
-use crate::println;
-use crate::kernel;
+use crate::{println, kernel};
 use core::fmt::Write;
 use limine::memory_map::EntryType;
 
@@ -86,6 +85,7 @@ pub fn valloc(kernel: &mut kernel::Kernel, num_pages: usize) -> *mut usize {
             let new_entry = (entry as usize + num_pages * 4096) as *mut PMMNode;
             pmm_list_insert(new_entry, (*entry).next);
             (*new_entry).size = (*entry).size - num_pages;
+            assert!(entry as u64 & 0b111 == 0);
             return entry as *mut usize;
         }
     }

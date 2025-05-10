@@ -119,6 +119,7 @@ fn stack_trace(rbp: u64, rip: u64) {
 
 static mut IN_PANIC: bool = false;
 
+#[allow(static_mut_refs)]
 #[unsafe(no_mangle)]
 unsafe extern "C" fn exception_handler(regs: IDTEFrame) -> ! {
     unsafe {
