@@ -12,10 +12,9 @@ mod utils;
 mod gdt;
 mod idt;
 mod panic;
-mod paging;
 use core::{fmt::Write, ptr::null_mut};
 use drivers::serial;
-use mem::pmm;
+use mem::{pmm, paging};
 extern crate alloc;
 
 fn init_kernel_info() -> kernel::Kernel<'static> {
