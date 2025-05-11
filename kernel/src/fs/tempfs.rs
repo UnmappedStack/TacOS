@@ -1,59 +1,58 @@
 use core::fmt::Write;
 use crate::println;
-use alloc::{boxed::Box, string::String, vec::Vec};
+use alloc::{string::String, vec::Vec};
 
 enum InodeContents {
-    File(Box<File>),
-    Dir(Box<Dir>),
+    File(Vec<i8>),
+    Dir(Vec<Inode>),
 }
 
-struct Inode {
+pub struct Inode {
     fname: String,
     contents: InodeContents,
 }
 
-pub struct File {
-    contents: Vec<i8>,
-}
-
-pub struct Dir {
-    entries: Vec<Inode>,
-}
-
 pub struct TempFS {
-    rootdir: Dir, 
+    rootdir: Inode, 
 }
 
 pub fn new() -> TempFS {
-    let rootdir = Dir {
-        entries: Vec::<Inode>::new(),
+    let rootdir = Inode {
+        fname: String::from("TMPFSROOT"),
+        contents: InodeContents::Dir(Vec::new()),
     };
     let ret = TempFS { rootdir };
     println!("Initiated new empty TempFS");
     ret
 }
 
-pub fn openroot(superblock: &mut TempFS) -> &mut Dir {
+pub fn openroot(superblock: &mut TempFS) -> &mut Inode {
     &mut superblock.rootdir
 }
 
-pub fn mkfile(dir: &mut Dir, fname: &str) {
-    dir.entries.push(Inode {
+pub fn mkfile(dir: &mut Inode, fname: &str) {
+    let entries = match &mut dir.contents {
+        InodeContents::Dir(v) => v,
+        _ => todo!("tmpfs error handling (err: mkfile dir is a file)"),
+    };
+    entries.push(Inode {
         fname: String::from(fname),
         contents: InodeContents::File(
-            Box::new(File {
-                contents: Vec::<i8>::new(),
-            })
+            Vec::<i8>::new(),
         ),
     });
     println!("Created TempFS file {}", fname);
 }
 
-pub fn openfile<'a>(dir: &'a mut Dir, fname: &str) -> &'a mut Box<File> {
-    for entry in dir.entries.iter_mut() {
+pub fn openfile<'a>(dir: &'a mut Inode, fname: &str) -> &'a mut Inode {
+    let entries = match &mut dir.contents {
+        InodeContents::Dir(v) => v,
+        _ => todo!("tmpfs error handling (err: expected dir got file in open)"),
+    };
+    for entry in entries.iter_mut() {
         if entry.fname != fname { continue }
         match &mut entry.contents {
-            InodeContents::File(v) => return v,
+            InodeContents::File(_) => return entry,
             InodeContents::Dir(_)  => {
                 todo!("tmpfs error handling (err: tried to open dir as file)");
             }
@@ -62,14 +61,22 @@ pub fn openfile<'a>(dir: &'a mut Dir, fname: &str) -> &'a mut Box<File> {
     todo!("tmpfs error handling (err: file not found)");
 }
 
-pub fn writefile(file: &mut Box<File>, buf: Vec<i8>, bytes: usize) {
+pub fn writefile(file: &mut Inode, buf: Vec<i8>, bytes: usize) {
+    let contents = match &mut file.contents {
+        InodeContents::File(v) => v,
+        _ => todo!("tmpfs error handling (err: tried to write to file as dir)"),
+    };
     for i in 0..bytes {
-        file.contents.push(buf[i]);
+        contents.push(buf[i]);
     }
 }
 
-pub fn readfile(file: &Box<File>, buf: &mut Vec<i8>, bytes: usize) {
+pub fn readfile(file: &Inode, buf: &mut Vec<i8>, bytes: usize) {
+    let contents = match &file.contents {
+        InodeContents::File(v) => v,
+        _ => todo!("tmpfs error handling (err: tried to write to file as dir)"),
+    };
     for i in 0..bytes {
-        buf[i] = file.contents[i];
+        buf[i] = contents[i];
     }
 }
