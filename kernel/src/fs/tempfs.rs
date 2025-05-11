@@ -99,3 +99,17 @@ pub fn mkdir(parent: &mut Inode, dirname: &str) {
     });
 }
 
+pub fn opendir<'a>(parent: &'a mut Inode, dirname: &str) -> &'a mut Inode {
+    let entries = match &mut parent.contents {
+        InodeContents::Dir(v) => v,
+        _ => todo!("tmpfs error handling (err: expected dir got file in open)"),
+    };
+    for entry in entries.iter_mut() {
+        if entry.fname != dirname { continue }
+        match entry.contents {
+            InodeContents::Dir(_) => return entry,
+            _ => todo!("tmpfs error handling (err: tried to open file as dir)"),
+        }
+    }
+    todo!("tmpfs error handling (err: directory does not exist)");
+}

@@ -23,8 +23,13 @@ fn test_tempfs() {
     let mut fs = tempfs::new();
     let root = tempfs::openroot(&mut fs);
     println!("Opened root directory of filesystem");
-    tempfs::mkfile(root, fname);
-    let f = tempfs::openfile(root, fname);
+    tempfs::mkdir(root, "testdir");
+    println!("Created test directory within root");
+    let dir = tempfs::opendir(root, "testdir");
+    println!("Opened test directory");
+    tempfs::mkfile(dir, fname);
+    println!("Created file {}", fname);
+    let f = tempfs::openfile(dir, fname);
     let msg = "Hello, world!";
     println!("Writing to {}: {}", fname, msg);
     tempfs::writefile(f, crate::utils::str_as_cstr(msg), msg.len());
