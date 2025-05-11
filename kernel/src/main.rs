@@ -11,10 +11,27 @@ mod utils;
 mod gdt;
 mod idt;
 mod panic;
+mod fs;
 use core::{fmt::Write, ptr::null_mut};
 use drivers::{serial, tty};
+use fs::tempfs;
 use mem::{pmm, paging};
 extern crate alloc;
+
+fn test_tempfs() {
+    let fname = "testfile.txt";
+    let mut fs = tempfs::new();
+    let root = tempfs::openroot(&mut fs);
+    println!("Opened root directory of filesystem");
+    tempfs::mkfile(root, fname);
+    let f = tempfs::openfile(root, fname);
+    let msg = "Hello, world!";
+    println!("Writing to {}: {}", fname, msg);
+    tempfs::writefile(f, crate::utils::str_as_cstr(msg), msg.len());
+    let mut buf: alloc::vec::Vec<i8> = alloc::vec![0; msg.len()];
+    tempfs::readfile(f, &mut buf, msg.len());
+    println!("Read back: {}", crate::utils::cstr_as_string(buf));
+}
 
 fn init_kernel_info() -> kernel::Kernel<'static> {
     assert!(bootloader::BASE_REVISION.is_supported());
@@ -42,6 +59,7 @@ unsafe extern "C" fn kmain() -> ! {
     panic::init(&mut kernel);
     paging::init(&mut kernel);
     heap::init(&mut kernel);
+    test_tempfs();
     tty::init(&mut kernel);
     tty::write(kernel.tty,
         "\x1B[1;32mKernel initiation complete \x1B[22;39m\

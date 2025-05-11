@@ -89,7 +89,7 @@ fn map_kernel(kernel: &mut kernel::Kernel, pml4: *mut u64) {
         let phys = kernel.kernel_phys_base +
                                     (kernel_ro_start - kernel.kernel_virt_base);
         map_consecutive_pages(kernel, pml4, phys, kernel_ro_start,
-                                                        len, PAGE_PRESENT);
+                                                             len, PAGE_PRESENT);
     }
     unsafe {
         let len = page_align_up(kernel_end - kernel_writable_start) / 4096;
