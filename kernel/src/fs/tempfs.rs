@@ -80,3 +80,14 @@ pub fn readfile(file: &Inode, buf: &mut Vec<i8>, bytes: usize) {
         buf[i] = contents[i];
     }
 }
+
+pub fn mkdir(parent: &mut Inode, dirname: &str) {
+    let entries = match &mut parent.contents {
+        InodeContents::Dir(v) => v,
+        _ => todo!("tmpfs error handling (err: expected dir got file in open)"),
+    };
+    entries.push(Inode {
+        fname: String::from(dirname),
+        contents: InodeContents::Dir(Vec::new()),
+    });
+}
