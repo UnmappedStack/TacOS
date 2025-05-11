@@ -61,6 +61,13 @@ pub fn openfile<'a>(dir: &'a mut Inode, fname: &str) -> &'a mut Inode {
     todo!("tmpfs error handling (err: file not found)");
 }
 
+pub fn closefile(f: &Inode) -> i32 {
+    match f.contents {
+        InodeContents::File(_) => 0,
+        _ => todo!("tmpfs error handling (err: tried to close dir as file)"),
+    }
+}
+
 pub fn writefile(file: &mut Inode, buf: Vec<i8>, bytes: usize) {
     let contents = match &mut file.contents {
         InodeContents::File(v) => v,
@@ -91,3 +98,4 @@ pub fn mkdir(parent: &mut Inode, dirname: &str) {
         contents: InodeContents::Dir(Vec::new()),
     });
 }
+

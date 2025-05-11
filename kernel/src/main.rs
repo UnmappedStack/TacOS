@@ -31,6 +31,7 @@ fn test_tempfs() {
     let mut buf: alloc::vec::Vec<i8> = alloc::vec![0; msg.len()];
     tempfs::readfile(f, &mut buf, msg.len());
     println!("Read back: {}", crate::utils::cstr_as_string(buf));
+    tempfs::closefile(f);
 }
 
 fn init_kernel_info() -> kernel::Kernel<'static> {
