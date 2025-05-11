@@ -37,6 +37,8 @@ fn test_tempfs() {
     tempfs::readfile(f, &mut buf, msg.len());
     println!("Read back: {}", crate::utils::cstr_as_string(buf));
     tempfs::closefile(f);
+    tempfs::closedir(dir);
+    tempfs::closedir(root);
 }
 
 fn init_kernel_info() -> kernel::Kernel<'static> {

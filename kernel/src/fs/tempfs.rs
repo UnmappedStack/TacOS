@@ -68,6 +68,13 @@ pub fn closefile(f: &Inode) -> i32 {
     }
 }
 
+pub fn closedir(f: &Inode) -> i32 {
+    match f.contents {
+        InodeContents::Dir(_) => 0,
+        _ => todo!("tmpfs error handling (err: tried to close file as dir)"),
+    }
+}
+
 pub fn writefile(file: &mut Inode, buf: Vec<i8>, bytes: usize) {
     let contents = match &mut file.contents {
         InodeContents::File(v) => v,
