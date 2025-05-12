@@ -35,7 +35,7 @@ fn test_tempfs() {
     println!("Writing to {}: {}", fname, msg);
     tempfs::writefile(f, crate::utils::str_as_cstr(msg), msg.len());
     let mut buf: alloc::vec::Vec<i8> = alloc::vec![0; msg.len()];
-    tempfs::readfile(f, &mut buf, msg.len());
+    tempfs::readfile(f, &mut buf, 0, msg.len());
     println!("Read back: {}", crate::utils::cstr_as_string(buf));
     tempfs::closefile(f);
     tempfs::mkdir(dir, "anotherdir");

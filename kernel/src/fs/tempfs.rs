@@ -89,13 +89,15 @@ pub fn writefile(file: &mut Inode, buf: Vec<i8>, bytes: usize) {
     }
 }
 
-pub fn readfile(file: &Inode, buf: &mut Vec<i8>, bytes: usize) {
+pub fn readfile(file: &Inode, buf: &mut Vec<i8>, offset: usize, bytes: usize) {
     let contents = match &file.contents {
         InodeContents::File(v) => v,
         _ => todo!("tmpfs error handling (err: tried to write to file as dir)"),
     };
+    let len = contents.len();
     for i in 0..bytes {
-        buf[i] = contents[i];
+        if offset + i >= len { break }
+        buf[i] = contents[offset + i];
     }
 }
 
