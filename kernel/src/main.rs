@@ -2,6 +2,7 @@
 #![no_main]
 
 mod bootloader;
+mod err;
 mod cpu;
 mod drivers;
 mod mem;
@@ -18,6 +19,9 @@ use fs::tempfs;
 use mem::{pmm, paging};
 extern crate alloc;
 
+/* This is INCREDIBLY messy and bad.
+ * Don't worry!!! This is a temporary function just for testing out the TempFS
+ * while it's being developed. I promise this'll be gone! */
 fn test_tempfs() {
     let fname = "testfile.txt";
     let mut fs = tempfs::new();
@@ -25,24 +29,31 @@ fn test_tempfs() {
     println!("Opened root directory of filesystem");
     tempfs::mkdir(root, "testdir");
     println!("Created test directory within root");
-    let dir = tempfs::opendir(root, "testdir");
+    let mut dirbuf: tempfs::Inode = Default::default();
+    let mut dir = &mut dirbuf;
+    if tempfs::opendir(&mut dir, root, "testdir") < 0 {
+        panic!("Failed to open testdir");
+    }
     println!("Opened test directory");
-    tempfs::mkfile(dir, fname);
-    tempfs::mkfile(dir, "otherthing.txt");
+    if tempfs::mkfile(&mut dir, fname) < 0 {
+        panic!("failed to create file");
+    }
+    tempfs::mkfile(&mut dir, "otherthing.txt");
     println!("Created file {}", fname);
-    let f = tempfs::openfile(dir, fname);
+    let mut f: tempfs::Inode = Default::default();
+    tempfs::openfile(&mut dir, fname, &mut &mut f);
     let msg = "Hello, world!";
     println!("Writing to {}: {}", fname, msg);
-    tempfs::writefile(f, crate::utils::str_as_cstr(msg), 0, msg.len());
-    tempfs::writefile(f, crate::utils::str_as_cstr("rust! :)"), 7, 9);
+    tempfs::writefile(&mut f, crate::utils::str_as_cstr(msg), 0, msg.len());
+    tempfs::writefile(&mut f, crate::utils::str_as_cstr("rust! :)"), 7, 9);
     let mut buf: alloc::vec::Vec<i8> = alloc::vec![0; 17];
-    tempfs::readfile(f, &mut buf, 0, 17);
+    tempfs::readfile(&mut f, &mut buf, 0, 17);
     println!("Read back: {}", crate::utils::cstr_as_string(buf));
-    tempfs::closefile(f);
-    tempfs::mkdir(dir, "anotherdir");
+    tempfs::closefile(&mut f);
+    tempfs::mkdir(&mut dir, "anotherdir");
     println!("Listing dir:");
     let mut buf = alloc::vec![Default::default(); 3];
-    tempfs::getdents(dir, &mut buf, 3);
+    tempfs::getdents(&mut dir, &mut buf, 3);
     for i in 0..3 {
         let t = match buf[i].contents {
             tempfs::InodeContents::File(_) => "File",
@@ -51,7 +62,7 @@ fn test_tempfs() {
         };
         println!(" - {} found: {}", t, buf[i].fname);
     }
-    tempfs::closedir(dir);
+    tempfs::closedir(&mut dir);
     tempfs::closedir(root);
 }
 

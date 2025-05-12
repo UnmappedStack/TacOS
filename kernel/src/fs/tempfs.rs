@@ -1,5 +1,5 @@
 use core::fmt::Write;
-use crate::println;
+use crate::{println, err::Errno};
 use alloc::{string::String, vec::Vec};
 
 #[derive(Clone, Default)]
@@ -34,10 +34,10 @@ pub fn openroot(superblock: &mut TempFS) -> &mut Inode {
     &mut superblock.rootdir
 }
 
-pub fn mkfile(dir: &mut Inode, fname: &str) {
+pub fn mkfile(dir: &mut Inode, fname: &str) -> i32 {
     let entries = match &mut dir.contents {
         InodeContents::Dir(v) => v,
-        _ => todo!("tmpfs error handling (err: mkfile dir is a file)"),
+        _ => return -(Errno::ENOTDIR as i32),
     };
     entries.push(Inode {
         fname: String::from(fname),
@@ -46,36 +46,39 @@ pub fn mkfile(dir: &mut Inode, fname: &str) {
         ),
     });
     println!("Created TempFS file {}", fname);
+    0
 }
 
-pub fn openfile<'a>(dir: &'a mut Inode, fname: &str) -> &'a mut Inode {
+pub fn openfile<'a>(dir: &'a mut Inode, fname: &str,
+                                            buf: &'a mut &'a mut Inode) -> i32 {
     let entries = match &mut dir.contents {
         InodeContents::Dir(v) => v,
-        _ => todo!("tmpfs error handling (err: expected dir got file in open)"),
+        _ => return -(Errno::EISDIR as i32),
     };
     for entry in entries.iter_mut() {
         if entry.fname != fname { continue }
         match &mut entry.contents {
-            InodeContents::File(_) => return entry,
-            _  => {
-                todo!("tmpfs error handling (err: tried to open dir as file)");
-            }
+            InodeContents::File(_) => {
+                *buf = entry;
+                return 0
+            },
+            _  => return -(Errno::EISDIR as i32),
         }
     }
-    todo!("tmpfs error handling (err: file not found)");
+    -(Errno::ENOENT as i32)
 }
 
 pub fn closefile(f: &Inode) -> i32 {
     match f.contents {
         InodeContents::File(_) => 0,
-        _ => todo!("tmpfs error handling (err: tried to close dir as file)"),
+        _ => -(Errno::EISDIR as i32),
     }
 }
 
 pub fn closedir(f: &Inode) -> i32 {
     match f.contents {
         InodeContents::Dir(_) => 0,
-        _ => todo!("tmpfs error handling (err: tried to close file as dir)"),
+        _ => -(Errno::ENOTDIR as i32),
     }
 }
 
@@ -83,7 +86,7 @@ pub fn writefile(file: &mut Inode, buf: Vec<i8>,
                                         offset: usize, bytes: usize) -> isize {
     let contents = match &mut file.contents {
         InodeContents::File(v) => v,
-        _ => todo!("tmpfs error handling (err: tried to write to file as dir)"),
+        _ => return -(Errno::EISDIR as isize),
     };
     for i in 0..bytes {
         if offset+i >= contents.len() {
@@ -99,7 +102,7 @@ pub fn readfile(file: &Inode, buf: &mut Vec<i8>,
                                         offset: usize, bytes: usize) -> isize {
     let contents = match &file.contents {
         InodeContents::File(v) => v,
-        _ => todo!("tmpfs error handling (err: tried to write to file as dir)"),
+        _ => return -(Errno::EISDIR as isize),
     };
     let len = contents.len();
     for i in 0..bytes {
@@ -109,40 +112,46 @@ pub fn readfile(file: &Inode, buf: &mut Vec<i8>,
     bytes as isize
 }
 
-pub fn mkdir(parent: &mut Inode, dirname: &str) {
+pub fn mkdir(parent: &mut Inode, dirname: &str) -> i32 {
     let entries = match &mut parent.contents {
         InodeContents::Dir(v) => v,
-        _ => todo!("tmpfs error handling (err: expected dir got file in open)"),
+        _ => return -(Errno::ENOTDIR as i32),
     };
     entries.push(Inode {
         fname: String::from(dirname),
         contents: InodeContents::Dir(Vec::new()),
     });
+    0
 }
 
-pub fn opendir<'a>(parent: &'a mut Inode, dirname: &str) -> &'a mut Inode {
+pub fn opendir<'a>(buf: &mut &'a mut Inode, parent: &'a mut Inode,
+                                                        dirname: &str) -> i32 {
     let entries = match &mut parent.contents {
         InodeContents::Dir(v) => v,
-        _ => todo!("tmpfs error handling (err: expected dir got file in open)"),
+        _ => return -(Errno::ENOTDIR as i32),
     };
     for entry in entries.iter_mut() {
         if entry.fname != dirname { continue }
         match entry.contents {
-            InodeContents::Dir(_) => return entry,
-            _ => todo!("tmpfs error handling (err: tried to open file as dir)"),
+            InodeContents::Dir(_) => {
+                *buf = entry;
+                return 0
+            },
+            _ => return -(Errno::ENOTDIR as i32),
         }
     }
-    todo!("tmpfs error handling (err: directory does not exist)");
+    -(Errno::ENOENT as i32)
 }
 
-pub fn getdents(dir: &Inode, buf: &mut Vec<Inode>, max: usize) {
+pub fn getdents(dir: &Inode, buf: &mut Vec<Inode>, max: usize) -> isize {
     let entries = match &dir.contents {
         InodeContents::Dir(v) => v,
-        _ => todo!("tmpfs error handling (err: tried to get dents of file)"),
+        _ => return -(Errno::ENOTDIR as isize),
     };
     let nentries = entries.len();
     for i in 0..max {
-        if i >= nentries { break }
+        if i >= nentries { return (i * size_of::<Inode>()) as isize }
         buf[i] = entries[i].clone();
     }
+    return (max * size_of::<Inode>()) as isize
 }
