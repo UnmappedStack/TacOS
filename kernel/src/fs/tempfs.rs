@@ -2,14 +2,18 @@ use core::fmt::Write;
 use crate::println;
 use alloc::{string::String, vec::Vec};
 
-enum InodeContents {
+#[derive(Clone, Default)]
+pub enum InodeContents {
     File(Vec<i8>),
     Dir(Vec<Inode>),
+    #[default]
+    Default,
 }
 
+#[derive(Clone, Default)]
 pub struct Inode {
-    fname: String,
-    contents: InodeContents,
+    pub fname: String,
+    pub contents: InodeContents,
 }
 
 pub struct TempFS {
@@ -53,7 +57,7 @@ pub fn openfile<'a>(dir: &'a mut Inode, fname: &str) -> &'a mut Inode {
         if entry.fname != fname { continue }
         match &mut entry.contents {
             InodeContents::File(_) => return entry,
-            InodeContents::Dir(_)  => {
+            _  => {
                 todo!("tmpfs error handling (err: tried to open dir as file)");
             }
         }
@@ -119,4 +123,16 @@ pub fn opendir<'a>(parent: &'a mut Inode, dirname: &str) -> &'a mut Inode {
         }
     }
     todo!("tmpfs error handling (err: directory does not exist)");
+}
+
+pub fn getdents(dir: &Inode, buf: &mut Vec<Inode>, max: usize) {
+    let entries = match &dir.contents {
+        InodeContents::Dir(v) => v,
+        _ => todo!("tmpfs error handling (err: tried to get dents of file)"),
+    };
+    let nentries = entries.len();
+    for i in 0..max {
+        if i >= nentries { break }
+        buf[i] = entries[i].clone();
+    }
 }

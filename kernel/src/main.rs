@@ -28,6 +28,7 @@ fn test_tempfs() {
     let dir = tempfs::opendir(root, "testdir");
     println!("Opened test directory");
     tempfs::mkfile(dir, fname);
+    tempfs::mkfile(dir, "otherthing.txt");
     println!("Created file {}", fname);
     let f = tempfs::openfile(dir, fname);
     let msg = "Hello, world!";
@@ -37,6 +38,18 @@ fn test_tempfs() {
     tempfs::readfile(f, &mut buf, msg.len());
     println!("Read back: {}", crate::utils::cstr_as_string(buf));
     tempfs::closefile(f);
+    tempfs::mkdir(dir, "anotherdir");
+    println!("Listing dir:");
+    let mut buf = alloc::vec![Default::default(); 3];
+    tempfs::getdents(dir, &mut buf, 3);
+    for i in 0..3 {
+        let t = match buf[i].contents {
+            tempfs::InodeContents::File(_) => "File",
+            tempfs::InodeContents::Dir(_)  => "Directory",
+            _ => "Invalid",
+        };
+        println!("{} found: {}", t, buf[i].fname);
+    }
     tempfs::closedir(dir);
     tempfs::closedir(root);
 }
