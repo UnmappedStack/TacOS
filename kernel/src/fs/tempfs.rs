@@ -49,37 +49,22 @@ pub fn mkfile(dir: &mut Inode, fname: &str) -> i32 {
     0
 }
 
-pub fn openfile<'a>(dir: &'a mut Inode, fname: &str,
-                                            buf: &'a mut &'a mut Inode) -> i32 {
-    let entries = match &mut dir.contents {
+pub fn open<'a>(buf: &mut &'a mut Inode, parent: &'a mut Inode,
+                                                        fname: &str) -> i32 {
+    let entries = match &mut parent.contents {
         InodeContents::Dir(v) => v,
-        _ => return -(Errno::EISDIR as i32),
+        _ => return -(Errno::ENOTDIR as i32),
     };
     for entry in entries.iter_mut() {
         if entry.fname != fname { continue }
-        match &mut entry.contents {
-            InodeContents::File(_) => {
-                *buf = entry;
-                return 0
-            },
-            _  => return -(Errno::EISDIR as i32),
-        }
+        *buf = entry;
+        return 0
     }
     -(Errno::ENOENT as i32)
 }
 
-pub fn closefile(f: &Inode) -> i32 {
-    match f.contents {
-        InodeContents::File(_) => 0,
-        _ => -(Errno::EISDIR as i32),
-    }
-}
-
-pub fn closedir(f: &Inode) -> i32 {
-    match f.contents {
-        InodeContents::Dir(_) => 0,
-        _ => -(Errno::ENOTDIR as i32),
-    }
+pub fn close(_f: &Inode) -> i32 {
+    0
 }
 
 pub fn writefile(file: &mut Inode, buf: Vec<i8>,
@@ -122,25 +107,6 @@ pub fn mkdir(parent: &mut Inode, dirname: &str) -> i32 {
         contents: InodeContents::Dir(Vec::new()),
     });
     0
-}
-
-pub fn opendir<'a>(buf: &mut &'a mut Inode, parent: &'a mut Inode,
-                                                        dirname: &str) -> i32 {
-    let entries = match &mut parent.contents {
-        InodeContents::Dir(v) => v,
-        _ => return -(Errno::ENOTDIR as i32),
-    };
-    for entry in entries.iter_mut() {
-        if entry.fname != dirname { continue }
-        match entry.contents {
-            InodeContents::Dir(_) => {
-                *buf = entry;
-                return 0
-            },
-            _ => return -(Errno::ENOTDIR as i32),
-        }
-    }
-    -(Errno::ENOENT as i32)
 }
 
 pub fn getdents(dir: &Inode, buf: &mut Vec<Inode>, max: usize) -> isize {

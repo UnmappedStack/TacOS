@@ -31,7 +31,7 @@ fn test_tempfs() {
     println!("Created test directory within root");
     let mut dirbuf: tempfs::Inode = Default::default();
     let mut dir = &mut dirbuf;
-    if tempfs::opendir(&mut dir, root, "testdir") < 0 {
+    if tempfs::open(&mut dir, root, "testdir") < 0 {
         panic!("Failed to open testdir");
     }
     println!("Opened test directory");
@@ -40,16 +40,21 @@ fn test_tempfs() {
     }
     tempfs::mkfile(&mut dir, "otherthing.txt");
     println!("Created file {}", fname);
-    let mut f: tempfs::Inode = Default::default();
-    tempfs::openfile(&mut dir, fname, &mut &mut f);
+    let mut fbuf: tempfs::Inode = Default::default();
+    let mut f = &mut fbuf;
+    tempfs::open(&mut f, &mut dir, fname);
     let msg = "Hello, world!";
     println!("Writing to {}: {}", fname, msg);
-    tempfs::writefile(&mut f, crate::utils::str_as_cstr(msg), 0, msg.len());
+    if tempfs::writefile(&mut f, crate::utils::str_as_cstr(msg), 0, msg.len()) < 0 {
+        panic!("write fialed");
+    }
     tempfs::writefile(&mut f, crate::utils::str_as_cstr("rust! :)"), 7, 9);
     let mut buf: alloc::vec::Vec<i8> = alloc::vec![0; 17];
-    tempfs::readfile(&mut f, &mut buf, 0, 17);
+    if tempfs::readfile(&mut f, &mut buf, 0, 17) < 0 {
+        panic!("read fialed");
+    }
     println!("Read back: {}", crate::utils::cstr_as_string(buf));
-    tempfs::closefile(&mut f);
+    tempfs::close(&mut f);
     tempfs::mkdir(&mut dir, "anotherdir");
     println!("Listing dir:");
     let mut buf = alloc::vec![Default::default(); 3];
@@ -62,8 +67,8 @@ fn test_tempfs() {
         };
         println!(" - {} found: {}", t, buf[i].fname);
     }
-    tempfs::closedir(&mut dir);
-    tempfs::closedir(root);
+    tempfs::close(&mut dir);
+    tempfs::close(root);
 }
 
 fn init_kernel_info() -> kernel::Kernel<'static> {
