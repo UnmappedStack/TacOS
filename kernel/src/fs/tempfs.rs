@@ -79,7 +79,8 @@ pub fn closedir(f: &Inode) -> i32 {
     }
 }
 
-pub fn writefile(file: &mut Inode, buf: Vec<i8>, offset: usize, bytes: usize) {
+pub fn writefile(file: &mut Inode, buf: Vec<i8>,
+                                        offset: usize, bytes: usize) -> isize {
     let contents = match &mut file.contents {
         InodeContents::File(v) => v,
         _ => todo!("tmpfs error handling (err: tried to write to file as dir)"),
@@ -91,18 +92,21 @@ pub fn writefile(file: &mut Inode, buf: Vec<i8>, offset: usize, bytes: usize) {
             contents[offset+i] = buf[i];
         }
     }
+    bytes as isize
 }
 
-pub fn readfile(file: &Inode, buf: &mut Vec<i8>, offset: usize, bytes: usize) {
+pub fn readfile(file: &Inode, buf: &mut Vec<i8>,
+                                        offset: usize, bytes: usize) -> isize {
     let contents = match &file.contents {
         InodeContents::File(v) => v,
         _ => todo!("tmpfs error handling (err: tried to write to file as dir)"),
     };
     let len = contents.len();
     for i in 0..bytes {
-        if offset + i >= len { break }
+        if offset + i >= len { return i as isize }
         buf[i] = contents[offset + i];
     }
+    bytes as isize
 }
 
 pub fn mkdir(parent: &mut Inode, dirname: &str) {
