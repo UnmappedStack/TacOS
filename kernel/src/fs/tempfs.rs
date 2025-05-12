@@ -79,13 +79,17 @@ pub fn closedir(f: &Inode) -> i32 {
     }
 }
 
-pub fn writefile(file: &mut Inode, buf: Vec<i8>, bytes: usize) {
+pub fn writefile(file: &mut Inode, buf: Vec<i8>, offset: usize, bytes: usize) {
     let contents = match &mut file.contents {
         InodeContents::File(v) => v,
         _ => todo!("tmpfs error handling (err: tried to write to file as dir)"),
     };
     for i in 0..bytes {
-        contents.push(buf[i]);
+        if offset+i >= contents.len() {
+            contents.push(buf[i]);
+        } else {
+            contents[offset+i] = buf[i];
+        }
     }
 }
 

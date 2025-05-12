@@ -33,9 +33,10 @@ fn test_tempfs() {
     let f = tempfs::openfile(dir, fname);
     let msg = "Hello, world!";
     println!("Writing to {}: {}", fname, msg);
-    tempfs::writefile(f, crate::utils::str_as_cstr(msg), msg.len());
-    let mut buf: alloc::vec::Vec<i8> = alloc::vec![0; msg.len()];
-    tempfs::readfile(f, &mut buf, 0, msg.len());
+    tempfs::writefile(f, crate::utils::str_as_cstr(msg), 0, msg.len());
+    tempfs::writefile(f, crate::utils::str_as_cstr("rust! :)"), 7, 9);
+    let mut buf: alloc::vec::Vec<i8> = alloc::vec![0; 17];
+    tempfs::readfile(f, &mut buf, 0, 17);
     println!("Read back: {}", crate::utils::cstr_as_string(buf));
     tempfs::closefile(f);
     tempfs::mkdir(dir, "anotherdir");
@@ -48,7 +49,7 @@ fn test_tempfs() {
             tempfs::InodeContents::Dir(_)  => "Directory",
             _ => "Invalid",
         };
-        println!("{} found: {}", t, buf[i].fname);
+        println!(" - {} found: {}", t, buf[i].fname);
     }
     tempfs::closedir(dir);
     tempfs::closedir(root);
