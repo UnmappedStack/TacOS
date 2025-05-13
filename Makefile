@@ -34,7 +34,7 @@ $(call USER_VARIABLE,KNASMFLAGS,-F dwarf -g)
 # User controllable linker flags. We set none by default.
 $(call USER_VARIABLE,KLDFLAGS,)
 
-all: bootloader kernel libc userspace initrd disk qemu
+all: bootloader kernel libc userspace initrd disk
 
 bootloader:
 	make -C limine
@@ -69,6 +69,7 @@ disk:
 qemu:
 	qemu-system-x86_64 tacos.iso -serial stdio -no-shutdown -no-reboot -monitor telnet:127.0.0.1:8000,server,nowait -d int,cpu_reset,in_asm -D log.txt -m 4G -accel kvm
 
+run: all qemu
 
 qemu-gdb:
 	qemu-system-x86_64 tacos.iso -serial stdio -no-shutdown -no-reboot -monitor telnet:127.0.0.1:8000,server,nowait -d int,cpu_reset,in_asm -D log.txt -S -s 
