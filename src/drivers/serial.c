@@ -24,13 +24,11 @@ void init_serial(void) {
 static int is_transmit_empty(void) { return inb(COM1 + 5) & 0x20; }
 
 void write_serial_char(char ch) {
-    while (!is_transmit_empty())
-        ;
+    while (!is_transmit_empty());
     outb(COM1, ch);
 }
 
 void write_serial(const char *str) {
     size_t len = strlen(str);
-    for (size_t i = 0; i < len; i++)
-        write_serial_char(str[i]);
+    for (size_t i = 0; i < len; i++) write_serial_char(str[i]);
 }

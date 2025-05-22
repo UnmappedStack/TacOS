@@ -15,8 +15,7 @@ void pit_wait(uint64_t ms) {
         ms; // this is easy since one PIT tick is set to one millisecond
     unlock_pit();
     ENABLE_INTERRUPTS();
-    while (kernel.pit_counter > 0 && kernel.pit_counter <= ms)
-        IO_WAIT();
+    while (kernel.pit_counter > 0 && kernel.pit_counter <= ms) IO_WAIT();
     DISABLE_INTERRUPTS();
     lock_pit();
     return;

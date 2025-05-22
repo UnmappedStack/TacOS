@@ -124,6 +124,5 @@ void _start(void) {
            "userspace\n");
     ENABLE_INTERRUPTS();
     unlock_lapic_timer();
-    for (;;)
-        ;
+    for (;;);
 }

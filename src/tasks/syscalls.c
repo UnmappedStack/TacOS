@@ -71,11 +71,10 @@ void sys_exit(int status) {
     CURRENT_TASK->flags |= TASK_DEAD;
     CURRENT_TASK->flags &= ~TASK_PRESENT;
     ENABLE_INTERRUPTS();
-    for (;;)
-        ;
+    for (;;);
 }
 
-int sys_getpid() { return CURRENT_TASK->pid; }
+int sys_getpid(void) { return CURRENT_TASK->pid; }
 
 int sys_execve(char *path, char **argv, char **envp) {
     DISABLE_INTERRUPTS();
@@ -83,8 +82,7 @@ int sys_execve(char *path, char **argv, char **envp) {
     if ((e = execve(CURRENT_TASK, path, argv, envp)) < 0)
         return e;
     ENABLE_INTERRUPTS();
-    for (;;)
-        ;
+    for (;;);
 }
 
 // TODO: Actually send a signal to the task and do clean up, report to it's
@@ -253,8 +251,7 @@ int sys_clock_gettime(size_t clockid, struct timespec *tp) {
 
 // TODO: actually yield properly
 void sys_sched_yield(void) {
-    for (size_t i = 0; i < 3; i++)
-        __asm__ volatile("hlt\n");
+    for (size_t i = 0; i < 3; i++) __asm__ volatile("hlt\n");
 }
 
 // major stub
@@ -289,8 +286,7 @@ void expand_path_dots(char *path) {
             size_t off = 0;
             if (i > 1) {
                 off++;
-                while (path[i - off] != '/')
-                    off++;
+                while (path[i - off] != '/') off++;
             }
             memmove(&path[i - off], &path[i + 3], strlen(&path[3] + 1));
             i -= 4 + off;

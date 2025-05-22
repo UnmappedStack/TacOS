@@ -51,8 +51,7 @@ TempfsInode *tempfs_create_entry(TempfsInode *dir) {
         // TODO: Make this wayyy faster cos this sucks a lot. Possibly use
         // `struct list`?
         TempfsDirEntry *last_entry = dir->first_dir_entry;
-        while (last_entry->next)
-            last_entry = last_entry->next;
+        while (last_entry->next) last_entry = last_entry->next;
         last_entry->next = slab_alloc(kernel.tempfs_direntry_cache);
         new_entry = last_entry->next;
     }

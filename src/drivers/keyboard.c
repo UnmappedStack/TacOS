@@ -334,8 +334,7 @@ int stdin_read(void *f, char *buf, size_t len, size_t off) {
     if (inb(PS2_STATUS_REGISTER) & 0x01)
         inb(PS2_DATA_REGISTER);
     draw_cursor(false);
-    while (current_input_data.currently_reading)
-        IO_WAIT();
+    while (current_input_data.currently_reading) IO_WAIT();
     memcpy(buf, current_input_data.current_buffer,
            current_input_data.input_len + 1);
     size_t ret = current_input_data.input_len;

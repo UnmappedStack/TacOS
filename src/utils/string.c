@@ -14,8 +14,7 @@ size_t oct2bin(char *str, int size) {
 
 size_t strlen(const char *str) {
     size_t len = 0;
-    while (str[len])
-        len++;
+    while (str[len]) len++;
     return len;
 }
 
@@ -113,8 +112,7 @@ void uint64_to_binary_string(uint64_t num, char *buf) {
     }
     buffer[idx] = 0;
     reverse(buffer, idx);
-    for (int i = 0; i <= idx; i++)
-        buf[i] = buffer[i];
+    for (int i = 0; i <= idx; i++) buf[i] = buffer[i];
 }
 
 void uint64_to_hex_string_padded(uint64_t num, char *str) {
@@ -133,10 +131,7 @@ void uint64_to_hex_string_padded(uint64_t num, char *str) {
             num >>= 4;
         }
     }
-
-    while (index < 16)
-        buffer[index++] = '0';
-
+    while (index < 16) buffer[index++] = '0';
     buffer[index] = '\0';
     reverse(buffer, index);
     memcpy(str, buffer, 17);
