@@ -1,10 +1,10 @@
 #pragma once
-#include <stdbool.h>
 #include <fs/device.h>
-#include <mem/paging.h>
 #include <fs/vfs.h>
+#include <mem/paging.h>
+#include <stdbool.h>
 
-#define FILE_DATA_BLOCK_LEN (PAGE_SIZE - sizeof(TempfsFileNode*))
+#define FILE_DATA_BLOCK_LEN (PAGE_SIZE - sizeof(TempfsFileNode *))
 
 typedef struct TempfsFileNode TempfsFileNode;
 typedef struct TempfsDirEntry TempfsDirEntry;
@@ -41,7 +41,7 @@ struct TempfsInode {
 };
 
 typedef struct {
-    TempfsInode    *inode;
+    TempfsInode *inode;
     TempfsDirEntry *current_entry;
     bool is_first;
 } TempfsDirIter;
@@ -60,6 +60,7 @@ TempfsInode *tempfs_diriter(TempfsDirIter *iter);
 int tempfs_closedir(TempfsDirIter *dir);
 int tempfs_rmdir(TempfsDirIter *dir);
 int tempfs_rmfile(TempfsInode *file);
-int tempfs_identify(TempfsInode *inode, char *namebuf, bool *is_dir_buf, size_t *fsize);
+int tempfs_identify(TempfsInode *inode, char *namebuf, bool *is_dir_buf,
+                    size_t *fsize);
 void *tempfs_file_from_diriter(TempfsDirIter *iter);
 extern FileSystem tempfs;

@@ -6,6 +6,4 @@ void spinlock_aquire(Spinlock *lock) {
     }
 }
 
-void spinlock_release(Spinlock *lock) {
-    atomic_flag_clear(lock);
-}
+void spinlock_release(Spinlock *lock) { atomic_flag_clear(lock); }

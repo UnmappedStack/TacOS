@@ -1,7 +1,7 @@
 #include <framebuffer.h>
+#include <kernel.h>
 #include <printf.h>
 #include <tty.h>
-#include <kernel.h>
 
 #define FG_DEFAULT 0xF1F1F1
 #define BG_DEFAULT 0x111111
@@ -13,7 +13,8 @@ void scroll_line() {
 void newline() {
     kernel.tty.loc_x = 0;
     kernel.tty.loc_y += 16;
-    if (kernel.tty.loc_y >= kernel.framebuffer.height - 16) scroll_line();
+    if (kernel.tty.loc_y >= kernel.framebuffer.height - 16)
+        scroll_line();
 }
 
 void write_framebuffer_char(char ch) {
@@ -27,7 +28,8 @@ void write_framebuffer_char(char ch) {
     }
     draw_char(ch, kernel.tty.loc_x, kernel.tty.loc_y, kernel.tty.fg_colour);
     kernel.tty.loc_x += 8;
-    if (kernel.tty.loc_x >= kernel.framebuffer.width) newline();
+    if (kernel.tty.loc_x >= kernel.framebuffer.width)
+        newline();
 }
 
 void write_framebuffer_char_nocover(char ch) {
@@ -39,34 +41,35 @@ void write_framebuffer_char_nocover(char ch) {
         newline();
         return;
     }
-    draw_char_nocover(ch, kernel.tty.loc_x, kernel.tty.loc_y, kernel.tty.fg_colour);
+    draw_char_nocover(ch, kernel.tty.loc_x, kernel.tty.loc_y,
+                      kernel.tty.fg_colour);
     kernel.tty.loc_x += 8;
-    if (kernel.tty.loc_x >= kernel.framebuffer.width) newline();
+    if (kernel.tty.loc_x >= kernel.framebuffer.width)
+        newline();
 }
 
 void tty_set_cell_graphics_mode(ANSICmd *cmd) {
     // ANSI base colours except for default
     uint32_t tty_colours[] = {
-        0x000000,
-        0xFF0000,
-        0x00FF00,
-        0xFFFF00,
-        0x0000FF,
-        0xFF00FF,
-        0x00FFFF,
-        0xFFFFFF,
+        0x000000, 0xFF0000, 0x00FF00, 0xFFFF00,
+        0x0000FF, 0xFF00FF, 0x00FFFF, 0xFFFFFF,
     };
     for (size_t i = 0; i < cmd->nvals; i++) {
         if (cmd->vals[i] >= 30 && cmd->vals[i] <= 39) {
-            uint32_t col = (cmd->vals[i] == 39) ? FG_DEFAULT : tty_colours[cmd->vals[i] - 30];
+            uint32_t col = (cmd->vals[i] == 39)
+                               ? FG_DEFAULT
+                               : tty_colours[cmd->vals[i] - 30];
             kernel.tty.fg_colour = col;
             break;
         } else if (cmd->vals[i] >= 40 && cmd->vals[i] <= 49) {
-            uint32_t col = (cmd->vals[i] == 49) ? BG_DEFAULT : tty_colours[cmd->vals[i] - 40];
+            uint32_t col = (cmd->vals[i] == 49)
+                               ? BG_DEFAULT
+                               : tty_colours[cmd->vals[i] - 40];
             kernel.tty.bg_colour = col;
             break;
         } else {
-            printf("Graphics mode in ANSI not yet supported: %i\n", cmd->vals[i]);
+            printf("Graphics mode in ANSI not yet supported: %i\n",
+                   cmd->vals[i]);
         }
     }
 }
@@ -80,7 +83,8 @@ void run_ansi_cmd(ANSICmd *cmd) {
         break;
     case 'J':
         // TODO: check how much of screen to clear
-        fill_rect(0, 0, kernel.framebuffer.width, kernel.framebuffer.height, kernel.tty.bg_colour);
+        fill_rect(0, 0, kernel.framebuffer.width, kernel.framebuffer.height,
+                  kernel.tty.bg_colour);
         kernel.tty.loc_x = 0;
         kernel.tty.loc_y = 0;
         break;
@@ -123,9 +127,10 @@ void write_tty_char(char ch) {
     case TTYEscape:
         if (ch == '[') {
             kernel.tty.mode = TTYCSI;
-            kernel.tty.current_cmd = (ANSICmd) {0};
+            kernel.tty.current_cmd = (ANSICmd){0};
         } else {
-            printf("Only CSI mode ([) is supported in TTY0's ANSI parser (TODO)\n");
+            printf("Only CSI mode ([) is supported in TTY0's ANSI parser "
+                   "(TODO)\n");
             kernel.tty.mode = TTYNormal;
         }
         break;
@@ -143,18 +148,19 @@ void write_framebuffer_text(const char *msg) {
 }
 
 int fb_open(void *f) {
-    (void) f;
+    (void)f;
     return 0;
 }
 
 int fb_close(void *f) {
-    (void) f;
+    (void)f;
     return 0;
 }
 
 int fb_write(void *f, char *buf, size_t len, size_t off) {
-    (void) f;
-    if (!buf) return -1;
+    (void)f;
+    if (!buf)
+        return -1;
     buf = &buf[off];
     while (*buf && len) {
         write_tty_char(*buf);
@@ -165,16 +171,16 @@ int fb_write(void *f, char *buf, size_t len, size_t off) {
 }
 
 int fb_read(void *f, char *buf, size_t len, size_t off) {
-    (void) f;
-    (void) buf;
-    (void) len;
-    (void) off;
+    (void)f;
+    (void)buf;
+    (void)len;
+    (void)off;
     printf("Framebuffer device is write-only!\n");
     return -1;
 }
 
 void init_tty(void) {
-    DeviceOps ttydev_ops = (DeviceOps) {
+    DeviceOps ttydev_ops = (DeviceOps){
         .read = &fb_read,
         .write = &fb_write,
         .open = &fb_open,
@@ -185,5 +191,6 @@ void init_tty(void) {
     kernel.tty.fg_colour = FG_DEFAULT;
     kernel.tty.bg_colour = BG_DEFAULT;
     kernel.tty.mode = TTYNormal;
-    fill_rect(0, 0, kernel.framebuffer.width, kernel.framebuffer.height, kernel.tty.bg_colour);
+    fill_rect(0, 0, kernel.framebuffer.width, kernel.framebuffer.height,
+              kernel.tty.bg_colour);
 }

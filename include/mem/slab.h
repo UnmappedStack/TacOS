@@ -7,7 +7,7 @@ typedef struct Slab Slab;
 
 struct Cache {
     struct list list;
-    char   name[20];
+    char name[20];
     struct list free_nodes;
     struct list partial_nodes;
     struct list full_nodes;
@@ -18,15 +18,15 @@ struct Cache {
 
 struct Slab {
     struct list list;
-    Cache  *cache;
+    Cache *cache;
     size_t free_stack_head;
     size_t num_free;
-    void   *data;
-    void   *data_end;
+    void *data;
+    void *data_end;
     // Free stack comes immediately after, then the data
 };
 
 Cache *init_slab_cache(size_t obj_size, const char *name);
-void  *slab_alloc(Cache *cache);
-int    slab_free(Cache *cache, void *addr);
-void   cache_destroy(Cache *cache);
+void *slab_alloc(Cache *cache);
+int slab_free(Cache *cache, void *addr);
+void cache_destroy(Cache *cache);

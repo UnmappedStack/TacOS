@@ -1,5 +1,5 @@
-#include <string.h>
 #include <printf.h>
+#include <string.h>
 
 size_t oct2bin(char *str, int size) {
     int n = 0;
@@ -14,17 +14,16 @@ size_t oct2bin(char *str, int size) {
 
 size_t strlen(const char *str) {
     size_t len = 0;
-    while (str[len]) len++;
+    while (str[len])
+        len++;
     return len;
 }
 
 void *memset(void *dest, int x, size_t n) {
-    __asm__ volatile(
-        "rep stosb"
-        : "=D"(dest), "=c"(n)
-        : "D"(dest), "a"(x), "c"(n)
-        : "memory"
-    );
+    __asm__ volatile("rep stosb"
+                     : "=D"(dest), "=c"(n)
+                     : "D"(dest), "a"(x), "c"(n)
+                     : "memory");
     return dest;
 }
 
@@ -41,8 +40,10 @@ char *strcpy(char *dest, const char *src) {
 // If it doesn't match, it always returns 1.
 int strcmp(char *str1, char *str2) {
     while (*str1) {
-        if (!*str2) return 1;
-        if (*str1 != *str2) return 1;
+        if (!*str2)
+            return 1;
+        if (*str1 != *str2)
+            return 1;
         str1++;
         str2++;
     }
@@ -52,36 +53,34 @@ int strcmp(char *str1, char *str2) {
 // NOTE: also non posix, see comment for strcmp above
 int memcmp(char *str1, char *str2, size_t bytes) {
     for (size_t i = 0; i < bytes; i++) {
-        if (str1[i] != str2[i]) return 1;
+        if (str1[i] != str2[i])
+            return 1;
     }
     return 0;
 }
 
 void *memcpy(void *dest, const void *src, size_t n) {
-    __asm__ volatile(
-        "rep movsb"
-        : "=D"(dest), "=S"(src), "=c"(n)
-        : "D"(dest), "S"(src), "c"(n)
-        : "memory"
-    );
+    __asm__ volatile("rep movsb"
+                     : "=D"(dest), "=S"(src), "=c"(n)
+                     : "D"(dest), "S"(src), "c"(n)
+                     : "memory");
     return dest;
 }
 
 void *memmove(void *dest, const void *src, size_t n) {
     if (dest == src) {
         return dest;
-    } else if ((uintptr_t) dest < (uintptr_t) src) {
+    } else if ((uintptr_t)dest < (uintptr_t)src) {
         return memcpy(dest, src, n);
-    } else if ((uintptr_t) dest > (uintptr_t) src) {
+    } else if ((uintptr_t)dest > (uintptr_t)src) {
         // copy in reverse
-        __asm__ volatile(
-            "std\n"
-            "rep movsb\n"
-            "cld\n"
-            : "=D"(dest), "=S"(src), "=c"(n)
-            : "D"((uintptr_t) dest + n - 1), "S"((uintptr_t) src + n - 1), "c"(n)
-            : "memory"
-        );
+        __asm__ volatile("std\n"
+                         "rep movsb\n"
+                         "cld\n"
+                         : "=D"(dest), "=S"(src), "=c"(n)
+                         : "D"((uintptr_t)dest + n - 1),
+                           "S"((uintptr_t)src + n - 1), "c"(n)
+                         : "memory");
         return dest;
     } else {
         // unreachable
@@ -174,7 +173,7 @@ int get_num_length(uint64_t num) {
     return length;
 }
 
-void uint64_to_string(uint64_t num, char* str) {
+void uint64_to_string(uint64_t num, char *str) {
     int length = get_num_length(num);
     str[length] = '\0';
     int index = length - 1;
@@ -186,7 +185,8 @@ void uint64_to_string(uint64_t num, char* str) {
 
 int strcontains(char *s, char c) {
     while (*s) {
-        if (*(s++) == c) return 1;
+        if (*(s++) == c)
+            return 1;
     }
     return 0;
 }
@@ -194,7 +194,8 @@ int strcontains(char *s, char c) {
 uint64_t str_to_u64(const char *str) {
     uint64_t result = 0;
     while (*str) {
-        if (*str < '0' || *str > '9') break;
+        if (*str < '0' || *str > '9')
+            break;
         result = result * 10 + (*str - '0');
         str++;
     }

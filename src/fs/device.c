@@ -1,5 +1,5 @@
-/* Note that device is one of the only parts of the kernel besides the VFS and the TempFS itselfs
- * that interacts with both of them. */
+/* Note that device is one of the only parts of the kernel besides the VFS and
+ * the TempFS itselfs that interacts with both of them. */
 
 #include <fs/device.h>
 #include <fs/tempfs.h>
@@ -17,17 +17,19 @@ int test_close(void *f) {
 }
 
 int test_write(void *f, char *buf, size_t len, size_t off) {
-    printf("test write with f = %p, txt = %s, len = %i, off = %i\n", f, buf, len, off);
+    printf("test write with f = %p, txt = %s, len = %i, off = %i\n", f, buf,
+           len, off);
     return 0;
 }
 
 int test_read(void *f, char *buf, size_t len, size_t off) {
-    printf("test read with f = %p, txt = %s, len = %i, off = %i\n", f, buf, len, off);
+    printf("test read with f = %p, txt = %s, len = %i, off = %i\n", f, buf, len,
+           off);
     return 0;
 }
 
 void init_devices() {
-    VfsDrive drive = (VfsDrive) {
+    VfsDrive drive = (VfsDrive){
         .in_memory = true,
         .fs = tempfs,
         .private = tempfs_new(),
@@ -39,7 +41,8 @@ void init_devices() {
 
 VfsFile *mkdevice(char *path, DeviceOps ops) {
     VfsFile *new_file = vfs_access(path, O_CREAT, VAT_mkfile);
-    if (!new_file) return NULL;
+    if (!new_file)
+        return NULL;
     TempfsInode *private = new_file->private;
     private->devops = ops;
     private->type = Device;

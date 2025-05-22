@@ -1,27 +1,27 @@
-#include <mem/pmm.h>
 #include <apic.h>
-#include <tty.h>
-#include <keyboard.h>
-#include <string.h>
-#include <framebuffer.h>
-#include <fs/device.h>
-#include <pit.h>
-#include <exec.h>
+#include <bootutils.h>
 #include <cpu.h>
-#include <stddef.h>
-#include <kernel.h>
-#include <serial.h>
 #include <cpu/gdt.h>
 #include <cpu/idt.h>
-#include <printf.h>
-#include <bootutils.h>
-#include <mem/paging.h>
-#include <panic.h>
-#include <fs/vfs.h>
+#include <exec.h>
+#include <fork.h>
+#include <framebuffer.h>
+#include <fs/device.h>
 #include <fs/tempfs.h>
 #include <fs/ustar.h>
+#include <fs/vfs.h>
+#include <kernel.h>
+#include <keyboard.h>
+#include <mem/paging.h>
+#include <mem/pmm.h>
+#include <panic.h>
+#include <pit.h>
+#include <printf.h>
 #include <scheduler.h>
-#include <fork.h>
+#include <serial.h>
+#include <stddef.h>
+#include <string.h>
+#include <tty.h>
 
 extern void enable_sse();
 
@@ -44,7 +44,8 @@ void ls(char *path) {
         printf("%s (%i bytes): %s\n", label, fsize, fname);
         buf = vfs_diriter(&dir, &is_dir);
         printf("did diriter\n");
-        if (!buf) break;
+        if (!buf)
+            break;
     }
 }
 
@@ -59,7 +60,8 @@ void cat(char *path) {
     char buf[FILE_DATA_BLOCK_LEN];
     for (;;) {
         int status = vfs_read(f, buf, FILE_DATA_BLOCK_LEN, off);
-        if (status == -2) break; // EOF
+        if (status == -2)
+            break; // EOF
         printf(buf);
         off += FILE_DATA_BLOCK_LEN;
     }
@@ -70,21 +72,21 @@ void try_exec_init() {
     printf("Executing init.\n");
     pid_t new_task = fork(NULL);
     if (!new_task) {
-        printf("Context switch shouldn't yet be enabled, yet the kernel task is already running in a forked task. Halting device.\n");
+        printf("Context switch shouldn't yet be enabled, yet the kernel task "
+               "is already running in a forked task. Halting device.\n");
         HALT_DEVICE();
     }
     Task *task = task_from_pid(new_task);
     if (!task) {
-        printf("task_from_pid() failed, couldn't run init program (return NULL)\n");
+        printf("task_from_pid() failed, couldn't run init program (return "
+               "NULL)\n");
         HALT_DEVICE();
     }
-    char *env[] = {
-        "TACOS=yum",
-        "TORTILLAS=ripoff",
-        NULL
-    };
-    if (execve(task, "/usr/bin/init", (char*[]) {"/usr/bin/init", "YOU_ARE_INIT", NULL}, env) < 0) {
-        printf("Failed to run init program, halting device (expected init program at /usr/bin/init).\n");
+    char *env[] = {"TACOS=yum", "TORTILLAS=ripoff", NULL};
+    if (execve(task, "/usr/bin/init",
+               (char *[]){"/usr/bin/init", "YOU_ARE_INIT", NULL}, env) < 0) {
+        printf("Failed to run init program, halting device (expected init "
+               "program at /usr/bin/init).\n");
         HALT_DEVICE();
     }
     printf("task ptr = 0x%p", task);
@@ -118,8 +120,10 @@ void _start(void) {
     init_keyboard();
     try_exec_init();
     init_lapic_timer();
-    printf("Successful boot, init spawned, enabling scheduler to enter userspace\n");
+    printf("Successful boot, init spawned, enabling scheduler to enter "
+           "userspace\n");
     ENABLE_INTERRUPTS();
     unlock_lapic_timer();
-    for (;;);
+    for (;;)
+        ;
 }

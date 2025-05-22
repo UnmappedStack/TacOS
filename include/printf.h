@@ -20,4 +20,4 @@
 #define BCYN "\x1B[1;36m"
 #define BWHT "\x1B[1;37m"
 
-void printf(char* format, ...);
+void printf(char *format, ...);

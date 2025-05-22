@@ -42,7 +42,7 @@ extern void stackSegmentFaultException();
 extern void generalProtectionFaultException();
 extern void pageFaultException();
 extern void floatingPointException();
-extern void alignmentCheckException(); 
+extern void alignmentCheckException();
 extern void machineCheckException();
 extern void simdFloatingPointException();
 extern void virtualisationException();

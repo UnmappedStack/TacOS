@@ -2,8 +2,8 @@
 #include <stdint.h>
 
 #define IDT_INTERRUPT_TYPE 0x8E
-#define IDT_TRAP_TYPE  0x8F
-#define IDT_SOFTWARE_TYPE  0xEF
+#define IDT_TRAP_TYPE 0x8F
+#define IDT_SOFTWARE_TYPE 0xEF
 
 typedef struct {
     uint16_t offset1;

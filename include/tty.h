@@ -4,9 +4,7 @@
 
 #define MAX_ANSI_VALS 27 // valid ANSI escape codes cannot be longer than this
 
-typedef enum {
-    TTYEscape, TTYCSI, TTYNormal
-} TTYMode;
+typedef enum { TTYEscape, TTYCSI, TTYNormal } TTYMode;
 
 typedef struct {
     char cmd;
@@ -21,7 +19,7 @@ typedef struct {
     size_t loc_x, loc_y;
     uint32_t fg_colour;
     uint32_t bg_colour;
-    ANSICmd  current_cmd;
+    ANSICmd current_cmd;
 } TTY;
 
 void init_tty(void);

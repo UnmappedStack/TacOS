@@ -1,20 +1,16 @@
-#include <stdarg.h>
-#include <string.h>
-#include <stddef.h>
-#include <stdint.h>
 #include <printf.h>
 #include <serial.h>
+#include <stdarg.h>
+#include <stddef.h>
+#include <stdint.h>
+#include <string.h>
 
-void write_text(char *text) {
-    write_serial(text);
-}
+void write_text(char *text) { write_serial(text); }
 
-void write_character(char ch) {
-    write_serial_char(ch);
-}
+void write_character(char ch) { write_serial_char(ch); }
 
-void printf_template(char* format, va_list args) {
-    size_t i   = 0;
+void printf_template(char *format, va_list args) {
+    size_t i = 0;
     size_t len = strlen(format);
     while (i < len) {
         if (format[i] == '%') {
@@ -43,7 +39,7 @@ void printf_template(char* format, va_list args) {
                 bufferb[64] = 0;
                 write_text(bufferb);
             } else if (format[i] == 's') {
-                write_text(va_arg(args, char*));
+                write_text(va_arg(args, char *));
             }
         } else {
             write_character(format[i]);
@@ -52,7 +48,7 @@ void printf_template(char* format, va_list args) {
     }
 }
 
-void printf(char* format, ...) {
+void printf(char *format, ...) {
     va_list args;
     va_start(args, format);
     printf_template(format, args);

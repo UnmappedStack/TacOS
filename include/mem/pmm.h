@@ -1,7 +1,7 @@
 #pragma once
-#include <stdint.h>
 #include <list.h>
 #include <stddef.h>
+#include <stdint.h>
 
 typedef struct {
     struct list list;

@@ -1,6 +1,6 @@
 #pragma once
-#include <stdint.h>
 #include <stddef.h>
+#include <stdint.h>
 
 #define HERTZ_DIVIDER 1190
 

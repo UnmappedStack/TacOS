@@ -1,6 +1,6 @@
 #pragma once
-#include <stdint.h>
 #include <stddef.h>
+#include <stdint.h>
 
 typedef struct {
     void *addr;
@@ -14,5 +14,7 @@ typedef struct {
 void init_framebuffer();
 void scroll_pixels(size_t num_pix);
 void draw_char(char ch, uint64_t x_coord, uint64_t y_coord, uint32_t colour);
-void fill_rect(uint64_t x, uint64_t y, uint64_t width, uint64_t height, uint32_t colour);
-void draw_char_nocover(char ch, uint64_t x_coord, uint64_t y_coord, uint32_t colour);
+void fill_rect(uint64_t x, uint64_t y, uint64_t width, uint64_t height,
+               uint32_t colour);
+void draw_char_nocover(char ch, uint64_t x_coord, uint64_t y_coord,
+                       uint32_t colour);

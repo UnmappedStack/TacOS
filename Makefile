@@ -74,7 +74,10 @@ run: all qemu
 qemu-gdb:
 	qemu-system-x86_64 tacos.iso -serial stdio -no-shutdown -no-reboot -monitor telnet:127.0.0.1:8000,server,nowait -d int,cpu_reset,in_asm -D log.txt -S -s 
 
-# everything below here is the kernel
+lint:
+	find src/ include/ -type f \( -name '*.c' -o -name '*.h' \) -exec clang-format --dry-run --Werror {} +
+
+# everything below here is the kernel (yes this build system is horrible)
 
 # Internal C flags that should not be changed by the user.
 override KCFLAGS += \
