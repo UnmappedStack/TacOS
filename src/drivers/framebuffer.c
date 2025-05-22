@@ -100,7 +100,7 @@ int fbdevclose(void *f) {
     (void)f;
     return 0;
 }
-void init_framebuffer() {
+void init_framebuffer(void) {
     kernel.framebuffer = boot_get_framebuffer();
     // raw framebuffer device
     DeviceOps fbdev_ops = {

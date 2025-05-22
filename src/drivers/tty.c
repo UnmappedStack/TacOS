@@ -5,12 +5,12 @@
 
 #define FG_DEFAULT 0xF1F1F1
 #define BG_DEFAULT 0x111111
-void scroll_line() {
+void scroll_line(void) {
     kernel.tty.loc_y -= 32;
     scroll_pixels(32);
 }
 
-void newline() {
+void newline(void) {
     kernel.tty.loc_x = 0;
     kernel.tty.loc_y += 16;
     if (kernel.tty.loc_y >= kernel.framebuffer.height - 16)

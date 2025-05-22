@@ -6,4 +6,4 @@ typedef struct {
     uint64_t offset;
 } __attribute__((packed)) GDTR;
 
-void init_GDT();
+void init_GDT(void);

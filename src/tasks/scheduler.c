@@ -6,7 +6,7 @@
 #include <scheduler.h>
 #include <string.h>
 
-void init_scheduler() {
+void init_scheduler(void) {
     kernel.scheduler = (SchedulerQueue){0};
     kernel.scheduler.cache = init_slab_cache(sizeof(Task), "Scheduler Queue");
     // init the kernel task
@@ -24,7 +24,7 @@ void init_scheduler() {
     printf("Initiated scheduler.\n");
 }
 
-Task *task_add() {
+Task *task_add(void) {
     Task *new_task = slab_alloc(kernel.scheduler.cache);
     new_task->pid = kernel.scheduler.pid_upto++;
     new_task->flags = 0;
@@ -40,7 +40,7 @@ Task *task_add() {
     return new_task;
 }
 
-Task *task_select() {
+Task *task_select(void) {
     Task *first_task = kernel.scheduler.current_task;
     kernel.scheduler.current_task =
         (Task *)kernel.scheduler.current_task->list.next;
@@ -56,4 +56,4 @@ Task *task_select() {
 }
 
 // for asm context switch
-Task *get_current_task() { return kernel.scheduler.current_task; }
+Task *get_current_task(void) { return kernel.scheduler.current_task; }

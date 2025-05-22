@@ -20,7 +20,7 @@ void init_chunk(void *addr, size_t len) {
     // NOTE: The list is already initialised.
 }
 
-void init_pmm() {
+void init_pmm(void) {
     printf("HHDM: 0x%p\n", kernel.hhdm);
     printf("There are %i memory map entries.\n", kernel.memmap_entry_count);
     printf("|==================|==================|======================|\n"

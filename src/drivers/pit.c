@@ -22,7 +22,7 @@ void pit_wait(uint64_t ms) {
     return;
 }
 
-void init_pit() {
+void init_pit(void) {
     outb(0x43, 0b110100); // set mode to rate generator, channel 0,
                           // lobyte/hibyte, binary mode
     outb(0x40, (HERTZ_DIVIDER) & 0xFF);
@@ -33,6 +33,6 @@ void init_pit() {
     printf("Initialised PIT.\n");
 }
 
-void unlock_pit() { unmask_ioapic(2, 0); }
+void unlock_pit(void) { unmask_ioapic(2, 0); }
 
-void lock_pit() { mask_ioapic(2, 0); }
+void lock_pit(void) { mask_ioapic(2, 0); }

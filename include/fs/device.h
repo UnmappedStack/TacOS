@@ -12,5 +12,5 @@ typedef struct {
     bool is_term;
 } DeviceOps;
 
-void init_devices();
+void init_devices(void);
 VfsFile *mkdevice(char *path, DeviceOps ops);

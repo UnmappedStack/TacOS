@@ -23,7 +23,7 @@ void memregion_add_kernel(Memregion **list) {
                   false, KERNEL_PFLAG_PRESENT | KERNEL_PFLAG_WRITE);
 }
 
-void init_memregion() {
+void init_memregion(void) {
     kernel.memregion_cache =
         init_slab_cache(sizeof(Memregion), "Memregion Cache");
     if (!kernel.memregion_cache) {

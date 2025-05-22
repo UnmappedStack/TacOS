@@ -28,7 +28,7 @@ int test_read(void *f, char *buf, size_t len, size_t off) {
     return 0;
 }
 
-void init_devices() {
+void init_devices(void) {
     VfsDrive drive = (VfsDrive){
         .in_memory = true,
         .fs = tempfs,

@@ -4,7 +4,7 @@
 
 #define COM1 0x3f8
 
-void init_serial() {
+void init_serial(void) {
     outb(COM1 + 1, 0x00);
     outb(COM1 + 3, 0x80);
     outb(COM1 + 0, 0x03);
@@ -21,7 +21,7 @@ void init_serial() {
     write_serial("Serial output initialised.\n");
 }
 
-static int is_transmit_empty() { return inb(COM1 + 5) & 0x20; }
+static int is_transmit_empty(void) { return inb(COM1 + 5) & 0x20; }
 
 void write_serial_char(char ch) {
     while (!is_transmit_empty())

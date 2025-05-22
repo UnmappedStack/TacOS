@@ -87,16 +87,16 @@ typedef struct {
     // fields are then here
 } __attribute__((packed)) MADT;
 
-void init_apic();
+void init_apic(void);
 void init_local_apic(uintptr_t lapic_addr);
-void end_of_interrupt();
+void end_of_interrupt(void);
 void map_ioapic(uint8_t vec, uint32_t irq, uint32_t lapic_id, bool polarity,
                 bool trigger);
 void mask_ioapic(uint8_t irq, uint32_t lapic_id);
 void unmask_ioapic(uint8_t irq, uint32_t lapic_id);
 void map_apic_into_task(uint64_t task_cr3_phys);
-void init_lapic_timer();
-void lock_lapic_timer();
-void unlock_lapic_timer();
-uint64_t get_current_processor();
+void init_lapic_timer(void);
+void lock_lapic_timer(void);
+void unlock_lapic_timer(void);
+uint64_t get_current_processor(void);
 void write_lapic(uintptr_t lapic_addr, uint64_t reg_offset, uint32_t val);

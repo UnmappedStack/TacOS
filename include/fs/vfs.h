@@ -69,7 +69,7 @@ typedef struct {
     size_t mntidx;
 } VfsDirIter;
 
-void init_vfs();
+void init_vfs(void);
 int vfs_mount(char *path, VfsDrive drive);
 VfsDrive *vfs_find_mounted_drive(char *path);
 VfsDrive *vfs_path_to_drive(char *path, size_t *drive_root_idx_buf);

@@ -6,4 +6,4 @@
 #define TYPE_OFF 156
 #define DATA_OFF 512
 
-void unpack_initrd();
+void unpack_initrd(void);

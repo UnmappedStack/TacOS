@@ -6,7 +6,7 @@
 #include <printf.h>
 #include <string.h>
 
-void unpack_initrd() {
+void unpack_initrd(void) {
     VfsDrive ramdisk = {
         .in_memory = true,
         .fs = tempfs,

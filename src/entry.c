@@ -23,7 +23,7 @@
 #include <string.h>
 #include <tty.h>
 
-extern void enable_sse();
+extern void enable_sse(void);
 
 Kernel kernel = {0};
 
@@ -68,7 +68,7 @@ void cat(char *path) {
     close(f);
 }
 
-void try_exec_init() {
+void try_exec_init(void) {
     printf("Executing init.\n");
     pid_t new_task = fork(NULL);
     if (!new_task) {

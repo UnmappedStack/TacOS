@@ -74,8 +74,14 @@ run: all qemu
 qemu-gdb:
 	qemu-system-x86_64 tacos.iso -serial stdio -no-shutdown -no-reboot -monitor telnet:127.0.0.1:8000,server,nowait -d int,cpu_reset,in_asm -D log.txt -S -s 
 
-lint:
-	find src/ include/ -type f \( -name '*.c' -o -name '*.h' \) -exec clang-format --dry-run --Werror {} +
+lint: lint-signatures lint-clang-format
+
+lint-clang-format:
+	@find src/ include/ -type f \( -name '*.c' -o -name '*.h' \) -exec clang-format --dry-run --Werror {} +
+
+lint-signatures:
+	@grep -rPn '^\s*void\s+\w+\s*\(\s*\)' src/ include/ && \
+	( echo "Functions with empty parameter lists should use 'void' instead of '()'"; exit 1 ) || true
 
 # everything below here is the kernel (yes this build system is horrible)
 

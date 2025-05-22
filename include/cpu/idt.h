@@ -20,5 +20,5 @@ typedef struct {
     uint64_t offset;
 } __attribute__((packed)) IDTR;
 
-void init_IDT();
+void init_IDT(void);
 void set_IDT_entry(uint32_t vector, void *isr, uint8_t flags, IDTEntry *IDT);

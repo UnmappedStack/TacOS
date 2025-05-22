@@ -111,14 +111,14 @@ void init_local_apic(uintptr_t lapic_addr) {
 
 Spinlock current_cpu_lock;
 
-uint64_t get_current_processor() {
+uint64_t get_current_processor(void) {
     spinlock_aquire(&current_cpu_lock);
     uint64_t to_return = read_lapic(kernel.lapic_addr, LAPIC_ID_REGISTER) >> 24;
     spinlock_release(&current_cpu_lock);
     return to_return;
 }
 
-void init_lapic_timer() {
+void init_lapic_timer(void) {
     uintptr_t lapic_addr = kernel.lapic_addr;
     printf("Initiating LAPIC timer...\n");
     printf("Got LAPIC registers address (vmem): 0x%x\n", lapic_addr);
@@ -147,23 +147,23 @@ void init_lapic_timer() {
            read_lapic(lapic_addr, LAPIC_TIMER_LVT_REGISTER));
 }
 
-void lock_lapic_timer() {
+void lock_lapic_timer(void) {
     write_lapic(kernel.lapic_addr, LAPIC_TIMER_LVT_REGISTER,
                 read_lapic(kernel.lapic_addr, LAPIC_TIMER_LVT_REGISTER) &
                     ~0x20000);
 }
 
-void unlock_lapic_timer() {
+void unlock_lapic_timer(void) {
     write_lapic(kernel.lapic_addr, LAPIC_TIMER_LVT_REGISTER,
                 read_lapic(kernel.lapic_addr, LAPIC_TIMER_LVT_REGISTER) |
                     0x20000);
 }
 
-void end_of_interrupt() {
+void end_of_interrupt(void) {
     write_lapic(kernel.lapic_addr, LAPIC_END_OF_INTERRUPT_REGISTER, 0);
 }
 
-bool verify_apic() {
+bool verify_apic(void) {
     uint32_t eax, edx;
     CPUID(1, &eax, &edx);
     return edx & (1 << 9);
@@ -181,7 +181,7 @@ void map_apic_into_task(uint64_t task_cr3_phys) {
               KERNEL_PFLAG_PRESENT | KERNEL_PFLAG_WRITE);
 }
 
-void init_apic() {
+void init_apic(void) {
     printf("Initiating APIC...\n");
     printf("Checking that APIC is avaliable...\n");
     if (verify_apic()) {

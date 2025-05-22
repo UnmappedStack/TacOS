@@ -361,7 +361,7 @@ int kb_read(void *f, Key *buf, size_t len, size_t off) {
     return 0;
 }
 
-void init_keyboard() {
+void init_keyboard(void) {
     DeviceOps stdindev_ops = (DeviceOps){
         .read = &stdin_read,
         .write = &stdin_write,

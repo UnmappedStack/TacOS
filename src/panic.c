@@ -67,7 +67,7 @@ void exception_handler(IDTEFrame registers) {
     HALT_DEVICE();
 }
 
-void init_exceptions() {
+void init_exceptions(void) {
     set_IDT_entry(0, (void *)&divideException, 0x8E, kernel.IDT);
     set_IDT_entry(1, (void *)&debugException, 0x8E, kernel.IDT);
     set_IDT_entry(3, (void *)&breakpointException, 0x8E, kernel.IDT);

@@ -244,7 +244,7 @@ uint64_t *init_paging_task() {
     return (uint64_t *)(pml4_virt - kernel.hhdm);
 }
 
-void init_paging() {
+void init_paging(void) {
     printf("Creating page tree...\n");
     uint64_t pml4_virt = kmalloc(1) + kernel.hhdm;
     memset((uint8_t *)pml4_virt, 0, 4096);

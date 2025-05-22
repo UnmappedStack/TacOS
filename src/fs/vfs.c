@@ -12,7 +12,7 @@
 #include <printf.h>
 #include <string.h>
 
-void init_vfs() {
+void init_vfs(void) {
     kernel.vfs_mount_table_cache =
         init_slab_cache(sizeof(VfsMountTableEntry), "VFS mount table");
     kernel.vfs_file_cache = init_slab_cache(sizeof(VfsFile), "VFS file cache");
