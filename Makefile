@@ -1,13 +1,4 @@
-# Nuke built-in rules and variables.
-MAKEFLAGS += -rR
-.SUFFIXES:
-
-# This is the name that our final executable will have.
-# Change as needed.
-override OUTPUT := tacos
-
-# Convenience macro to reliably declare user overridable variables.
-override USER_VARIABLE = $(if $(filter $(origin $(1)),default undefined),$(eval override $(1) := $(2)))
+all: bootloader kernel libc userspace initrd disk
 
 override XORRISO_FLAGS += \
 						  -as mkisofs -b boot/limine/limine-bios-cd.bin \
@@ -16,25 +7,9 @@ override XORRISO_FLAGS += \
 						  -efi-boot-part --efi-boot-image --protective-msdos-label \
 						  sysroot -o tacos.iso
 
-# User controllable C compiler command.
-$(call USER_VARIABLE,KCC,clang)
-
-# User controllable linker command.
-$(call USER_VARIABLE,KLD,ld)
-
-# User controllable C flags.
-$(call USER_VARIABLE,KCFLAGS,-g -pipe)
-
-# User controllable C preprocessor flags. We set none by default.
-$(call USER_VARIABLE,KCPPFLAGS,)
-
-# User controllable nasm flags.
-$(call USER_VARIABLE,KNASMFLAGS,-F dwarf -g)
-
-# User controllable linker flags. We set none by default.
-$(call USER_VARIABLE,KLDFLAGS,)
-
-all: bootloader kernel libc userspace initrd disk
+.PHONY: kernel
+kernel:
+	make -C kernel
 
 bootloader:
 	make -C limine
@@ -56,7 +31,7 @@ initrd:
 
 .PHONY: disk
 disk:
-	cp -v bin/tacos sysroot/boot/
+	cp -v kernel/bin/tacos sysroot/boot/
 	mkdir -p sysroot/boot/limine
 	cp -v limine.conf limine/limine-bios.sys limine/limine-bios-cd.bin \
     	limine/limine-uefi-cd.bin sysroot/boot/limine/
@@ -83,86 +58,6 @@ lint-signatures:
 	@grep -rPn '^\s*void\s+\w+\s*\(\s*\)' src/ include/ && \
 	( echo "Functions with empty parameter lists should use 'void' instead of '()'"; exit 1 ) || true
 
-# everything below here is the kernel (yes this build system is horrible)
-
-# Internal C flags that should not be changed by the user.
-override KCFLAGS += \
-    -Wall \
-    -Wextra \
-	-Werror \
-	-std=c23 \
-	-ffreestanding \
-    -fno-stack-protector \
-    -fno-stack-check \
-    -fPIE \
-    -m64 \
-    -march=x86-64 \
-    -mno-80387 \
-    -mno-mmx \
-	-g \
-    -mno-sse \
-    -mno-sse2 \
-	-fno-omit-frame-pointer \
-    -mno-red-zone \
-	-O0 \
-	-mcmodel=kernel
-
-# Internal C preprocessor flags that should not be changed by the user.
-override KCPPFLAGS := \
-    -I include \
-    $(KCPPFLAGS) \
-    -MMD \
-    -MP
-
-# Internal nasm flags that should not be changed by the user.
-override KNASMFLAGS += \
-    -Wall \
-    -f elf64
-
-# Internal linker flags that should not be changed by the user.
-override KLDFLAGS += \
-    -m elf_x86_64 \
-    -nostdlib \
-    -static \
-    -z max-page-size=0x1000 \
-    -T linker.ld
-
-# Use "find" to glob all *.c, *.S, and *.asm files in the tree and obtain the
-# object and header dependency file names.
-override CFILES := $(shell cd src && find -L * -type f -name '*.c' | LC_ALL=C sort)
-override ASFILES := $(shell cd src && find -L * -type f -name '*.S' | LC_ALL=C sort)
-override NASMFILES := $(shell cd src && find -L * -type f -name '*.asm' | LC_ALL=C sort)
-override OBJ := $(addprefix obj/,$(CFILES:.c=.c.o) $(ASFILES:.S=.S.o) $(NASMFILES:.asm=.asm.o))
-override HEADER_DEPS := $(addprefix obj/,$(CFILES:.c=.c.d) $(ASFILES:.S=.S.d))
-
-# Default target.
-.PHONY: kernel
-kernel: bin/$(OUTPUT)
-
-# Link rules for the final executable.
-bin/$(OUTPUT): linker.ld $(OBJ)
-	mkdir -p "$$(dirname $@)"
-	$(KLD) $(OBJ) $(KLDFLAGS) -o $@
-
-# Include header dependencies.
--include $(HEADER_DEPS)
-
-# Compilation rules for *.c files.
-obj/%.c.o: src/%.c
-	mkdir -p "$$(dirname $@)"
-	$(KCC) $(KCFLAGS) $(KCPPFLAGS) -c $< -o $@
-
-# Compilation rules for *.S files.
-obj/%.S.o: src/%.S 
-	mkdir -p "$$(dirname $@)"
-	$(KCC) $(KCFLAGS) $(KCPPFLAGS) -c $< -o $@
-
-# Compilation rules for *.asm (nasm) files.
-obj/%.asm.o: src/%.asm
-	mkdir -p "$$(dirname $@)"
-	nasm $(KNASMFLAGS) $< -o $@
-
-# Remove object files and the final executable.
 .PHONY: clean
 clean:
-	rm -rf obj bin
+	rm -rf kernel/obj kernel/bin

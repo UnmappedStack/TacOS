@@ -7,3 +7,5 @@ sysroot/
 log.txt
 initrd/usr/bin
 userspace/doom/tacos-doomgeneric
+kernel/bin/
+kernel/obj/
