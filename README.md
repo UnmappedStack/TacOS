@@ -45,6 +45,7 @@ determining executable automatically.  Try using the "file" command.
 0x000000000000fff0 in ?? ()
 (gdb) file kernel/bin/tacos # if you're debugging the kernel
 (gdb) file initrd/usr/bin/<program> # if you're debugging a userspace program
+(gdb) continue
 ```
 
 ## License & Contributions
