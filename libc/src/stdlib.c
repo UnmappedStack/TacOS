@@ -1,4 +1,5 @@
 #include <stdlib.h>
+#include <sys/wait.h>
 #include <stdio.h>
 #include <stdbool.h>
 #include <string.h>
@@ -87,7 +88,14 @@ void abort(void) {
 }
 
 int system(const char *command) {
-    printf("\nTODO: system(): command is %s\n", command);
+    pid_t pid = fork();
+    if (pid) {
+        int status;
+        waitpid(pid, &status, 0);
+    } else {
+        execve("/usr/bin/shell", (char*[]) {"shell", "-c", command, NULL}, environ);
+        exit(-1);
+    }
     return 0;
 }
 

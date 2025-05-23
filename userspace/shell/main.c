@@ -28,15 +28,22 @@ void run_program(char *program_file, char *argv[]) {
     }
 }
 
+// this is so horrible. I've just given up on making it decent.
 void run_cmd(char *cmd) {
     if (!*cmd || *cmd == '#') return;
+    size_t len = strlen(cmd);
+    if (cmd[len - 1] != '\n') {
+        char *original = cmd;
+        cmd = malloc(len + 2);
+        sprintf(cmd, "%s\n", original);
+    }
     char *argv[30];
     memset(argv, 0, 30 * sizeof(char*));
     size_t argc = 0;
     char *start = cmd;
     char *end = cmd;
     for (; end == cmd || (*(end - 1) != '\0' && *(end - 1) != '\n'); end++) {
-        if (*end != ' ' && *end != '\n') continue;
+        if (*end != ' ' && *end != '\n' && *end != '\0') continue;
         *end = 0;
         argv[argc++] = start;
         start = ++end;
