@@ -69,7 +69,10 @@ int main(int argc, char **argv) {
     setenv("SHELL", "unbash", true);
     if (argc == 1)
         shell_mode();
-    if (argv[1][0] == '-') {
+    else if (!strcmp(argv[1], "-c")) {
+        run_cmd(argv[2]);
+        return 0;
+    } else if (argv[1][0] == '-') {
         printf("GuacUtils shell: A simple CLI shell.\n"
                "Copyright (C) 2025 Jake Steinburger (UnmappedStack) under the Mozilla Public License 2.0. "
                "See LICENSE in the source repo for more information.\n");

@@ -33,25 +33,9 @@ int execve(const char *path, char **argv, char **envp) {
 
 extern char **environ;
 
-int execl(const char *path, const char *arg0, ...) {
-    char **argv = malloc(sizeof(char*));
-    int argc = 1;
-    argv[0] = path;
-    va_list args;
-    va_start(args, format);
-    char *arg;
-    while (arg=va_arg(args, char*)) {
-        argv = realloc(argv, (++argc+1) * sizeof(char*));
-        argv[argc - 1] = arg;
-    }
-    argv[argc] = NULL;
-    va_end(args);
-    return execve(path, argv, environ);
-}
-
 int execvp(const char *path, char **argv) {
     int contains_slash = strchr(path, '/') != NULL;
-    if (path[0] == '/' || contains_slash)
+    if (contains_slash)
         return execve(path, argv, environ);
     char *pathlist = getenv("PATH");
     if (!pathlist) return -1;
