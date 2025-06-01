@@ -1,10 +1,22 @@
 #include <cpu.h>
+#include <cpu/msr.h>
 #include <exec.h>
 #include <fork.h>
 #include <kernel.h>
 #include <printf.h>
 #include <scheduler.h>
 #include <stdint.h>
+
+#define LSTAR_MSR 0xC0000082
+
+void test_handler() {
+    printf("hi from handler :)");
+    for (;;);
+}
+
+void init_syscalls(void) {
+    write_msr(LSTAR_MSR, (uint64_t) &test_handler);
+}
 
 int remove_child(Task *parent, pid_t child, bool in_wait, int status) {
     for (size_t i = 0; i < MAX_CHILDREN; i++) {

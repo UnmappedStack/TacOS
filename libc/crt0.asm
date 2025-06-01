@@ -14,7 +14,6 @@ extern exit
 
 section .text
 _start:
-    sub rsp, 0
     mov rbp, rsp
     push rbp
     ; save argc+argv+envp

@@ -1,4 +1,6 @@
 #include <apic.h>
+#include <cpu/msr.h>
+#include <syscalls.h>
 #include <bootutils.h>
 #include <cpu.h>
 #include <cpu/gdt.h>
@@ -96,6 +98,7 @@ void _start(void) {
     DISABLE_INTERRUPTS();
     init_kernel_info();
     init_serial();
+    init_msr();
     init_pmm();
     init_TSS();
     init_GDT();
@@ -113,6 +116,7 @@ void _start(void) {
     init_scheduler();
     init_apic();
     init_pit();
+    init_syscalls();
     ls("/");
     ls("/home");
     init_framebuffer();
