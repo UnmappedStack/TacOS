@@ -41,18 +41,17 @@ Task *task_add(void) {
 }
 
 Task *task_select(void) {
-    Task *first_task = kernel.scheduler.current_task;
-    kernel.scheduler.current_task =
-        (Task *)kernel.scheduler.current_task->list.next;
-    while (!(kernel.scheduler.current_task->flags & TASK_PRESENT)) {
+    Task *first_task = CURRENT_TASK;
+    kernel.scheduler.current_task = (Task *)CURRENT_TASK->list.next;
+    while (
+        !(CURRENT_TASK->flags & TASK_PRESENT && !CURRENT_TASK->waiting_for)) {
         if (first_task == (Task *)kernel.scheduler.current_task) {
             printf("No avaliable task! Was init killed?\n");
             HALT_DEVICE();
         }
-        kernel.scheduler.current_task =
-            (Task *)kernel.scheduler.current_task->list.next;
+        kernel.scheduler.current_task = (Task *)CURRENT_TASK->list.next;
     }
-    return (Task *)kernel.scheduler.current_task;
+    return (Task *)CURRENT_TASK;
 }
 
 // for asm context switch

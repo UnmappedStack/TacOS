@@ -7,6 +7,8 @@
 #include <stdint.h>
 #include <string.h>
 
+#define CURRENT_TASK kernel.scheduler.current_task
+
 #define MAX_RESOURCES 20 // TODO: Dynamically allocate this.
 #define MAX_CHILDREN 20
 #define TASK_PRESENT 0b0001
@@ -48,6 +50,9 @@ struct Task {
     uint64_t first_rsp;
     char **envp;
     char cwd[MAX_PATH_LEN];
+    pid_t waiting_for; // if blocking, this contains the pid of the task it's
+                       // waiting for. Otherwise it should be 0 (and waiting for
+                       // task 0 should cause an error).
 };
 
 typedef struct {

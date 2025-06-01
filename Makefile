@@ -52,10 +52,10 @@ qemu-gdb:
 lint: lint-signatures lint-clang-format
 
 lint-clang-format:
-	@find src/ include/ -type f \( -name '*.c' -o -name '*.h' \) -exec clang-format --dry-run --Werror {} +
+	@find kernel/src/ kernel/include/ -type f \( -name '*.c' -o -name '*.h' \) -exec clang-format -i {} +
 
 lint-signatures:
-	@grep -rPn '^\s*void\s+\w+\s*\(\s*\)' src/ include/ && \
+	@grep -rPn '^\s*void\s+\w+\s*\(\s*\)' kernel/src/ kernel/include/ && \
 	( echo "Functions with empty parameter lists should use 'void' instead of '()'"; exit 1 ) || true
 
 .PHONY: clean

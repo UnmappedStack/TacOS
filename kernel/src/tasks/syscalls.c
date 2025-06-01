@@ -6,8 +6,6 @@
 #include <scheduler.h>
 #include <stdint.h>
 
-#define CURRENT_TASK kernel.scheduler.current_task
-
 int remove_child(Task *parent, pid_t child, bool in_wait, int status) {
     for (size_t i = 0; i < MAX_CHILDREN; i++) {
         if (parent->children[i].pid == child) {
@@ -68,6 +66,8 @@ void sys_exit(int status) {
     }
     printf("Exited task with status %i\n", status);
     remove_child(CURRENT_TASK->parent, CURRENT_TASK->pid, false, status);
+    if (CURRENT_TASK->parent->waiting_for == CURRENT_TASK->pid)
+        CURRENT_TASK->parent->waiting_for = 0;
     CURRENT_TASK->flags |= TASK_DEAD;
     CURRENT_TASK->flags &= ~TASK_PRESENT;
     ENABLE_INTERRUPTS();
@@ -141,15 +141,8 @@ int sys_waitpid(int pid, int *status, int options) {
         printf("TODO: waitpid does not yet support <=0 for the pid\n");
         return -1;
     }
-    // find child with needed pid
-    for (size_t i = 0; i < MAX_CHILDREN; i++) {
-        if (CURRENT_TASK->children[i].pid != (size_t)pid)
-            continue;
-        while (
-            !(task_from_pid(CURRENT_TASK->children[i].pid)->flags & TASK_DEAD))
-            IO_WAIT();
-        return 0;
-    }
+    CURRENT_TASK->waiting_for = pid;
+    WAIT_FOR_INTERRUPT();
     return -1; // pid not found in children
 }
 
