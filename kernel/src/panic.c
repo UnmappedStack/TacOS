@@ -56,6 +56,8 @@ void exception_handler(IDTEFrame registers) {
     } else {
         printf("Exception occurred in ring %i\n", registers.ss & 0b11);
     }
+    printf("SS w/o ring: %x\n", registers.ss & ~3);
+    printf("CS w/o ring: %x\n", registers.cs & ~3);
     stack_trace(registers.rbp, registers.rip);
     if (kernel.scheduler.current_task->pid > 0) {
         write_framebuffer_text("\nSegmentation fault\n");

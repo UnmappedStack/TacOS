@@ -8,14 +8,17 @@
 #include <stdint.h>
 
 #define LSTAR_MSR 0xC0000082
+#define  EFER_MSR 0xC0000080
 
-void test_handler() {
-    printf("hi from handler :)");
-    for (;;);
-}
+extern void syscall_handler(void);
 
 void init_syscalls(void) {
-    write_msr(LSTAR_MSR, (uint64_t) &test_handler);
+    // enable syscall/sysret
+    uint64_t EFER;
+    read_msr(EFER_MSR, &EFER);
+    write_msr(EFER_MSR, EFER | 0b1);
+    // set handler
+    write_msr(LSTAR_MSR, (uint64_t) &syscall_handler);
 }
 
 int remove_child(Task *parent, pid_t child, bool in_wait, int status) {

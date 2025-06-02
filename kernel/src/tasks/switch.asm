@@ -82,7 +82,6 @@ context_switch:
     pop rdi
     iretq
 .previously_executed:
-    ;; Restore SSE stuff of this task
     popall
 ;    ;; copy into regs
 ;    pop rsi

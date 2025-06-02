@@ -16,6 +16,9 @@ section .text
 _start:
     mov rbp, rsp
     push rbp
+    push rcx
+    ;syscall ; test
+    pop rcx
     ; save argc+argv+envp
     push rdi
     push rsi

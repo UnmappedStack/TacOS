@@ -64,7 +64,9 @@ syscall_lookup:
 syscall_lookup_end:
 
 global syscall_isr
+global syscall_handler
 
+;; `int 0x80` syscall interrupt handler
 syscall_isr:
     cmp rax, (syscall_lookup_end-syscall_lookup) / 8
     jge invalid_syscall
@@ -73,6 +75,24 @@ syscall_isr:
     popmost
     iretq
 
+;; `syscall` instruction handler
+syscall_handler:
+    mov [user_rsp], rsp
+    mov [user_rflags], r11
+    mov rsp, 0xFFFFFFFFFFFFF000
+    push rcx ; return address
+    pushall
+    mov rdi, in_syscall_msg
+    mov rsi, [user_rsp]
+    call printf
+    popall
+    pop rcx
+    cli ; no interrupts should ever be called while on the user stack yet
+        ; from within the kernel.
+    mov rsp, [user_rsp]
+    mov r11, [user_rflags]
+    o64 sysret
+
 invalid_syscall:
     push rdi
     mov rdi, rax
@@ -80,6 +100,11 @@ invalid_syscall:
     iretq
 
 section .rodata
-in_syscall_msg: db "In syscall %i", 10, 0
+in_syscall_msg: db "In `syscall` handler :) rsp is %p", 10, 0
 rdi_msg: db "RDI = %i", 10, 0
 rsp_msg: db "RSP in syscall handler = %p", 10, 0
+
+section .data
+user_rsp:    dq 0
+user_rflags: dq 0
+
