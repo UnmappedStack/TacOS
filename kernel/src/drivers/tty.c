@@ -25,6 +25,10 @@ void write_framebuffer_char(char ch) {
     if (ch == '\n') {
         newline();
         return;
+    } else if (ch == '\t') {
+        for (int i = 0; i < 3; i++)
+            write_framebuffer_char(' ');
+        return;
     }
     draw_char(ch, kernel.tty.loc_x, kernel.tty.loc_y, kernel.tty.fg_colour);
     kernel.tty.loc_x += 8;

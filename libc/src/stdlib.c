@@ -102,3 +102,15 @@ int setenv(char *key, char *val, int overwrite) {
 int abs(int j) {
     return (j < 0) ? -j : j;
 }
+
+long strtol(const char *nptr,
+                   char **endptr, int base) {
+    (void) nptr, (void) endptr, (void) base;
+    printf("TODO: strtol\n");
+    return 0;
+}
+
+long __isoc23_strtol(const char *nptr,
+                   char **endptr, int base) {
+    return strtol(nptr, endptr, base);
+}

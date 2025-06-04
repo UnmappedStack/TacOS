@@ -7,7 +7,7 @@ OBJDIR = obj
 PHONY: all
 all:
 	if [ ! -d "tacos-doomgeneric" ]; then \
-		git clone https://github.com/UnmappedStack/tacos-doomgeneric; \
+		git clone https://github.com/UnmappedStack/tacos-doomgeneric --depth=1; \
 	else \
 		echo "tacos-doomgeneric already exists, skipping clone."; \
 	fi
