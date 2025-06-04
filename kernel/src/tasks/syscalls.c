@@ -370,8 +370,3 @@ int sys_readdir(VfsDirIter *iter, struct dirent *dp) {
     vfs_identify(entry, dp->d_name, NULL, &dp->d_fsize);
     return 0;
 }
-
-void sys_get_fb_info(uint64_t *pitchbuf, uint64_t *bppbuf) {
-    *pitchbuf = kernel.framebuffer.pitch;
-    *bppbuf = kernel.framebuffer.bytes_per_pix;
-}

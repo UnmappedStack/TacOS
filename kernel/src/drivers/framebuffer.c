@@ -100,11 +100,20 @@ int fbdevclose(void *f) {
     (void)f;
     return 0;
 }
+int fbdevread(void *f, char *buf, size_t len, size_t off) {
+    (void) f, (void) off;
+    if (len < sizeof(uint64_t) * 2 || off) return -1;
+    uint64_t *nbuf = (uint64_t*) buf;
+    nbuf[0] = kernel.framebuffer.pitch;
+    nbuf[1] = kernel.framebuffer.bytes_per_pix;
+    return 0;
+}
 void init_framebuffer(void) {
     kernel.framebuffer = boot_get_framebuffer();
     // raw framebuffer device
     DeviceOps fbdev_ops = {
-        .open = &fbdevopen, .close = &fbdevclose, .is_term = false};
+        .open = &fbdevopen, .close = &fbdevclose, .read = &fbdevread, .is_term = false
+    };
     mkdevice("/dev/fb0", fbdev_ops);
     // Fill the screen and finish up
     printf("Framebuffer initialised.\n");

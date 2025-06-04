@@ -33,7 +33,6 @@ extern sys_getcwd
 extern sys_chdir
 extern sys_opendir
 extern sys_readdir
-extern sys_get_fb_info
 
 syscall_lookup:
     dq sys_read          ; 0
@@ -60,7 +59,6 @@ syscall_lookup:
     dq sys_chdir         ; 21
     dq sys_opendir       ; 22
     dq sys_readdir       ; 23
-    dq sys_get_fb_info   ; 24
 syscall_lookup_end:
 
 global syscall_isr
