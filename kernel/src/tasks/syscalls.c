@@ -12,6 +12,8 @@
 
 extern void syscall_handler(void);
 
+// This is just for the `syscall`/`sysret` method of interrupts which isn't actually
+// used, I was just playing around with it. Interrupts for syscalls rein supreme!!
 void init_syscalls(void) {
     // enable syscall/sysret
     uint64_t EFER;
@@ -370,3 +372,34 @@ int sys_readdir(VfsDirIter *iter, struct dirent *dp) {
     vfs_identify(entry, dp->d_name, NULL, &dp->d_fsize);
     return 0;
 }
+
+pid_t sys_fork();
+
+void *syscalls[] = {
+    sys_read,
+    sys_write,
+    sys_open,
+    sys_close,
+    sys_exit,
+    sys_getpid,
+    sys_fork,
+    sys_execve,
+    sys_kill,
+    sys_isatty,
+    sys_wait,
+    sys_sbrk,
+    sys_unlink,
+    sys_remove,
+    sys_mkdir,
+    sys_lseek,
+    sys_clock_gettime,
+    sys_sched_yield,
+    sys_mmap,
+    sys_waitpid,
+    sys_getcwd,
+    sys_chdir,
+    sys_opendir,
+    sys_readdir,
+};
+
+uint64_t num_syscalls = sizeof(syscalls) / sizeof(syscalls[0]);

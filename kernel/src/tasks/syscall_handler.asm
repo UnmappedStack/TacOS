@@ -8,68 +8,19 @@ extern unlock_pit
 
 %include "include/asm.inc"
 
-extern sys_read
-extern sys_write
-extern sys_open
-extern sys_close
+extern syscalls
+extern num_syscalls
 extern sys_invalid
-extern sys_exit
-extern sys_getpid
-extern sys_fork
-extern sys_execve
-extern sys_kill
-extern sys_isatty
-extern sys_wait
-extern sys_sbrk
-extern sys_unlink
-extern sys_remove
-extern sys_mkdir
-extern sys_lseek
-extern sys_clock_gettime
-extern sys_sched_yield
-extern sys_mmap
-extern sys_waitpid
-extern sys_getcwd
-extern sys_chdir
-extern sys_opendir
-extern sys_readdir
-
-syscall_lookup:
-    dq sys_read          ; 0
-    dq sys_write         ; 1
-    dq sys_open          ; 2
-    dq sys_close         ; 3
-    dq sys_exit          ; 4
-    dq sys_getpid        ; 5
-    dq sys_fork          ; 6
-    dq sys_execve        ; 7
-    dq sys_kill          ; 8
-    dq sys_isatty        ; 9
-    dq sys_wait          ; 10
-    dq sys_sbrk          ; 11
-    dq sys_unlink        ; 12
-    dq sys_remove        ; 13
-    dq sys_mkdir         ; 14
-    dq sys_lseek         ; 15
-    dq sys_clock_gettime ; 16
-    dq sys_sched_yield   ; 17
-    dq sys_mmap          ; 18
-    dq sys_waitpid       ; 19
-    dq sys_getcwd        ; 20
-    dq sys_chdir         ; 21
-    dq sys_opendir       ; 22
-    dq sys_readdir       ; 23
-syscall_lookup_end:
 
 global syscall_isr
 global syscall_handler
 
 ;; `int 0x80` syscall interrupt handler
 syscall_isr:
-    cmp rax, (syscall_lookup_end-syscall_lookup) / 8
+    cmp rax, [num_syscalls]
     jge invalid_syscall
     pushmost
-    call [syscall_lookup + rax * 8]
+    call [syscalls + rax * 8]
     popmost
     iretq
 
