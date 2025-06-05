@@ -17,8 +17,14 @@ global syscall_handler
 
 ;; `int 0x80` syscall interrupt handler
 syscall_isr:
+    ; check if it's invalid:
+    ; if it's higher than the number of syscalls
     cmp rax, [num_syscalls]
     jge invalid_syscall
+    ; ...or if the syscall function pointer is NULL
+    cmp qword [syscalls + rax * 8], 0
+    je invalid_syscall
+    ; ...but if it's a valid syscall, so continue.
     pushmost
     call [syscalls + rax * 8]
     popmost

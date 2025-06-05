@@ -235,7 +235,10 @@ size_t sys_lseek(int fd, size_t offset, int whence) {
     }
 }
 
-void sys_invalid(int sys) { printf("Invalid syscall: %i\n", sys); }
+void sys_invalid(int sys) {
+    printf("Invalid syscall: %i\n", sys);
+    sys_exit(-1);
+}
 
 /* called by the task switch. Don't ask why this is in the syscalls.c file lol
  */
