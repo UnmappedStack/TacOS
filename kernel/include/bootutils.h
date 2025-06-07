@@ -23,7 +23,7 @@ static volatile struct limine_module_request initrd_request = {
     .internal_modules = &module_list,
     .internal_module_count = 1};
 
-static void init_kernel_info() {
+static void init_kernel_info(void) {
     kernel.memmap_entry_count = memmap_request.response->entry_count;
     kernel.memmap = *(memmap_request.response->entries);
     kernel.hhdm = hhdm_request.response->offset;
