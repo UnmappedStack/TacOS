@@ -44,7 +44,7 @@ void create_system_segment_descriptor(uint64_t *GDT, uint8_t idx, uint64_t base,
     GDT[idx + 1] = base4;
 }
 
-__attribute__((noinline)) void init_GDT() {
+__attribute__((noinline)) void init_GDT(void) {
     GDTR gdtr;
     kernel.GDT = (uint64_t *)(kmalloc(1) + kernel.hhdm);
     kernel.GDT[0] = create_gdt_entry(0, 0, 0, 0);      // null

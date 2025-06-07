@@ -20,7 +20,7 @@ char *ascii_art = " ________                     ______    ______  \n"
 int main(int argc, char **argv, char **envp) {
     if (argc <= 1 || (strcmp(argv[1], "YOU_ARE_INIT") && argv[1][0] != '-')) {
         // Seems like init was called by another user program rather than the kernel.
-        // It should be safe to assume that the streams are aready open.
+        // It should be safe to assume that the streams are already open.
         printf("sysinit cannot be run manually, must be called by kernel. Try run `init --help`.\n");
         return -1;
     } else if (argv[1][0] == '-') {
