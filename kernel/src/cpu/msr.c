@@ -4,7 +4,7 @@
 #include <cpu/cpuid.h>
 #define CPUID_FLAG_MSR 1 << 5
 
-void init_msr() {
+void init_msr(void) {
    static uint32_t a, d; // eax, edx
    cpuid(1, &a, &d);
    if (d & CPUID_FLAG_MSR) {

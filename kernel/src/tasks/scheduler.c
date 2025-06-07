@@ -13,7 +13,7 @@ void init_scheduler(void) {
     Task *krnl_task = task_add();
     krnl_task->pml4 = kernel.cr3;
     krnl_task->entry = (void *)&_start;
-    krnl_task->parent = krnl_task; // The kernel task is it's own parent
+    krnl_task->parent = krnl_task; // The kernel task is its own parent
     krnl_task->flags = 0;
     krnl_task->rsp = USER_STACK_PTR;
     krnl_task->memregion_list = 0;

@@ -53,7 +53,7 @@ and the source itself. If you just include it normally, you just get
 the header file function definitions. To get the code, you include
 it from a C or C++ file and define STB_SPRINTF_IMPLEMENTATION first.
 
-It only uses va_args macros from the C runtime to do it's work. It
+It only uses va_args macros from the C runtime to do its work. It
 does cast doubles to S64s and shifts and divides U64s, which does
 drag in CRT code on most platforms.
 

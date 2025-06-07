@@ -13,7 +13,7 @@
 extern void syscall_handler(void);
 
 // This is just for the `syscall`/`sysret` method of interrupts which isn't actually
-// used, I was just playing around with it. Interrupts for syscalls rein supreme!!
+// used, I was just playing around with it. Interrupts for syscalls reign supreme!!
 void init_syscalls(void) {
     // enable syscall/sysret
     uint64_t EFER;
@@ -102,7 +102,7 @@ int sys_execve(char *path, char **argv, char **envp) {
     for (;;);
 }
 
-// TODO: Actually send a signal to the task and do clean up, report to it's
+// TODO: Actually send a signal to the task and do clean up, report to its
 // parent
 int sys_kill(int pid, int sig) {
     if (pid < 0) {
