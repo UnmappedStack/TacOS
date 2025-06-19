@@ -49,7 +49,6 @@ int execvp(const char *path, char **argv) {
         sprintf(full_path, pattern, dir, path);
         int f = open(full_path, 0, 0);
         if (f < 0) {
-            fprintf(stderr, "failed to open from PATH %s (execvp)\n", full_path);
             free(dir);
             return -1;
         }
