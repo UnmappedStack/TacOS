@@ -21,7 +21,7 @@ git checkout v9.x-binary
 cd ..
 make run
 ```
-You'll need to have Qemu, NASM, and Clang installed. It will automatically run in the Qemu emulator.
+You'll need to have Xorriso, Qemu, NASM, and Clang installed. It will automatically run in the Qemu emulator.
 
 The build system has a few primary commands which you can use:
  - `make run`: Builds TacOS and runs it in Qemu
