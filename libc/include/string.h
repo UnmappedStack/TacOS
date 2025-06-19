@@ -1,6 +1,7 @@
 #pragma once
 #include <stddef.h>
 
+char* strndup(char *s, size_t n);
 size_t strlen(const char *str);
 int strcmp(const char *s1, const char *s2);
 void *memset(void *dest, int x, size_t n);

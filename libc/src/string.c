@@ -130,6 +130,18 @@ char* strdup(const char *s) {
     return ret;
 }
 
+char* strndup(char *s, size_t n) {
+    size_t slen = strlen(s);
+    size_t len = (slen > n) ? n : slen;
+    int *t = malloc(1); // I'm giving in to the UB. Fuck this.
+                        // Don't worry, this'll be gone when I switch to newlib.
+    char *ret = (char*) malloc(len + 1);
+    free(t);
+    memcpy(ret, s, len);
+    ret[len] = 0;
+    return ret;
+}
+
 char *strpbrk(const char *s, const char *accept) {
     size_t naccept = strlen(accept);
     for (; *s; s++) {

@@ -39,23 +39,24 @@ int execvp(const char *path, char **argv) {
         return execve(path, argv, environ);
     char *pathlist = getenv("PATH");
     if (!pathlist) return -1;
-    size_t start = 0;
-    size_t end = 0;
-    for (; !end || pathlist[end - 1]; end++) {
-        if (pathlist[end] == ':' || !pathlist[end]) {
-            char temp = pathlist[end];
-            char *fullpath = (char*) malloc(strlen(&pathlist[start]) + strlen(path) + 1);
-            sprintf(fullpath, "%s/%s", &pathlist[start], path);
-            // check if the path exists by opening it, and if it does, try call execve on it
-            int f;
-            if ((f=open(fullpath, 0, 0)) >= 0) {
-                close(f);
-                execve(fullpath, argv, environ);
-            }
-            free(fullpath);
-            pathlist[end] = temp;
-            start = end = end + 1;
+    while (*pathlist) {
+        char* start = pathlist;
+        while (*pathlist && *pathlist != ':') pathlist++;
+        char* dir = strndup(start, pathlist-start);
+        char* pattern = "%s/%s";
+        size_t len = sprintf(NULL, pattern, dir, path);
+        char* full_path = (char*) malloc(len + 1);
+        sprintf(full_path, pattern, dir, path);
+        int f = open(full_path, 0, 0);
+        if (f < 0) {
+            fprintf(stderr, "failed to open from PATH %s (execvp)\n", full_path);
+            free(dir);
+            return -1;
         }
+        execve(full_path, argv, environ);
+        free(dir);
+        if (!*pathlist) break;
+        pathlist++;
     }
     return -1;
 }

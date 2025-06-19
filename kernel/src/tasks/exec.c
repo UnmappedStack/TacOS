@@ -79,7 +79,7 @@ int execve(Task *task, char *filename, char **argv, char **envp) {
     task->flags = 0;
     VfsFile *f = open(filename, 0);
     if (!f) {
-        printf("Failed to open file \"%s\".\n", filename);
+        printf("Failed to open file \"%s\", execve failed.\n", filename);
         return -1;
     }
     if (vfs_read(f, (char *)&file_header, sizeof(elf_file_header), 0) < 0) {
