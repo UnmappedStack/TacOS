@@ -68,6 +68,7 @@ void shell_mode() {
         memset(input, 0, 200);
         fgets(input, 200, stdin);
         printf("\n");
+        if (*input == '\n') continue;
         run_cmd(input);
     }
 }
