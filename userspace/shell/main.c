@@ -16,15 +16,13 @@ void run_program(char *program_file, char *argv[]) {
         return;
     }
     pid_t pid = fork();
-    if (pid == 0) {
-        // hey... I'm not the original! I'm a child???
+    if (pid) {
+        int status;
+        waitpid(pid, &status, 0);
+    } else {
         execvp(program_file, argv);
         printf("shell: command not found: %s\n", program_file);
         exit(127);
-    } else {
-        // I'm the original, suck it! (and wait)
-        int status;
-        waitpid(pid, &status, 0);
     }
 }
 

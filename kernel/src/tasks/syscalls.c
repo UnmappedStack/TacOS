@@ -25,13 +25,12 @@ void init_syscalls(void) {
 
 int remove_child(Task *parent, pid_t child, bool in_wait, int status) {
     for (size_t i = 0; i < MAX_CHILDREN; i++) {
-        if (parent->children[i].pid == child) {
-            if (in_wait) // called from wait syscall
-                parent->children[i].pid = 0;
-            else
-                parent->children[i].status = status;
-            return 0;
-        }
+        if (parent->children[i].pid != child) continue;
+        if (in_wait) // called from wait syscall
+            parent->children[i].pid = 0;
+        else
+            parent->children[i].status = status;
+        return 0;
     }
     return -1;
 }
@@ -81,6 +80,7 @@ void sys_exit(int status) {
             status, status);
         HALT_DEVICE();
     }
+    DISABLE_INTERRUPTS();
     printf("Exited task with status %i\n", status);
     remove_child(CURRENT_TASK->parent, CURRENT_TASK->pid, false, status);
     if (CURRENT_TASK->parent->waiting_for == CURRENT_TASK->pid)
@@ -158,7 +158,8 @@ int sys_waitpid(int pid, int *status, int options) {
         printf("TODO: waitpid does not yet support <=0 for the pid\n");
         return -1;
     }
-    CURRENT_TASK->waiting_for = pid;
+    if (!(task_from_pid(pid)->flags & TASK_DEAD))
+        CURRENT_TASK->waiting_for = pid;
     WAIT_FOR_INTERRUPT();
     return -1; // pid not found in children
 }
