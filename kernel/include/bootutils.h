@@ -31,4 +31,5 @@ static void init_kernel_info() {
     kernel.kernel_virt_addr = kernel_addr_request.response->virtual_base;
     kernel.initrd_addr = initrd_request.response->modules[0]->address;
     kernel.rsdp_table = rsdp_request.response->address;
+    kernel.scheduler.initiated = false;
 }

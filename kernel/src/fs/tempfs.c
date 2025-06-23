@@ -20,6 +20,7 @@ TempfsInode *tempfs_new() {
     memcpy(newfs->name, "FSROOT", 7);
     newfs->type = Directory;
     newfs->parent = newfs;
+    newfs->first_dir_entry = NULL;
     // create . and .. entries
     TempfsInode *prevdirentry, *thisdirentry;
     if (!(prevdirentry = tempfs_create_entry(newfs)))
@@ -51,7 +52,9 @@ TempfsInode *tempfs_create_entry(TempfsInode *dir) {
         // TODO: Make this wayyy faster cos this sucks a lot. Possibly use
         // `struct list`?
         TempfsDirEntry *last_entry = dir->first_dir_entry;
-        while (last_entry->next) last_entry = last_entry->next;
+        while (last_entry->next) {
+            last_entry = last_entry->next;
+        }
         last_entry->next = slab_alloc(kernel.tempfs_direntry_cache);
         new_entry = last_entry->next;
     }
@@ -231,6 +234,16 @@ int tempfs_closedir(TempfsDirIter *dir) {
 
 void *tempfs_file_from_diriter(TempfsDirIter *iter) { return iter->inode; }
 
+TempfsInode *tempfs_find_inode_in_dir(TempfsInode *dir, char *fname) {
+    if (dir->type != Directory) return NULL;
+    TempfsDirEntry *entry = dir->first_dir_entry;
+    while (entry) {
+        if (!strcmp(entry->inode->name, fname)) return entry->inode;
+        entry = entry->next;
+    }
+    return NULL;
+}
+
 FileSystem tempfs = (FileSystem){
     .fs_id = fs_tempfs,
     .find_root_fn = (void *(*)(void *))tempfs_find_root,
@@ -247,4 +260,5 @@ FileSystem tempfs = (FileSystem){
     .read_fn = (int (*)(void *, char *, size_t, size_t))tempfs_read,
     .identify_fn = (int (*)(void *, char *, bool *, size_t *))tempfs_identify,
     .file_from_diriter = (void *(*)(void *))tempfs_file_from_diriter,
+    .find_inode_in_dir = (void *(*)(void *, char *))tempfs_find_inode_in_dir,
 };

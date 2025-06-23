@@ -40,7 +40,7 @@ void exception_handler(IDTEFrame registers) {
         printf("Exception type: General protection fault");
     else
         printf("Exception type: %i", registers.type);
-    printf(" in task of PID=%i\n", kernel.scheduler.current_task->pid);
+    printf(" in task of PID=%i\n", (kernel.scheduler.initiated) ? kernel.scheduler.current_task->pid : 0);
     size_t cr3;
     __asm__ volatile("movq %%cr3, %0" : "=r"(cr3));
     printf("Error code: 0b%b\n\n", registers.code);

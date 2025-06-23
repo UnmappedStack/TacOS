@@ -43,8 +43,6 @@ int vfs_mount(char *path, VfsDrive drive) {
     VfsMountTableEntry *new_entry = slab_alloc(kernel.vfs_mount_table_cache);
     strcpy(new_entry->path, path);
     new_entry->drive = drive;
-    printf("new entry find root is %p\n", new_entry,
-           new_entry->drive.fs.find_root_fn);
     list_insert(&kernel.vfs_mount_table_list, &new_entry->list);
     return 0;
 }
@@ -94,22 +92,6 @@ int vfs_identify(VfsFile *file, char *name, bool *is_dir, size_t *fsize) {
     return file->drive.fs.identify_fn(file->private, name, is_dir, fsize);
 }
 
-// Returns the *private*, not an actual VfsFile
-void *find_direntry(VfsDrive *drive, VfsDirIter *dir, char *name) {
-    char entry_name[MAX_FILENAME_LEN];
-    void *this_entry;
-    for (;;) {
-        if (!dir)
-            return NULL;
-        if (!(this_entry = drive->fs.diriter_fn(dir->private)))
-            return NULL;
-        if (drive->fs.identify_fn(this_entry, entry_name, NULL, NULL) < 0)
-            return NULL;
-        if (!strcmp(name, entry_name))
-            return this_entry;
-    }
-}
-
 VfsFile *vfs_access(char *path, int flags, VfsAccessType type) {
     char path_from_rel[MAX_PATH_LEN];
     if (*path != '/') {
@@ -126,8 +108,8 @@ VfsFile *vfs_access(char *path, int flags, VfsAccessType type) {
     size_t new_path_start_idx;
     VfsDrive *drive = vfs_path_to_drive(path, &new_path_start_idx);
     if (!drive) {
-        printf("Path is not mounted anywhere (make sure root is mounted!). "
-               "Cannot open.\n");
+        printf("Path `%s` is not mounted anywhere (make sure root is mounted!). "
+               "Cannot open.\n", path);
         return NULL;
     }
     char path_cpy[MAX_PATH_LEN];
@@ -143,7 +125,6 @@ VfsFile *vfs_access(char *path, int flags, VfsAccessType type) {
     char *path_lag = &path_cpy[1];
     size_t pathlen = strlen(path) + 1;
     void *current_dir = drive->fs.find_root_fn(drive->private);
-    VfsDirIter cd_iter = {0};
     for (size_t i = 1; i < pathlen; i++) {
         if (path_cpy[i] == '/' || !path_cpy[i]) {
             char original_char = path_cpy[i];
@@ -151,22 +132,20 @@ VfsFile *vfs_access(char *path, int flags, VfsAccessType type) {
             if (*path_lag == '/')
                 path_lag++;
             bool is_dir = original_char == '/';
-            cd_iter.private = drive->fs.opendir_fn(current_dir);
             if (is_dir) {
-                VfsFile *cd_temp = find_direntry(drive, &cd_iter, path_lag);
+                void *cd_temp = drive->fs.find_inode_in_dir(current_dir, path_lag);
                 drive->fs.close_fn(current_dir);
                 if (!cd_temp) {
-                    printf("Couldn't open directory: \"%s\": doesn't exist.\n",
+                    printf("Couldn't open directory: \"%s\": doesn't exist or dir is a file.\n",
                            path_lag);
                     return NULL;
                 }
                 current_dir = cd_temp;
             } else {
-                VfsFile *entry = find_direntry(drive, &cd_iter, path_lag);
+                void *entry = drive->fs.find_inode_in_dir(current_dir, path_lag);
                 if (!entry && ((flags & O_CREAT) || type == VAT_mkdir ||
                                type == VAT_mkfile)) {
                     void *new_file = NULL;
-                    ;
                     if (type == VAT_mkfile || type == VAT_open) {
                         new_file = drive->fs.mkfile_fn(current_dir, path_lag);
                     } else if (type == VAT_mkdir || type == VAT_opendir)

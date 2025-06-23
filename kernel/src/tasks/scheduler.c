@@ -20,6 +20,7 @@ void init_scheduler(void) {
     memset(krnl_task->resources, 0, sizeof(krnl_task->resources));
     memset(krnl_task->children, 0, sizeof(krnl_task->children));
     kernel.scheduler.current_task = krnl_task;
+    kernel.scheduler.initiated = true;
     // memregion_add_kernel(&krnl_task->memregion_list);
     printf("Initiated scheduler.\n");
 }

@@ -60,6 +60,7 @@ typedef struct {
     Task *current_task;
     Cache *cache;
     pid_t pid_upto;
+    bool initiated;
 } SchedulerQueue;
 
 void init_scheduler(void);

@@ -41,6 +41,7 @@ typedef struct {
     int (*read_fn)(void *file, char *buf, size_t len, size_t offset);
     int (*identify_fn)(void *priv, char *buf, bool *is_dir, size_t *fsize);
     void *(*file_from_diriter)(void *iter);
+    void *(*find_inode_in_dir)(void *dir, char *fname);
 } FileSystem;
 
 typedef struct {
