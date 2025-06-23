@@ -26,7 +26,6 @@ typedef enum {
 } VfsFlag;
 
 typedef struct {
-    uint8_t fs_id;
     void *(*find_root_fn)(void *fs);
     void *(*open_fn)(void *file);
     int (*close_fn)(void *file);
@@ -42,6 +41,11 @@ typedef struct {
     int (*identify_fn)(void *priv, char *buf, bool *is_dir, size_t *fsize);
     void *(*file_from_diriter)(void *iter);
     void *(*find_inode_in_dir)(void *dir, char *fname);
+} FSOps;
+
+typedef struct {
+    uint8_t fs_id;
+    FSOps ops;
 } FileSystem;
 
 typedef struct {
