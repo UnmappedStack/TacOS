@@ -31,6 +31,7 @@ struct TempfsInode {
     TempfsInode *parent;
     TempfsInodeType type;
     size_t size;
+    FSOps ops;
     union {
         union {
             DeviceOps devops;
@@ -47,16 +48,16 @@ typedef struct {
 } TempfsDirIter;
 
 TempfsInode *tempfs_new(void);
-TempfsInode *tempfs_find_root(TempfsInode *fs);
+TempfsInode *tempfs_find_root(TempfsInode *fs, FSOps *ops);
 TempfsInode *tempfs_create_entry(TempfsInode *dir);
-TempfsInode *tempfs_new_file(TempfsInode *dir, char *name);
-TempfsInode *tempfs_mkdir(TempfsInode *parentdir, char *name);
+TempfsInode *tempfs_new_file(TempfsInode *dir, char *name, FSOps *ops);
+TempfsInode *tempfs_mkdir(TempfsInode *parentdir, char *name, FSOps *ops);
 TempfsInode *tempfs_open(TempfsInode *file);
 int tempfs_close(TempfsInode *file);
 TempfsDirIter *tempfs_opendir(TempfsInode *dir);
 int tempfs_write(TempfsInode *file, char *buf, size_t len, size_t offset);
 int tempfs_read(TempfsInode *file, char *buf, size_t len, size_t offset);
-TempfsInode *tempfs_diriter(TempfsDirIter *iter);
+TempfsInode *tempfs_diriter(TempfsDirIter *iter, FSOps *ops);
 int tempfs_closedir(TempfsDirIter *dir);
 int tempfs_rmdir(TempfsDirIter *dir);
 int tempfs_rmfile(TempfsInode *file);
@@ -64,3 +65,5 @@ int tempfs_identify(TempfsInode *inode, char *namebuf, bool *is_dir_buf,
                     size_t *fsize);
 void *tempfs_file_from_diriter(TempfsDirIter *iter);
 extern FileSystem tempfs;
+extern FSOps tempfs_dir_ops;
+extern FSOps tempfs_regfile_ops;

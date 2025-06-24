@@ -32,11 +32,15 @@ TempfsInode *tempfs_new() {
     thisdirentry->type = prevdirentry->type = Directory;
     thisdirentry->first_dir_entry = prevdirentry->first_dir_entry =
         newfs->first_dir_entry;
+    prevdirentry->ops = thisdirentry->ops = newfs->ops = tempfs_dir_ops;
     return newfs;
 }
 
 // Highly complexicated indeed
-TempfsInode *tempfs_find_root(TempfsInode *fs) { return fs; }
+TempfsInode *tempfs_find_root(TempfsInode *fs, FSOps *ops_buf) {
+    *ops_buf = fs->ops;
+    return fs;
+}
 
 TempfsInode *tempfs_create_entry(TempfsInode *dir) {
     if (dir->type != Directory) {
@@ -64,7 +68,7 @@ TempfsInode *tempfs_create_entry(TempfsInode *dir) {
     return new_entry->inode;
 }
 
-TempfsInode *tempfs_new_file(TempfsInode *dir, char *name) {
+TempfsInode *tempfs_new_file(TempfsInode *dir, char *name, FSOps *ops) {
     TempfsInode *new_inode;
     if ((new_inode = tempfs_create_entry(dir)) == NULL)
         return new_inode;
@@ -77,10 +81,11 @@ TempfsInode *tempfs_new_file(TempfsInode *dir, char *name) {
     strcpy(new_inode->name, name);
     new_inode->type = RegularFile;
     new_inode->size = 0;
+    new_inode->ops = *ops = tempfs_regfile_ops;
     return new_inode;
 }
 
-TempfsInode *tempfs_mkdir(TempfsInode *parentdir, char *name) {
+TempfsInode *tempfs_mkdir(TempfsInode *parentdir, char *name, FSOps *ops) {
     TempfsInode *new_inode;
     if ((new_inode = tempfs_create_entry(parentdir)) == NULL)
         return new_inode;
@@ -103,13 +108,16 @@ TempfsInode *tempfs_mkdir(TempfsInode *parentdir, char *name) {
     thisdirentry->type = prevdirentry->type = Directory;
     thisdirentry->first_dir_entry = new_inode->first_dir_entry;
     prevdirentry->first_dir_entry = parentdir->first_dir_entry;
+    new_inode->ops = *ops = thisdirentry->ops = prevdirentry->ops = tempfs_dir_ops;
     return new_inode;
 }
 
-TempfsInode *tempfs_diriter(TempfsDirIter *iter) {
+TempfsInode *tempfs_diriter(TempfsDirIter *iter, FSOps *ops) {
     if (!iter->current_entry)
         return NULL;
     TempfsInode *to_return = iter->current_entry->inode;
+    if (ops)
+        *ops = to_return->ops;
     if (iter->is_first) {
         iter->is_first = false;
         return to_return;
@@ -118,8 +126,7 @@ TempfsInode *tempfs_diriter(TempfsDirIter *iter) {
     return to_return;
 }
 
-int tempfs_identify(TempfsInode *inode, char *namebuf, bool *is_dir_buf,
-                    size_t *fsize) {
+int tempfs_identify(TempfsInode *inode, char *namebuf, bool *is_dir_buf, size_t *fsize) {
     if (!inode)
         return -1;
     if (namebuf)
@@ -234,33 +241,43 @@ int tempfs_closedir(TempfsDirIter *dir) {
 
 void *tempfs_file_from_diriter(TempfsDirIter *iter) { return iter->inode; }
 
-TempfsInode *tempfs_find_inode_in_dir(TempfsInode *dir, char *fname) {
+TempfsInode *tempfs_find_inode_in_dir(TempfsInode *dir, char *fname, FSOps *ops_buf) {
     if (dir->type != Directory) return NULL;
     TempfsDirEntry *entry = dir->first_dir_entry;
     while (entry) {
-        if (!strcmp(entry->inode->name, fname)) return entry->inode;
+        if (!strcmp(entry->inode->name, fname)) {
+            *ops_buf = entry->inode->ops;
+            return entry->inode;
+        }
         entry = entry->next;
     }
     return NULL;
 }
 
+// TODO: for now devices use this too but it will be changes
+FSOps tempfs_regfile_ops = (FSOps) {
+    .open_fn = (void *(*)(void *))tempfs_open,
+    .close_fn = (int (*)(void *))tempfs_close,
+    .write_fn = (int (*)(void *, char *, size_t, size_t))tempfs_write,
+    .read_fn = (int (*)(void *, char *, size_t, size_t))tempfs_read,
+    .identify_fn = (int (*)(void *, char *, bool *, size_t *))tempfs_identify,
+};
+
+FSOps tempfs_dir_ops = (FSOps) {
+    .open_fn = (void *(*)(void *))tempfs_open,
+    .close_fn = (int (*)(void *))tempfs_closedir,
+    .mkfile_fn = (void *(*)(void *, char *, FSOps *))tempfs_new_file,
+    .mkdir_fn = (void *(*)(void *, char *, FSOps *))tempfs_mkdir,
+    .rmfile_fn = (int (*)(void *))tempfs_rmfile,
+    .rmdir_fn = (int (*)(void *))tempfs_rmdir,
+    .diriter_fn = (void *(*)(void *, FSOps *))tempfs_diriter,
+    .identify_fn = (int (*)(void *, char *, bool *, size_t *))tempfs_identify,
+    .opendir_fn = (void *(*)(void *))tempfs_opendir,
+    .file_from_diriter = (void *(*)(void *))tempfs_file_from_diriter,
+    .find_inode_in_dir = (void *(*)(void *, char *, FSOps *))tempfs_find_inode_in_dir,
+};
+
 FileSystem tempfs = (FileSystem){
     .fs_id = fs_tempfs,
-    .ops = (FSOps) {
-        .find_root_fn = (void *(*)(void *))tempfs_find_root,
-        .open_fn = (void *(*)(void *))tempfs_open,
-        .close_fn = (int (*)(void *))tempfs_close,
-        .mkfile_fn = (void *(*)(void *, char *))tempfs_new_file,
-        .mkdir_fn = (void *(*)(void *, char *))tempfs_mkdir,
-        .opendir_fn = (void *(*)(void *))tempfs_opendir,
-        .closedir_fn = (int (*)(void *))tempfs_closedir,
-        .rmfile_fn = (int (*)(void *))tempfs_rmfile,
-        .rmdir_fn = (int (*)(void *))tempfs_rmdir,
-        .diriter_fn = (void *(*)(void *))tempfs_diriter,
-        .write_fn = (int (*)(void *, char *, size_t, size_t))tempfs_write,
-        .read_fn = (int (*)(void *, char *, size_t, size_t))tempfs_read,
-        .identify_fn = (int (*)(void *, char *, bool *, size_t *))tempfs_identify,
-        .file_from_diriter = (void *(*)(void *))tempfs_file_from_diriter,
-        .find_inode_in_dir = (void *(*)(void *, char *))tempfs_find_inode_in_dir,
-    }
+    .find_root_fn = (void *(*)(void *, FSOps *ops))tempfs_find_root,
 };

@@ -46,6 +46,7 @@ VfsFile *mkdevice(char *path, DeviceOps ops) {
     TempfsInode *private = new_file->private;
     private->devops = ops;
     private->type = Device;
+    private->ops = tempfs_regfile_ops,
     printf("Created new device at %s, addr = %p\n", path, new_file);
     return new_file;
 }

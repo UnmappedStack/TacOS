@@ -25,27 +25,26 @@ typedef enum {
     O_RDWR = 8,
 } VfsFlag;
 
-typedef struct {
-    void *(*find_root_fn)(void *fs);
+typedef struct FSOps FSOps;
+struct FSOps {
     void *(*open_fn)(void *file);
     int (*close_fn)(void *file);
-    void *(*mkfile_fn)(void *dir, char *name);
-    void *(*mkdir_fn)(void *parentdir, char *name);
+    void *(*mkfile_fn)(void *dir, char *name, FSOps *ops);
+    void *(*mkdir_fn)(void *parentdir, char *name, FSOps *ops);
     void *(*opendir_fn)(void *dir);
-    int (*closedir_fn)(void *dir);
     int (*rmfile_fn)(void *file);
     int (*rmdir_fn)(void *dir);
-    void *(*diriter_fn)(void *iter);
+    void *(*diriter_fn)(void *iter, FSOps *ops);
     int (*write_fn)(void *file, char *buf, size_t len, size_t offset);
     int (*read_fn)(void *file, char *buf, size_t len, size_t offset);
     int (*identify_fn)(void *priv, char *buf, bool *is_dir, size_t *fsize);
     void *(*file_from_diriter)(void *iter);
-    void *(*find_inode_in_dir)(void *dir, char *fname);
-} FSOps;
+    void *(*find_inode_in_dir)(void *dir, char *fname, FSOps *ops);
+};
 
 typedef struct {
     uint8_t fs_id;
-    FSOps ops;
+    void *(*find_root_fn)(void *fs, FSOps *ops);
 } FileSystem;
 
 typedef struct {
@@ -64,6 +63,7 @@ typedef struct {
 
 typedef struct {
     VfsDrive drive;
+    FSOps ops;
     void *private;
 } VfsFile;
 
@@ -72,6 +72,7 @@ typedef struct {
     void *private;
     VfsDrive drive;
     size_t mntidx;
+    FSOps ops;
 } VfsDirIter;
 
 void init_vfs(void);

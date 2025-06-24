@@ -22,7 +22,7 @@ void init_vfs(void) {
 
 int vfs_dir_exists(char *path) {
     VfsFile *tmp;
-    VfsDirIter tmpbuf;
+    VfsDirIter tmpbuf = {0};
     if (opendir(&tmpbuf, &tmp, path, 0) < 0)
         return 0;
     closedir(&tmpbuf);
@@ -89,7 +89,7 @@ VfsDrive *vfs_path_to_drive(char *path, size_t *drive_root_idx_buf) {
 
 // If any field is NULL, it won't copy it to the buffer.
 int vfs_identify(VfsFile *file, char *name, bool *is_dir, size_t *fsize) {
-    return file->drive.fs.ops.identify_fn(file->private, name, is_dir, fsize);
+    return file->ops.identify_fn(file->private, name, is_dir, fsize);
 }
 
 VfsFile *vfs_access(char *path, int flags, VfsAccessType type) {
@@ -116,15 +116,14 @@ VfsFile *vfs_access(char *path, int flags, VfsAccessType type) {
     strcpy(path_cpy, &path[new_path_start_idx]);
     if (!path_cpy[0]) {
         VfsFile *file_addr = slab_alloc(kernel.vfs_file_cache);
-        *file_addr = (VfsFile){
-            .private = drive->fs.ops.find_root_fn(drive->private),
-            .drive = *drive,
-        };
+        file_addr->private = drive->fs.find_root_fn(drive->private, &file_addr->ops),
+        file_addr->drive = *drive;
         return file_addr;
     }
     char *path_lag = &path_cpy[1];
     size_t pathlen = strlen(path) + 1;
-    void *current_dir = drive->fs.ops.find_root_fn(drive->private);
+    FSOps current_dir_ops = {0};
+    void *current_dir = drive->fs.find_root_fn(drive->private, &current_dir_ops);
     for (size_t i = 1; i < pathlen; i++) {
         if (path_cpy[i] == '/' || !path_cpy[i]) {
             char original_char = path_cpy[i];
@@ -133,8 +132,8 @@ VfsFile *vfs_access(char *path, int flags, VfsAccessType type) {
                 path_lag++;
             bool is_dir = original_char == '/';
             if (is_dir) {
-                void *cd_temp = drive->fs.ops.find_inode_in_dir(current_dir, path_lag);
-                drive->fs.ops.close_fn(current_dir);
+                void *cd_temp = current_dir_ops.find_inode_in_dir(current_dir, path_lag, &current_dir_ops);
+                current_dir_ops.close_fn(current_dir);
                 if (!cd_temp) {
                     printf("Couldn't open directory: \"%s\": doesn't exist or dir is a file.\n",
                            path_lag);
@@ -142,29 +141,31 @@ VfsFile *vfs_access(char *path, int flags, VfsAccessType type) {
                 }
                 current_dir = cd_temp;
             } else {
-                void *entry = drive->fs.ops.find_inode_in_dir(current_dir, path_lag);
+                void *entry = current_dir_ops.find_inode_in_dir(current_dir, path_lag, &current_dir_ops);
                 if (!entry && ((flags & O_CREAT) || type == VAT_mkdir ||
                                type == VAT_mkfile)) {
                     void *new_file = NULL;
+                    FSOps ops = {0};
                     if (type == VAT_mkfile || type == VAT_open) {
-                        new_file = drive->fs.ops.mkfile_fn(current_dir, path_lag);
+                        new_file = current_dir_ops.mkfile_fn(current_dir, path_lag, &ops);
                     } else if (type == VAT_mkdir || type == VAT_opendir)
-                        new_file = drive->fs.ops.mkdir_fn(current_dir, path_lag);
+                        new_file = current_dir_ops.mkdir_fn(current_dir, path_lag, &ops);
                     else {
                         printf("Unsupported type in vfs_access\n");
                         return NULL;
                     }
-                    drive->fs.ops.close_fn(current_dir);
+                    current_dir_ops.close_fn(current_dir);
                     VfsFile *file_addr = slab_alloc(kernel.vfs_file_cache);
                     *file_addr = (VfsFile){
                         .private = new_file,
                         .drive = *drive,
+                        .ops = ops,
                     };
                     return file_addr;
                 } else if (!entry) {
                     printf("Can't open file/directory: doesn't exist and "
                            "O_CREAT is not in use.\n");
-                    drive->fs.ops.close_fn(current_dir);
+                    current_dir_ops.close_fn(current_dir);
                     return NULL;
                 } else {
                     if (type == VAT_mkdir || type == VAT_mkfile) {
@@ -172,20 +173,21 @@ VfsFile *vfs_access(char *path, int flags, VfsAccessType type) {
                                "exists.\n");
                         return NULL;
                     }
-                    drive->fs.ops.close_fn(current_dir);
+                    current_dir_ops.close_fn(current_dir);
                     VfsFile *file_addr = slab_alloc(kernel.vfs_file_cache);
                     *file_addr = (VfsFile){
-                        .private = drive->fs.ops.open_fn(entry),
+                        .private = current_dir_ops.open_fn(entry),
                         .drive = *drive,
+                        .ops = current_dir_ops,
                     };
                     vfs_identify(file_addr, path_cpy, &is_dir, NULL);
                     if (is_dir && type == VAT_open) {
                         printf("Can't open file, is a directory.\n");
-                        drive->fs.ops.close_fn(entry);
+                        current_dir_ops.close_fn(entry);
                         return NULL;
                     } else if (!is_dir && type == VAT_opendir) {
                         printf("Can't open directory, is a file.\n");
-                        drive->fs.ops.close_fn(entry);
+                        current_dir_ops.close_fn(entry);
                         return NULL;
                     }
                     return file_addr;
@@ -208,14 +210,17 @@ int opendir(VfsDirIter *buf, VfsFile **first_entry_buf, char *path, int flags) {
     VfsFile *temp = vfs_access(path, flags, VAT_opendir);
     if (!temp)
         return -1;
-    buf->private = temp->drive.fs.ops.opendir_fn(temp->private);
+    buf->private = temp->ops.opendir_fn(temp->private);
+    buf->ops = temp->ops;
     buf->drive = temp->drive;
-    temp->drive.fs.ops.close_fn(temp);
+    temp->ops.close_fn(temp);
     *first_entry_buf = slab_alloc(kernel.vfs_file_cache);
+    FSOps ops = {0};
     **first_entry_buf = (VfsFile){
-        .private = temp->drive.fs.ops.diriter_fn(buf->private),
+        .private = temp->ops.diriter_fn(buf->private, &ops),
         .drive = temp->drive,
     };
+    (*first_entry_buf)->ops = ops;
     strcpy(buf->path, path);
     return 0;
 }
@@ -223,7 +228,7 @@ int opendir(VfsDirIter *buf, VfsFile **first_entry_buf, char *path, int flags) {
 int mkfile(char *path) {
     VfsFile *temp;
     if ((temp = vfs_access(path, 0, VAT_mkfile))) {
-        temp->drive.fs.ops.close_fn(temp);
+        temp->ops.close_fn(temp);
         return 0;
     } else {
         return -1;
@@ -233,29 +238,29 @@ int mkfile(char *path) {
 int mkdir(char *path) {
     VfsFile *temp;
     if ((temp = vfs_access(path, 0, VAT_mkdir))) {
-        temp->drive.fs.ops.close_fn(temp);
+        temp->ops.close_fn(temp);
         return 0;
     } else {
         return -1;
     }
 }
 
-int close(VfsFile *file) { return file->drive.fs.ops.close_fn(file->private); }
+int close(VfsFile *file) { return file->ops.close_fn(file->private); }
 
 int closedir(VfsDirIter *dir) {
-    return dir->drive.fs.ops.closedir_fn(dir->private);
+    return dir->ops.close_fn(dir->private);
 }
 
-int rm_file(VfsFile *file) { return file->drive.fs.ops.rmfile_fn(file->private); }
+int rm_file(VfsFile *file) { return file->ops.rmfile_fn(file->private); }
 
-int rm_dir(VfsDirIter *dir) { return dir->drive.fs.ops.rmdir_fn(dir->private); }
+int rm_dir(VfsDirIter *dir) { return dir->ops.rmdir_fn(dir->private); }
 
 int vfs_read(VfsFile *file, char *buffer, size_t len, size_t offset) {
-    return file->drive.fs.ops.read_fn(file->private, buffer, len, offset);
+    return file->ops.read_fn(file->private, buffer, len, offset);
 }
 
 int vfs_write(VfsFile *file, char *buffer, size_t len, size_t offset) {
-    return file->drive.fs.ops.write_fn(file->private, buffer, len, offset);
+    return file->ops.write_fn(file->private, buffer, len, offset);
 }
 
 /* This is a kinda clunky API, but basically:
@@ -265,10 +270,8 @@ int vfs_write(VfsFile *file, char *buffer, size_t len, size_t offset) {
  */
 VfsFile *vfs_diriter(VfsDirIter *dir, bool *is_dir) {
     VfsFile *to_return = slab_alloc(kernel.vfs_file_cache);
-    *to_return = (VfsFile){
-        .drive = dir->drive,
-        .private = dir->drive.fs.ops.diriter_fn(dir->private),
-    };
+    to_return->drive = dir->drive;
+    to_return->private = dir->ops.diriter_fn(dir->private, &to_return->ops);
     if (!to_return->private)
         return NULL;
     vfs_identify(to_return, NULL, is_dir, NULL);
@@ -278,6 +281,7 @@ VfsFile *vfs_diriter(VfsDirIter *dir, bool *is_dir) {
 VfsDirIter vfs_file_to_diriter(VfsFile *f) {
     return (VfsDirIter){
         .drive = f->drive,
-        .private = f->drive.fs.ops.opendir_fn(f),
+        .private = f->ops.opendir_fn(f),
+        .ops = f->ops,
     };
 }
