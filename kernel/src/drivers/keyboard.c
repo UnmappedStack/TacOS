@@ -366,14 +366,12 @@ void init_keyboard(void) {
         .write = &stdin_write,
         .open = &stdin_open,
         .close = &stdin_close,
-        .is_term = false,
     };
     DeviceOps kbdev_ops = (DeviceOps){
         .read = (void *)&kb_read,
         .write = &stdin_write,
         .open = &stdin_open,
         .close = &stdin_close,
-        .is_term = false,
     };
     mkdevice("/dev/stdin0", stdindev_ops);
     mkdevice("/dev/kb0", kbdev_ops);

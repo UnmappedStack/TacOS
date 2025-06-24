@@ -122,17 +122,6 @@ int sys_kill(int pid, int sig) {
     }
 }
 
-int sys_isatty(int fd) {
-    VfsFile *f = CURRENT_TASK->resources[fd].f;
-    if (!f)
-        return 0;
-    if (f->drive.fs.fs_id == fs_tempfs) {
-        TempfsInode *private = f->private;
-        return private->type == Device && private->devops.is_term;
-    }
-    return 0;
-}
-
 int sys_wait(int *status) {
     for (;;) {
         for (size_t i = 0; i < MAX_CHILDREN; i++) {
@@ -389,7 +378,7 @@ void *syscalls[] = {
     sys_fork,
     sys_execve,
     sys_kill,
-    sys_isatty,
+    NULL, // empty spot - next syscall I add should go here
     sys_wait,
     sys_sbrk,
     sys_unlink,

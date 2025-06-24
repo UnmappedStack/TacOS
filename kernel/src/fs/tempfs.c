@@ -254,7 +254,6 @@ TempfsInode *tempfs_find_inode_in_dir(TempfsInode *dir, char *fname, FSOps *ops_
     return NULL;
 }
 
-// TODO: for now devices use this too but it will be changes
 FSOps tempfs_regfile_ops = (FSOps) {
     .open_fn = (void *(*)(void *))tempfs_open,
     .close_fn = (int (*)(void *))tempfs_close,

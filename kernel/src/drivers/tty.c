@@ -189,7 +189,6 @@ void init_tty(void) {
         .write = &fb_write,
         .open = &fb_open,
         .close = &fb_close,
-        .is_term = true,
     };
     mkdevice("/dev/tty0", ttydev_ops);
     kernel.tty.fg_colour = FG_DEFAULT;

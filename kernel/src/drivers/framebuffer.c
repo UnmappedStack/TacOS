@@ -112,7 +112,7 @@ void init_framebuffer(void) {
     kernel.framebuffer = boot_get_framebuffer();
     // raw framebuffer device
     DeviceOps fbdev_ops = {
-        .open = &fbdevopen, .close = &fbdevclose, .read = &fbdevread, .is_term = false
+        .open = &fbdevopen, .close = &fbdevclose, .read = &fbdevread
     };
     mkdevice("/dev/fb0", fbdev_ops);
     // Fill the screen and finish up
