@@ -21,7 +21,7 @@ DIR *opendir(char *path) {
 
 struct dirent *readdir(DIR *dirp) {
     struct dirent *ret = (struct dirent*) malloc(sizeof(struct dirent));
-    if (__syscall2(23, (size_t) dirp, (size_t) ret)) {
+    if (__syscall2(23, (size_t) dirp, (size_t) ret)) { // syscall 23 = diriter
         free(ret);
         return NULL;
     }

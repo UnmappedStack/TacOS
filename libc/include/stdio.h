@@ -9,6 +9,8 @@
 #define BUFSIZ 8192
 #define EOF -1
 
+typedef size_t off_t;
+
 #define getc fgetc
 
 typedef enum {

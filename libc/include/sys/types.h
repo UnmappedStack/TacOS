@@ -1,9 +1,16 @@
 #pragma once
 #include <stddef.h>
 #include <stdbool.h>
+#include <stdio.h>
 
+typedef int ino_t;
+
+// structure source: https://stackoverflow.com/a/12991451
 struct dirent {
-    char d_name[30];
-    bool d_isdir;
-    size_t d_fsize;
+    ino_t          d_ino;       /* inode number */
+    off_t          d_off;       /* offset to the next dirent */
+    unsigned short d_reclen;    /* length of this record */
+    unsigned char  d_type;      /* type of file; not supported
+                                   by all file system types */
+    char           d_name[256]; /* filename */
 };

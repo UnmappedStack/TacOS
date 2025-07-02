@@ -16,12 +16,11 @@ void lsdir(char *dir, bool show_all) {
     printf("%s:\n", dir);
     while ((entry = readdir(d)) != NULL) {
         if (entry->d_name[0] == '.' && !show_all) continue;
-        if (entry->d_isdir) printf("\x1B[36m");
-        printf("  %s", entry->d_name, (entry->d_isdir));
-        if (entry->d_isdir)
-            printf("\x1B[39m\n");
-        else
-            printf(": %zu bytes\n", entry->d_fsize);
+        if (entry->d_type & DT_DIR) printf("\x1B[36m");
+        printf("  %s", entry->d_name);
+        if (entry->d_type & DT_DIR)
+            printf("\x1B[39m");
+        printf("\n");
     }
 }
 

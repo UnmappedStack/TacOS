@@ -351,18 +351,42 @@ err:
     return -1;
 }
 
+// structure source: https://stackoverflow.com/a/12991451
 struct dirent {
-    char d_name[30];
-    bool d_isdir;
-    size_t d_fsize;
+    int            d_ino;       /* inode number */
+    size_t         d_off;       /* offset to the next dirent */
+    unsigned short d_reclen;    /* length of this record */
+    unsigned char  d_type;      /* type of file; not supported
+                                   by all file system types */
+    char           d_name[256]; /* filename */
+};
+
+enum {
+    DT_UNKNOWN = 0,
+    DT_FIFO    = 1,
+    DT_CHR     = 2,
+    DT_DIR     = 4,
+    DT_BLK     = 6,
+    DT_REG     = 8,
+    DT_LNK     = 10,
+    DT_SOCK    = 12,
+    DT_WHT     = 14
 };
 
 // reads the current entry in a DirIter to return then iterates
 int sys_readdir(VfsDirIter *iter, struct dirent *dp) {
-    VfsFile *entry = vfs_diriter(iter, &dp->d_isdir);
+    bool is_dir; // this should reeeeaallly not exist, it should be a flag (TODO)
+    VfsFile *entry = vfs_diriter(iter, &is_dir);
     if (!entry)
         return 1;
-    vfs_identify(entry, dp->d_name, NULL, &dp->d_fsize);
+    vfs_identify(entry, dp->d_name, NULL, NULL);
+    dp->d_ino = (int)(uintptr_t)entry->private; // this is kinda dumb but my temporary solution is
+                                                // to just make the d_ino be the lower 32 bits of the pointer
+                                                // to private of the file
+    dp->d_off = 0;
+    dp->d_reclen = sizeof(struct dirent);
+    dp->d_type = (is_dir) ? DT_DIR : DT_REG; // again this should check a flag cos it could
+                                             // be a device etc
     return 0;
 }
 
