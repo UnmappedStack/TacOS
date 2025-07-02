@@ -17,6 +17,12 @@ typedef enum {
     VAT_mkdir,
 } VfsAccessType;
 
+typedef enum {
+    FT_REGFILE,
+    FT_DIRECTORY,
+    FT_CHARDEV,
+} VFSFileType;
+
 /* TODO: Actually take flags into account when reading/writing files */
 typedef enum {
     O_CREAT = 1,
@@ -37,7 +43,7 @@ struct FSOps {
     void *(*diriter_fn)(void *iter, FSOps *ops);
     int (*write_fn)(void *file, char *buf, size_t len, size_t offset);
     int (*read_fn)(void *file, char *buf, size_t len, size_t offset);
-    int (*identify_fn)(void *priv, char *buf, bool *is_dir, size_t *fsize);
+    int (*identify_fn)(void *priv, char *buf, VFSFileType *type, size_t *fsize);
     void *(*file_from_diriter)(void *iter);
     void *(*find_inode_in_dir)(void *dir, char *fname, FSOps *ops);
 };
@@ -80,7 +86,7 @@ int vfs_mount(char *path, VfsDrive drive);
 VfsDrive *vfs_find_mounted_drive(char *path);
 VfsDrive *vfs_path_to_drive(char *path, size_t *drive_root_idx_buf);
 VfsFile *vfs_access(char *path, int flags, VfsAccessType type);
-int vfs_identify(VfsFile *file, char *name, bool *is_dir, size_t *fsize);
+int vfs_identify(VfsFile *file, char *name, VFSFileType *type, size_t *fsize);
 VfsFile *open(char *path, int flags);
 int opendir(VfsDirIter *buf, VfsFile **first_entry_buf, char *path, int flags);
 int mkfile(char *path);
@@ -89,7 +95,7 @@ int closedir(VfsDirIter *dir);
 int close(VfsFile *file);
 int rm_file(VfsFile *file);
 int rm_dir(VfsDirIter *dir);
-VfsFile *vfs_diriter(VfsDirIter *dir, bool *is_dir);
+VfsFile *vfs_diriter(VfsDirIter *dir, VFSFileType *type);
 VfsDirIter vfs_file_to_diriter(VfsFile *f);
 int vfs_read(VfsFile *file, char *buffer, size_t len, size_t offset);
 int vfs_write(VfsFile *file, char *buffer, size_t len, size_t offset);

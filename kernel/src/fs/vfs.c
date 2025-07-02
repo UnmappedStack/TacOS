@@ -88,8 +88,8 @@ VfsDrive *vfs_path_to_drive(char *path, size_t *drive_root_idx_buf) {
 }
 
 // If any field is NULL, it won't copy it to the buffer.
-int vfs_identify(VfsFile *file, char *name, bool *is_dir, size_t *fsize) {
-    return file->ops.identify_fn(file->private, name, is_dir, fsize);
+int vfs_identify(VfsFile *file, char *name, VFSFileType *type, size_t *fsize) {
+    return file->ops.identify_fn(file->private, name, type, fsize);
 }
 
 VfsFile *vfs_access(char *path, int flags, VfsAccessType type) {
@@ -184,12 +184,13 @@ VfsFile *vfs_access(char *path, int flags, VfsAccessType type) {
                         printf("internal open() failed\n");
                         return NULL;
                     }
-                    vfs_identify(file_addr, path_cpy, &is_dir, NULL);
-                    if (is_dir && type == VAT_open) {
+                    VFSFileType ftype;
+                    vfs_identify(file_addr, path_cpy, &ftype, NULL);
+                    if (ftype == FT_DIRECTORY && type == VAT_open) {
                         printf("Can't open file, is a directory.\n");
                         current_dir_ops.close_fn(entry);
                         return NULL;
-                    } else if (!is_dir && type == VAT_opendir) {
+                    } else if (ftype != FT_DIRECTORY && type == VAT_opendir) {
                         printf("Can't open directory, is a file.\n");
                         current_dir_ops.close_fn(entry);
                         return NULL;
@@ -272,13 +273,13 @@ int vfs_write(VfsFile *file, char *buffer, size_t len, size_t offset) {
  *  - If you read that it's a dir, you should use vfs_file_to_diriter to get
  * that new directory as a VfsDirIter
  */
-VfsFile *vfs_diriter(VfsDirIter *dir, bool *is_dir) {
+VfsFile *vfs_diriter(VfsDirIter *dir, VFSFileType *type) {
     VfsFile *to_return = slab_alloc(kernel.vfs_file_cache);
     to_return->drive = dir->drive;
     to_return->private = dir->ops.diriter_fn(dir->private, &to_return->ops);
     if (!to_return->private)
         return NULL;
-    vfs_identify(to_return, NULL, is_dir, NULL);
+    vfs_identify(to_return, NULL, type, NULL);
     return to_return;
 }
 

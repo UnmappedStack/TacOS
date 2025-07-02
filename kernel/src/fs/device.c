@@ -27,10 +27,10 @@ VfsFile *mkdevice(char *path, DeviceOps ops) {
         .close_fn    = (int (*)(void *))ops.close,
         .write_fn    = (int (*)(void *, char *, size_t, size_t))ops.write,
         .read_fn     = (int (*)(void *, char *, size_t, size_t))ops.read,
-        .identify_fn = (int (*)(void *, char *, bool *, size_t *))tempfs_identify,
+        .identify_fn = (int (*)(void *, char *, VFSFileType *, size_t *))tempfs_identify,
     };
     new_file->ops = private->ops;
-    private->type = Device;
+    private->type = FT_CHARDEV;
     printf("Created new device at %s, addr = %p\n", path, new_file);
     return new_file;
 }

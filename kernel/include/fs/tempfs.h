@@ -10,12 +10,6 @@ typedef struct TempfsFileNode TempfsFileNode;
 typedef struct TempfsDirEntry TempfsDirEntry;
 typedef struct TempfsInode TempfsInode;
 
-typedef enum {
-    RegularFile,
-    Device,
-    Directory,
-} TempfsInodeType;
-
 struct TempfsFileNode {
     TempfsFileNode *next;
     char data[FILE_DATA_BLOCK_LEN];
@@ -29,7 +23,7 @@ struct TempfsDirEntry {
 struct TempfsInode {
     char name[MAX_FILENAME_LEN]; // TODO: Allocate dynamically
     TempfsInode *parent;
-    TempfsInodeType type;
+    VFSFileType type;
     size_t size;
     FSOps ops;
     union {
@@ -58,7 +52,7 @@ TempfsInode *tempfs_diriter(TempfsDirIter *iter, FSOps *ops);
 int tempfs_closedir(TempfsDirIter *dir);
 int tempfs_rmdir(TempfsDirIter *dir);
 int tempfs_rmfile(TempfsInode *file);
-int tempfs_identify(TempfsInode *inode, char *namebuf, bool *is_dir_buf,
+int tempfs_identify(TempfsInode *inode, char *namebuf, VFSFileType *type,
                     size_t *fsize);
 void *tempfs_file_from_diriter(TempfsDirIter *iter);
 extern FileSystem tempfs;

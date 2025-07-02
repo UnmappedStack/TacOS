@@ -18,7 +18,7 @@ TempfsInode *tempfs_new() {
         kernel.tempfs_data_cache = init_slab_cache(PAGE_SIZE, "TempFS Data");
     TempfsInode *newfs = slab_alloc(kernel.tempfs_inode_cache);
     memcpy(newfs->name, "FSROOT", 7);
-    newfs->type = Directory;
+    newfs->type = FT_DIRECTORY;
     newfs->parent = newfs;
     newfs->first_dir_entry = NULL;
     // create . and .. entries
@@ -29,7 +29,7 @@ TempfsInode *tempfs_new() {
         return NULL;
     strcpy(prevdirentry->name, "..");
     strcpy(thisdirentry->name, ".");
-    thisdirentry->type = prevdirentry->type = Directory;
+    thisdirentry->type = prevdirentry->type = FT_DIRECTORY;
     thisdirentry->first_dir_entry = prevdirentry->first_dir_entry =
         newfs->first_dir_entry;
     prevdirentry->ops = thisdirentry->ops = newfs->ops = tempfs_dir_ops;
@@ -43,7 +43,7 @@ TempfsInode *tempfs_find_root(TempfsInode *fs, FSOps *ops_buf) {
 }
 
 TempfsInode *tempfs_create_entry(TempfsInode *dir) {
-    if (dir->type != Directory) {
+    if (dir->type != FT_DIRECTORY) {
         printf(
             "Failed to create TempFS entry: TempfsInode is not a directory.\n");
         return NULL;
@@ -79,7 +79,7 @@ TempfsInode *tempfs_new_file(TempfsInode *dir, char *name, FSOps *ops) {
         return NULL;
     }
     strcpy(new_inode->name, name);
-    new_inode->type = RegularFile;
+    new_inode->type = FT_REGFILE;
     new_inode->size = 0;
     new_inode->ops = *ops = tempfs_regfile_ops;
     return new_inode;
@@ -90,13 +90,13 @@ TempfsInode *tempfs_mkdir(TempfsInode *parentdir, char *name, FSOps *ops) {
     if ((new_inode = tempfs_create_entry(parentdir)) == NULL)
         return new_inode;
     if (strlen(name) + 1 > MAX_FILENAME_LEN) {
-        printf("Directory name is longer than %i characters, which is the max "
+        printf("FT_DIRECTORY name is longer than %i characters, which is the max "
                "length for file system of type TempFS.\n",
                MAX_FILENAME_LEN);
         return NULL;
     }
     strcpy(new_inode->name, name);
-    new_inode->type = Directory;
+    new_inode->type = FT_DIRECTORY;
     // create the .. and . entries
     TempfsInode *prevdirentry, *thisdirentry;
     if (!(prevdirentry = tempfs_create_entry(new_inode)))
@@ -105,7 +105,7 @@ TempfsInode *tempfs_mkdir(TempfsInode *parentdir, char *name, FSOps *ops) {
         return NULL;
     strcpy(prevdirentry->name, "..");
     strcpy(thisdirentry->name, ".");
-    thisdirentry->type = prevdirentry->type = Directory;
+    thisdirentry->type = prevdirentry->type = FT_DIRECTORY;
     thisdirentry->first_dir_entry = new_inode->first_dir_entry;
     prevdirentry->first_dir_entry = parentdir->first_dir_entry;
     new_inode->ops = *ops = thisdirentry->ops = prevdirentry->ops = tempfs_dir_ops;
@@ -126,13 +126,13 @@ TempfsInode *tempfs_diriter(TempfsDirIter *iter, FSOps *ops) {
     return to_return;
 }
 
-int tempfs_identify(TempfsInode *inode, char *namebuf, bool *is_dir_buf, size_t *fsize) {
+int tempfs_identify(TempfsInode *inode, char *namebuf, VFSFileType *type, size_t *fsize) {
     if (!inode)
         return -1;
     if (namebuf)
         strcpy(namebuf, inode->name);
-    if (is_dir_buf)
-        *is_dir_buf = inode->type == Directory;
+    if (type)
+        *type = inode->type;
     if (fsize)
         *fsize = inode->size;
     return 0;
@@ -140,7 +140,7 @@ int tempfs_identify(TempfsInode *inode, char *namebuf, bool *is_dir_buf, size_t 
 
 int tempfs_access(TempfsInode *file, char *buf, size_t len, size_t offset,
                   bool write) {
-    if (file->type != RegularFile)
+    if (file->type != FT_REGFILE)
         return 0;
     if (write) {
         if (!file->first_file_node)
@@ -212,7 +212,7 @@ int tempfs_close(TempfsInode *file) {
 }
 
 TempfsDirIter *tempfs_opendir(TempfsInode *dir) {
-    if (dir->type != Directory) {
+    if (dir->type != FT_DIRECTORY) {
         printf("Cannot open directory because it's not a directory. dir = %p\n",
                dir);
         HALT_DEVICE();
@@ -233,7 +233,7 @@ int tempfs_closedir(TempfsDirIter *dir) {
 void *tempfs_file_from_diriter(TempfsDirIter *iter) { return iter->inode; }
 
 TempfsInode *tempfs_find_inode_in_dir(TempfsInode *dir, char *fname, FSOps *ops_buf) {
-    if (dir->type != Directory) return NULL;
+    if (dir->type != FT_DIRECTORY) return NULL;
     TempfsDirEntry *entry = dir->first_dir_entry;
     while (entry) {
         if (!strcmp(entry->inode->name, fname)) {
@@ -250,7 +250,7 @@ FSOps tempfs_regfile_ops = (FSOps) {
     .close_fn = (int (*)(void *))tempfs_close,
     .write_fn = (int (*)(void *, char *, size_t, size_t))tempfs_write,
     .read_fn = (int (*)(void *, char *, size_t, size_t))tempfs_read,
-    .identify_fn = (int (*)(void *, char *, bool *, size_t *))tempfs_identify,
+    .identify_fn = (int (*)(void *, char *, VFSFileType *, size_t *))tempfs_identify,
 };
 
 FSOps tempfs_dir_ops = (FSOps) {
@@ -261,7 +261,7 @@ FSOps tempfs_dir_ops = (FSOps) {
     .rmfile_fn = (int (*)(void *))tempfs_rmfile,
     .rmdir_fn = (int (*)(void *))tempfs_rmdir,
     .diriter_fn = (void *(*)(void *, FSOps *))tempfs_diriter,
-    .identify_fn = (int (*)(void *, char *, bool *, size_t *))tempfs_identify,
+    .identify_fn = (int (*)(void *, char *, VFSFileType *, size_t *))tempfs_identify,
     .opendir_fn = (void *(*)(void *))tempfs_opendir,
     .file_from_diriter = (void *(*)(void *))tempfs_file_from_diriter,
     .find_inode_in_dir = (void *(*)(void *, char *, FSOps *))tempfs_find_inode_in_dir,

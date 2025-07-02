@@ -35,16 +35,16 @@ void ls(char *path) {
     VfsFile *buf;
     size_t fsize;
     char fname[MAX_FILENAME_LEN];
-    bool is_dir;
+    VFSFileType type;
     if (opendir(&dir, &buf, path, 0) < 0) {
         printf("Failed to open dir %s\n", path);
         HALT_DEVICE();
     }
     for (;;) {
-        vfs_identify(buf, fname, &is_dir, &fsize);
-        char *label = (is_dir) ? " - Directory" : " - File";
+        vfs_identify(buf, fname, &type, &fsize);
+        char *label = (type == FT_DIRECTORY) ? " - Directory" : " - File";
         printf("%s (%i bytes): %s\n", label, fsize, fname);
-        buf = vfs_diriter(&dir, &is_dir);
+        buf = vfs_diriter(&dir, &type);
         if (!buf)
             break;
     }

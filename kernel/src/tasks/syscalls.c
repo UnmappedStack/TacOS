@@ -184,10 +184,10 @@ int sys_remove(char *filename) {
     VfsFile *f = vfs_access(filename, 0, 0);
     if (!f)
         return -1;
-    bool is_dir;
-    if (vfs_identify(f, NULL, &is_dir, NULL))
+    VFSFileType type;
+    if (vfs_identify(f, NULL, &type, NULL))
         return -1;
-    if (is_dir) {
+    if (type == FT_DIRECTORY) {
         VfsDirIter dir = vfs_file_to_diriter(f);
         return rm_dir(&dir);
     } else {
@@ -373,20 +373,28 @@ enum {
     DT_WHT     = 14
 };
 
+unsigned char vfs_type_as_dirent_type(VFSFileType type) {
+    switch (type) {
+    case FT_REGFILE:   return DT_REG;
+    case FT_DIRECTORY: return DT_DIR;
+    case FT_CHARDEV:   return DT_CHR;
+    default:           return DT_UNKNOWN;
+    };
+}
+
 // reads the current entry in a DirIter to return then iterates
 int sys_readdir(VfsDirIter *iter, struct dirent *dp) {
-    bool is_dir; // this should reeeeaallly not exist, it should be a flag (TODO)
-    VfsFile *entry = vfs_diriter(iter, &is_dir);
+    VFSFileType type;
+    VfsFile *entry = vfs_diriter(iter, NULL);
     if (!entry)
         return 1;
-    vfs_identify(entry, dp->d_name, NULL, NULL);
+    vfs_identify(entry, dp->d_name, &type, NULL);
     dp->d_ino = (int)(uintptr_t)entry->private; // this is kinda dumb but my temporary solution is
                                                 // to just make the d_ino be the lower 32 bits of the pointer
                                                 // to private of the file
     dp->d_off = 0;
     dp->d_reclen = sizeof(struct dirent);
-    dp->d_type = (is_dir) ? DT_DIR : DT_REG; // again this should check a flag cos it could
-                                             // be a device etc
+    dp->d_type = vfs_type_as_dirent_type(type);
     return 0;
 }
 
