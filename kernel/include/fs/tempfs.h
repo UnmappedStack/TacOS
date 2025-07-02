@@ -52,7 +52,7 @@ TempfsInode *tempfs_find_root(TempfsInode *fs, FSOps *ops);
 TempfsInode *tempfs_create_entry(TempfsInode *dir);
 TempfsInode *tempfs_new_file(TempfsInode *dir, char *name, FSOps *ops);
 TempfsInode *tempfs_mkdir(TempfsInode *parentdir, char *name, FSOps *ops);
-TempfsInode *tempfs_open(TempfsInode *file);
+int tempfs_open(TempfsInode **buf, TempfsInode *file);
 int tempfs_close(TempfsInode *file);
 TempfsDirIter *tempfs_opendir(TempfsInode *dir);
 int tempfs_write(TempfsInode *file, char *buf, size_t len, size_t offset);

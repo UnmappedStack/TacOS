@@ -176,10 +176,11 @@ VfsFile *vfs_access(char *path, int flags, VfsAccessType type) {
                     current_dir_ops.close_fn(current_dir);
                     VfsFile *file_addr = slab_alloc(kernel.vfs_file_cache);
                     *file_addr = (VfsFile){
-                        .private = current_dir_ops.open_fn(entry),
                         .drive = *drive,
                         .ops = current_dir_ops,
                     };
+                    int e = current_dir_ops.open_fn(&file_addr->private, entry);
+                    if (e < 0) return NULL;
                     vfs_identify(file_addr, path_cpy, &is_dir, NULL);
                     if (is_dir && type == VAT_open) {
                         printf("Can't open file, is a directory.\n");

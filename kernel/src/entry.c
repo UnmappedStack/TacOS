@@ -121,6 +121,7 @@ void _start(void) {
     init_framebuffer();
     init_tty();
     init_keyboard();
+    lock_lapic_timer();
     try_exec_init();
     init_lapic_timer();
     printf("Successful boot, init spawned, enabling scheduler to enter "

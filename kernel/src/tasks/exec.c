@@ -143,6 +143,5 @@ int execve(Task *task, char *filename, char **argv, char **envp) {
     task->flags = TASK_FIRST_EXEC | TASK_PRESENT;
     printf("\n -> execve(): Task %i has flags 0b%b, task ptr = 0x%p\n",
            task->pid, task->flags, &task->flags);
-    printf("first rsp offset = %i\n", offsetof(Task, first_rsp));
     return 0;
 }

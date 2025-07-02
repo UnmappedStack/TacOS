@@ -27,7 +27,7 @@ typedef enum {
 
 typedef struct FSOps FSOps;
 struct FSOps {
-    void *(*open_fn)(void *file);
+    int (*open_fn)(void **buf, void *file);
     int (*close_fn)(void *file);
     void *(*mkfile_fn)(void *dir, char *name, FSOps *ops);
     void *(*mkdir_fn)(void *parentdir, char *name, FSOps *ops);

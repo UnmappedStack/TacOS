@@ -206,12 +206,11 @@ int tempfs_rmfile(TempfsInode *file) {
     return -1;
 }
 
-TempfsInode *tempfs_open(TempfsInode *file) {
-    if (file->type == Device) {
-        if (file->devops.open(file))
-            return NULL;
-    }
-    return file;
+int tempfs_open(TempfsInode **buf, TempfsInode *file) {
+    *buf = file;
+    if (file->type == Device)
+        return file->devops.open(file);
+    return 0;
 }
 
 int tempfs_close(TempfsInode *file) {
@@ -255,7 +254,7 @@ TempfsInode *tempfs_find_inode_in_dir(TempfsInode *dir, char *fname, FSOps *ops_
 }
 
 FSOps tempfs_regfile_ops = (FSOps) {
-    .open_fn = (void *(*)(void *))tempfs_open,
+    .open_fn = (int (*)(void **, void *))tempfs_open,
     .close_fn = (int (*)(void *))tempfs_close,
     .write_fn = (int (*)(void *, char *, size_t, size_t))tempfs_write,
     .read_fn = (int (*)(void *, char *, size_t, size_t))tempfs_read,
@@ -263,7 +262,7 @@ FSOps tempfs_regfile_ops = (FSOps) {
 };
 
 FSOps tempfs_dir_ops = (FSOps) {
-    .open_fn = (void *(*)(void *))tempfs_open,
+    .open_fn = (int (*)(void **, void *))tempfs_open,
     .close_fn = (int (*)(void *))tempfs_closedir,
     .mkfile_fn = (void *(*)(void *, char *, FSOps *))tempfs_new_file,
     .mkdir_fn = (void *(*)(void *, char *, FSOps *))tempfs_mkdir,

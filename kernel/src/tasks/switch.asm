@@ -7,6 +7,8 @@ extern task_select
 extern end_of_interrupt
 extern printf
 extern increment_global_clock
+extern stack_trace
+extern scheduler_is_initiated
 
 %include "include/asm.inc"
 
