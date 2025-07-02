@@ -92,8 +92,8 @@ void scroll_pixels(size_t num_pix) {
               kernel.tty.bg_colour);
 }
 
-int fbdevopen(void *f) {
-    (void)f;
+int fbdevopen(void **buf, void *f) {
+    *buf = f;
     return 0;
 }
 int fbdevclose(void *f) {

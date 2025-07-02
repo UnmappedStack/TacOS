@@ -180,7 +180,10 @@ VfsFile *vfs_access(char *path, int flags, VfsAccessType type) {
                         .ops = current_dir_ops,
                     };
                     int e = current_dir_ops.open_fn(&file_addr->private, entry);
-                    if (e < 0) return NULL;
+                    if (e < 0) {
+                        printf("internal open() failed\n");
+                        return NULL;
+                    }
                     vfs_identify(file_addr, path_cpy, &is_dir, NULL);
                     if (is_dir && type == VAT_open) {
                         printf("Can't open file, is a directory.\n");
@@ -228,7 +231,7 @@ int opendir(VfsDirIter *buf, VfsFile **first_entry_buf, char *path, int flags) {
 
 int mkfile(char *path) {
     VfsFile *temp;
-    if ((temp = vfs_access(path, 0, VAT_mkfile))) {
+    if ((temp = vfs_access(path, 0, VAT_mkfile)) >= 0) {
         temp->ops.close_fn(temp);
         return 0;
     } else {

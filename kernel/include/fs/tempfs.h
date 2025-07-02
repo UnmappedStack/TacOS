@@ -33,10 +33,7 @@ struct TempfsInode {
     size_t size;
     FSOps ops;
     union {
-        union {
-            DeviceOps devops;
-            TempfsFileNode *first_file_node;
-        };
+        TempfsFileNode *first_file_node;
         TempfsDirEntry *first_dir_entry;
     };
 };

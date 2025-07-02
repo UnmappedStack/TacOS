@@ -6,28 +6,6 @@
 #include <fs/vfs.h>
 #include <printf.h>
 
-int test_open(void *f) {
-    printf("test open with f = %p\n", f);
-    return 0;
-}
-
-int test_close(void *f) {
-    printf("test close with f = %p\n", f);
-    return 0;
-}
-
-int test_write(void *f, char *buf, size_t len, size_t off) {
-    printf("test write with f = %p, txt = %s, len = %i, off = %i\n", f, buf,
-           len, off);
-    return 0;
-}
-
-int test_read(void *f, char *buf, size_t len, size_t off) {
-    printf("test read with f = %p, txt = %s, len = %i, off = %i\n", f, buf, len,
-           off);
-    return 0;
-}
-
 void init_devices(void) {
     VfsDrive drive = (VfsDrive){
         .in_memory = true,
@@ -44,9 +22,15 @@ VfsFile *mkdevice(char *path, DeviceOps ops) {
     if (!new_file)
         return NULL;
     TempfsInode *private = new_file->private;
-    private->devops = ops;
+    private->ops = (FSOps) {
+        .open_fn     = (int (*)(void **, void *))ops.open,
+        .close_fn    = (int (*)(void *))ops.close,
+        .write_fn    = (int (*)(void *, char *, size_t, size_t))ops.write,
+        .read_fn     = (int (*)(void *, char *, size_t, size_t))ops.read,
+        .identify_fn = (int (*)(void *, char *, bool *, size_t *))tempfs_identify,
+    };
+    new_file->ops = private->ops;
     private->type = Device;
-    private->ops = tempfs_regfile_ops,
     printf("Created new device at %s, addr = %p\n", path, new_file);
     return new_file;
 }

@@ -151,8 +151,8 @@ void write_framebuffer_text(const char *msg) {
     }
 }
 
-int fb_open(void *f) {
-    (void)f;
+int fb_open(void **buf, void *f) {
+    *buf = f;
     return 0;
 }
 
@@ -175,10 +175,7 @@ int fb_write(void *f, char *buf, size_t len, size_t off) {
 }
 
 int fb_read(void *f, char *buf, size_t len, size_t off) {
-    (void)f;
-    (void)buf;
-    (void)len;
-    (void)off;
+    (void)f, (void)buf, (void)len, (void)off;
     printf("Framebuffer device is write-only!\n");
     return -1;
 }

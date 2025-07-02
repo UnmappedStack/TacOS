@@ -311,8 +311,8 @@ ret:
     end_of_interrupt();
 }
 
-int stdin_open(void *f) {
-    (void)f;
+int stdin_open(void **buf, void *f) {
+    *buf = f;
     return 0;
 }
 
