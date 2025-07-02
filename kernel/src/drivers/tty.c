@@ -64,13 +64,11 @@ void tty_set_cell_graphics_mode(ANSICmd *cmd) {
                                ? FG_DEFAULT
                                : tty_colours[cmd->vals[i] - 30];
             kernel.tty.fg_colour = col;
-            break;
         } else if (cmd->vals[i] >= 40 && cmd->vals[i] <= 49) {
             uint32_t col = (cmd->vals[i] == 49)
                                ? BG_DEFAULT
                                : tty_colours[cmd->vals[i] - 40];
             kernel.tty.bg_colour = col;
-            break;
         } else {
             printf("Graphics mode in ANSI not yet supported: %i\n",
                    cmd->vals[i]);
