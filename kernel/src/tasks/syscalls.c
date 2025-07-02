@@ -123,21 +123,10 @@ int sys_kill(int pid, int sig) {
 }
 
 int sys_wait(int *status) {
-    for (;;) {
-        for (size_t i = 0; i < MAX_CHILDREN; i++) {
-            if (CURRENT_TASK->children[i].pid &&
-                (task_from_pid(CURRENT_TASK->children[i].pid)->flags &
-                 TASK_DEAD)) {
-                pid_t pid = CURRENT_TASK->children[i].pid;
-                if (status)
-                    *status = CURRENT_TASK->children[i].status;
-                remove_child(CURRENT_TASK->parent,
-                             CURRENT_TASK->children[i].pid, true, 0);
-                return (int)pid;
-            }
-        }
-        IO_WAIT();
-    }
+    (void) status;
+    printf("TODO: sys_wait is not implemented yet\n");
+    sys_exit(-1);
+    return -1;
 }
 
 int sys_waitpid(int pid, int *status, int options) {
@@ -225,6 +214,13 @@ size_t sys_lseek(int fd, size_t offset, int whence) {
     }
 }
 
+int sys_link(char *old, char *new) {
+    (void) old, (void) new;
+    printf("TODO: sys_link not implemented yet\n");
+    sys_exit(-1);
+    return -1;
+}
+
 void sys_invalid(int sys) {
     printf("Invalid syscall: %i\n", sys);
     sys_exit(-1);
@@ -250,6 +246,12 @@ int sys_clock_gettime(size_t clockid, struct timespec *tp) {
     tp->tv_sec = kernel.global_clock.tv_sec;
     tp->tv_nsec = kernel.global_clock.tv_nsec;
     return 0;
+}
+
+void sys_times(void *buf) {
+    (void) buf;
+    printf("TODO: sys_times() is not implemented yet\n");
+    sys_exit(-1);
 }
 
 // TODO: actually yield properly
@@ -398,6 +400,13 @@ int sys_readdir(VfsDirIter *iter, struct dirent *dp) {
     return 0;
 }
 
+int sys_stat(char *file, void *statbuf) {
+    (void) file, (void) statbuf;
+    printf("TODO: sys_stat is not implemented yet\n");
+    exit(-1);
+    return -1;
+}
+
 pid_t sys_fork();
 
 void *syscalls[] = {
@@ -410,7 +419,7 @@ void *syscalls[] = {
     sys_fork,
     sys_execve,
     sys_kill,
-    NULL, // empty spot - next syscall I add should go here
+    sys_times,
     sys_wait,
     sys_sbrk,
     sys_unlink,
@@ -425,6 +434,7 @@ void *syscalls[] = {
     sys_chdir,
     sys_opendir,
     sys_readdir,
+    sys_stat,
 };
 
 uint64_t num_syscalls = sizeof(syscalls) / sizeof(syscalls[0]);
