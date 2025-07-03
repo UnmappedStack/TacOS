@@ -403,7 +403,7 @@ int sys_readdir(VfsDirIter *iter, struct dirent *dp) {
 int sys_stat(char *file, void *statbuf) {
     (void) file, (void) statbuf;
     printf("TODO: sys_stat is not implemented yet\n");
-    exit(-1);
+    sys_exit(-1);
     return -1;
 }
 
