@@ -23,6 +23,10 @@ $(USER_PROGRAMS):
 .PHONY: libc
 libc:
 	make -C libc
+	sudo mkdir -p /home/TacOSlibc
+	sudo cp libc/bin/tacoc.a /home/TacOSlibc/tacoc.a
+	sudo cp libc/bin/crt0.o /home/TacOSlibc/crt0.o
+	sudo cp -r libc/include /home/TacOSlibc/include
 
 .PHONY: initrd
 initrd:
