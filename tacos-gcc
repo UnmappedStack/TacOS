@@ -2,4 +2,4 @@
 # So this is kinda stupid but for my own convenience, until I have a proper C cross compiler,
 # this is just a quick program that will literally call GCC internally but make sure it uses my LibC.
 
-gcc $@ -ffreestanding -fno-pie -no-pie -static -fno-stack-protector -nostdlib -I/home/TacOSlibc/include /home/TacOSlibc/crt0.o /home/TacOSlibc/tacoc.a
+gcc $@ -nostdinc -I$(gcc -print-file-name=include) -ffreestanding -fno-pie -no-pie -static -fno-stack-protector -nostdlib -I/home/TacOSlibc/include /home/TacOSlibc/crt0.o /home/TacOSlibc/tacoc.a
