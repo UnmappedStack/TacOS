@@ -1,6 +1,8 @@
 #include <printf.h>
-#include <io.h>
+#include <string.h>
+#include <stddef.h>
 #include <stdint.h>
+#include <io.h>
 
 #define CONFIG_ADDR 0xCF8
 #define CONFIG_DATA 0xCFC
@@ -32,6 +34,15 @@ uint16_t pci_get_vendorID(uint8_t bus, uint8_t device, uint8_t function) {
     return (vendor == 0xFFFF) ? 0 : vendor;
 }
 
+// returns a pointer to the capabilities list or a NULL pointer if the device doesn't
+// implement a capabilities list
+uint8_t pci_get_capabilities_list(uint8_t bus, uint8_t device, uint8_t function) {
+    uint16_t status = pci_read16(bus, device, function, 6);
+    if (!(status & 0b10000)) return 0;
+    uint8_t capabilities_offset = ((uint8_t) pci_read16(bus, device, function, 0x34)) & ~0b11;
+    return capabilities_offset;
+}
+
 void init_pci(void) {
     int bus, dev, func;
     for (bus = 0; bus < 256; bus++) {
@@ -43,15 +54,20 @@ void init_pci(void) {
                 uint8_t subclass = (uint8_t) tmp;
                 uint8_t class = (uint8_t) (tmp >> 8);
                 uint16_t devID = pci_read16(bus, dev, func, 2);
+                uint8_t capabilities_list = pci_get_capabilities_list(bus, dev, func);
+                char capabilities_list_str[20] = {0};
+                uint64_to_hex_string(capabilities_list, &capabilities_list_str[2]);
+                memcpy(capabilities_list_str, "0x", 2);
                 printf("[bus:%i|dev:%i|func:%i] PCI device found:\n"
+                       "    - Class %i, subclass %i\n"
                        "    - VendorID: 0x%x (%s)\n"
                        "    - DeviceID: 0x%x\n"
-                       "    - Class: %i\n"
-                       "    - Subclass: %i\n",
+                       "    - Capabilities list: %s\n",
                        bus, dev, func,
+                       class, subclass,
                        vendorID, pci_vendorID_to_str(vendorID),
                        devID,
-                       class, subclass);
+                       (capabilities_list) ? capabilities_list_str : "None");
             }
         }
     }
