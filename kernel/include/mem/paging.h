@@ -46,6 +46,7 @@ void read_vmem(uint64_t *pml4_addr, uintptr_t virt_addr, char *buffer,
                size_t len);
 void push_vmem(uint64_t *pml4_addr, uint64_t rsp, char *data, size_t len);
 void clear_page_cache(uint64_t addr);
+uintptr_t valloc(size_t size_pages);
 
 #define switch_page_structures()                                               \
     printf("Switching CR3 & kernel stack...\n");                               \

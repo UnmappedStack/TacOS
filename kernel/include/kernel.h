@@ -47,6 +47,7 @@ typedef struct {
     IOApic ioapic_device;
     uintptr_t ioapic_addr;
     size_t pit_counter;
+    size_t vmm_upto;
 } Kernel;
 
 extern Kernel kernel;

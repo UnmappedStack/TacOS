@@ -51,6 +51,8 @@ void init_pmm(void) {
                "continue.\n");
         HALT_DEVICE();
     }
+    kernel.vmm_upto = kernel.memmap[kernel.memmap_entry_count - 1].base +
+                        kernel.memmap[kernel.memmap_entry_count - 1].length;
     printf("Successfully initiated %i physical allocator chunks.\n", list_len);
 }
 

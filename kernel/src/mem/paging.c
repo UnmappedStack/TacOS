@@ -251,3 +251,11 @@ void init_paging(void) {
     map_all((uint64_t *)pml4_virt, true);
     kernel.cr3 = pml4_virt - kernel.hhdm;
 }
+
+// return a virtual address, simple bump allocator
+// literally the most basic a VMM can possibly get
+uintptr_t valloc(size_t size_pages) {
+    uintptr_t ret = kernel.vmm_upto;
+    kernel.vmm_upto += size_pages * PAGE_SIZE;
+    return ret;
+}

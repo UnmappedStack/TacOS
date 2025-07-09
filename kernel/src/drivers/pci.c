@@ -1,22 +1,42 @@
 #include <printf.h>
+#include <kernel.h>
+#include <mem/paging.h>
 #include <string.h>
 #include <stddef.h>
 #include <stdint.h>
 #include <io.h>
 
+/* and also drivers which it needs to be able to handle the init of
+ * if it finds said device in the PCI enumeration */
+#include <nvme.h>
+
 #define CONFIG_ADDR 0xCF8
 #define CONFIG_DATA 0xCFC
 
-uint16_t pci_read16(uint8_t bus, uint8_t device, uint8_t function, uint8_t reg) {
+uint32_t pci_read32(uint8_t bus, uint8_t device, uint8_t function, uint8_t reg) {
     uint32_t lbus  = (uint32_t) bus;
     uint32_t ldev  = (uint32_t) device;
     uint32_t lfunc = (uint32_t) function;
     #define ENABLE (1 << 31)
     uint32_t addr = (uint32_t) (reg & 0xFC) | (lfunc << 8) | (ldev << 11) | (lbus << 16) | ENABLE;
     outl(CONFIG_ADDR, addr);
+    return inl(CONFIG_DATA);
+}
+
+uint16_t pci_read16(uint8_t bus, uint8_t device, uint8_t function, uint8_t reg) {
     // `(reg & 2) * 8` will return 0 or 16, aka the offset of the read data to return
-    uint32_t read_back = inl(CONFIG_DATA);
-    return (uint16_t) (read_back >> ((reg & 2) * 8) & 0xFFFF);
+    uint32_t dword = pci_read32(bus, device, function, reg);
+    return (uint16_t) (dword >> ((reg & 2) * 8) & 0xFFFF);
+}
+
+void pci_write32(uint8_t bus, uint8_t device, uint8_t function, uint8_t reg, uint32_t val) {
+    uint32_t lbus  = (uint32_t) bus;
+    uint32_t ldev  = (uint32_t) device;
+    uint32_t lfunc = (uint32_t) function;
+    #define ENABLE (1 << 31)
+    uint32_t addr = (uint32_t) (reg & 0xFC) | (lfunc << 8) | (ldev << 11) | (lbus << 16) | ENABLE;
+    outl(CONFIG_ADDR, addr);
+    outl(CONFIG_DATA, val);
 }
 
 char *pci_vendorID_to_str(uint16_t id) {
@@ -41,6 +61,75 @@ uint8_t pci_get_capabilities_list(uint8_t bus, uint8_t device, uint8_t function)
     if (!(status & 0b10000)) return 0;
     uint8_t capabilities_offset = ((uint8_t) pci_read16(bus, device, function, 0x34)) & ~0b11;
     return capabilities_offset;
+}
+
+typedef struct {
+    uint64_t message_address;
+    uint32_t message_data;
+    struct {
+        uint32_t masked;
+    } vector_control;
+} MSIXTableEntry;
+
+// technically, MSI-X
+int pci_enable_msi(uint8_t bus, uint8_t device, uint8_t function,
+        uint8_t capabilities_list, uint32_t handler_vector) {
+    while (capabilities_list) {
+        uint32_t this_entry = pci_read32(bus, device, function, capabilities_list);
+        uint8_t capabilityID = (uint8_t) this_entry;
+        uint8_t next = (uint8_t) (this_entry >> 8);
+        capabilities_list = next;
+        if (capabilityID != 0x11) continue;
+        printf("MSI-X is supported!\n");
+        uint8_t header_type = (uint8_t) pci_read16(bus, device, function, 0xE);
+        if (header_type != 0 && header_type != 1) { // don't say this is dumb, it's
+                                                    // for readability
+            printf("Header type for enabling MSI must be 0 or 1.\n");
+            return -1;
+        }
+        uint32_t buf = pci_read32(bus, device, function, capabilities_list + 4);
+
+        uint8_t BIR = buf & 0b111;
+        uint8_t BAR_offset = 0x10 + BIR * 4;
+        uint32_t BAR_low = pci_read32(bus, device, function, BAR_offset);
+        bool BAR_is_portIO = BAR_low & 0b1; // false if accessed through mmio
+        if (BAR_is_portIO) {
+            printf("BAR_is_portIO is true, not supported\n");
+            return -1;
+        }
+        uint64_t BAR_addr;
+        uint8_t BAR_type = (BAR_low & 0b110) >> 1;
+        switch (BAR_type) {
+        case 0x0:
+            // 32 bit
+            BAR_addr = BAR_low & 0xFFFFFFF0;
+            break;
+        case 0x1:
+            // 16 bit (technically reserved in the latest PCI revisions)
+            BAR_addr = BAR_low & 0xFFF0;
+            break;
+        case 0x2:
+            // 64 bit
+            uint32_t BAR_high = pci_read32(bus, device, function, BAR_offset + 4);
+            BAR_addr = ((BAR_low & 0xFFFFFFF0) + (((uint64_t) BAR_high & 0xFFFFFFFF) << 32));
+            break;
+        }
+        pci_write32(bus, device, function, BAR_offset, 0xffffffff);
+        uint32_t BAR_size = ~pci_read32(bus, device, function, BAR_offset) + 1;
+        pci_write32(bus, device, function, BAR_offset, BAR_low);
+        uint32_t size_pages = PAGE_ALIGN_UP(BAR_size) / 4096;
+        MSIXTableEntry *msi_table = (MSIXTableEntry*) valloc(size_pages);
+        map_pages((void*) (kernel.cr3 + kernel.hhdm), (uintptr_t) msi_table, BAR_addr, size_pages,
+                    KERNEL_PFLAG_WRITE | KERNEL_PFLAG_PRESENT);
+        
+        msi_table[0].message_address = 0xFEE00000;
+        msi_table[0].message_data    = handler_vector;
+        msi_table[0].vector_control.masked = 0;
+        // yeah I kinda did this the lazy way and ended up only mapping the first vector lol
+        return 0;
+    }
+    printf("MSI-X support not found in capability list.\n");
+    return -1;
 }
 
 void init_pci(void) {
@@ -68,6 +157,8 @@ void init_pci(void) {
                        vendorID, pci_vendorID_to_str(vendorID),
                        devID,
                        (capabilities_list) ? capabilities_list_str : "None");
+                if (class == 1 && subclass == 8)
+                    nvme_init(bus, dev, func, capabilities_list);
             }
         }
     }
