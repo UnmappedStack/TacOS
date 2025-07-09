@@ -46,7 +46,10 @@ disk:
 	./limine/limine bios-install tacos.iso
 
 qemu:
-	qemu-system-x86_64 tacos.iso -serial stdio -no-shutdown -no-reboot -monitor telnet:127.0.0.1:8000,server,nowait -d int,cpu_reset,in_asm -D log.txt -m 4G -accel kvm
+	qemu-system-x86_64 tacos.iso -serial stdio -no-shutdown -no-reboot \
+		-monitor telnet:127.0.0.1:8000,server,nowait -d int,cpu_reset,in_asm -D log.txt -m 4G -accel kvm \
+		-drive file=README.md,if=none,id=nvm \
+		-device nvme,drive=nvm,serial=deadbeef
 
 run: all qemu
 

@@ -1,4 +1,5 @@
 #include <apic.h>
+#include <pci.h>
 #include <cpu/msr.h>
 #include <syscalls.h>
 #include <bootutils.h>
@@ -118,6 +119,7 @@ void _start(void) {
     init_syscalls();
     ls("/");
     ls("/home");
+    init_pci();
     init_framebuffer();
     init_tty();
     init_keyboard();
