@@ -255,7 +255,7 @@ void init_paging(void) {
 // return a virtual address, simple bump allocator
 // literally the most basic a VMM can possibly get
 uintptr_t valloc(size_t size_pages) {
-    uintptr_t ret = kernel.vmm_upto;
+    uintptr_t ret = kernel.vmm_upto + kernel.hhdm;
     kernel.vmm_upto += size_pages * PAGE_SIZE;
     return ret;
 }

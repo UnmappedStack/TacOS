@@ -78,8 +78,10 @@ int pci_enable_msi(uint8_t bus, uint8_t device, uint8_t function,
         uint32_t this_entry = pci_read32(bus, device, function, capabilities_list);
         uint8_t capabilityID = (uint8_t) this_entry;
         uint8_t next = (uint8_t) (this_entry >> 8);
-        capabilities_list = next;
-        if (capabilityID != 0x11) continue;
+        if (capabilityID != 0x11) {
+            capabilities_list = next;
+            continue;
+        }
         printf("MSI-X is supported!\n");
         uint8_t header_type = (uint8_t) pci_read16(bus, device, function, 0xE);
         if (header_type != 0 && header_type != 1) { // don't say this is dumb, it's
@@ -118,10 +120,12 @@ int pci_enable_msi(uint8_t bus, uint8_t device, uint8_t function,
         uint32_t BAR_size = ~pci_read32(bus, device, function, BAR_offset) + 1;
         pci_write32(bus, device, function, BAR_offset, BAR_low);
         uint32_t size_pages = PAGE_ALIGN_UP(BAR_size) / 4096;
-        MSIXTableEntry *msi_table = (MSIXTableEntry*) valloc(size_pages);
-        map_pages((void*) (kernel.cr3 + kernel.hhdm), (uintptr_t) msi_table, BAR_addr, size_pages,
+        uintptr_t vaddr = valloc(size_pages);
+        map_pages((void*) (kernel.cr3 + kernel.hhdm), vaddr, BAR_addr, size_pages,
                     KERNEL_PFLAG_WRITE | KERNEL_PFLAG_PRESENT);
-        
+
+        uint32_t table_offset = buf & ~0b111;
+        MSIXTableEntry *msi_table = (MSIXTableEntry*) (vaddr + table_offset);
         msi_table[0].message_address = 0xFEE00000;
         msi_table[0].message_data    = handler_vector;
         msi_table[0].vector_control.masked = 0;
