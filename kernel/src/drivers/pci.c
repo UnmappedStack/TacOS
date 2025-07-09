@@ -162,5 +162,4 @@ void init_pci(void) {
             }
         }
     }
-    for (;;);
 }
