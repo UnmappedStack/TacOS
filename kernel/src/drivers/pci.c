@@ -136,8 +136,10 @@ void init_pci(void) {
     int bus, dev, func;
     for (bus = 0; bus < 256; bus++) {
         for (dev = 0; dev < 32; dev++) {
+            uint16_t vendorID = pci_get_vendorID(bus, dev, 0);
+            if (!vendorID) continue;
             for (func = 0; func < 8; func++) {
-                uint16_t vendorID = pci_get_vendorID(bus, dev, func);
+                vendorID = pci_get_vendorID(bus, dev, func);
                 if (!vendorID) continue;
                 uint16_t tmp = pci_read16(bus, dev, func, 10);
                 uint8_t subclass = (uint8_t) tmp;
