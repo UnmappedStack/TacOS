@@ -71,8 +71,8 @@ typedef struct {
     } vector_control;
 } MSIXTableEntry;
 
-// technically, MSI-X
-int pci_enable_msi(uint8_t bus, uint8_t device, uint8_t function,
+// technically, MSI-X. Return BAR vaddr on success, 0 on failure.
+uintptr_t pci_enable_msi(uint8_t bus, uint8_t device, uint8_t function,
         uint8_t capabilities_list, uint32_t handler_vector) {
     while (capabilities_list) {
         uint32_t this_entry = pci_read32(bus, device, function, capabilities_list);
@@ -87,7 +87,7 @@ int pci_enable_msi(uint8_t bus, uint8_t device, uint8_t function,
         if (header_type != 0 && header_type != 1) { // don't say this is dumb, it's
                                                     // for readability
             printf("Header type for enabling MSI must be 0 or 1.\n");
-            return -1;
+            return 0;
         }
         uint32_t buf = pci_read32(bus, device, function, capabilities_list + 4);
 
@@ -97,7 +97,7 @@ int pci_enable_msi(uint8_t bus, uint8_t device, uint8_t function,
         bool BAR_is_portIO = BAR_low & 0b1; // false if accessed through mmio
         if (BAR_is_portIO) {
             printf("BAR_is_portIO is true, not supported\n");
-            return -1;
+            return 0;
         }
         uint64_t BAR_addr;
         uint8_t BAR_type = (BAR_low & 0b110) >> 1;
@@ -130,10 +130,10 @@ int pci_enable_msi(uint8_t bus, uint8_t device, uint8_t function,
         msi_table[0].message_data    = handler_vector;
         msi_table[0].vector_control.masked = 0;
         // yeah I kinda did this the lazy way and ended up only mapping the first vector lol
-        return 0;
+        return vaddr;
     }
     printf("MSI-X support not found in capability list.\n");
-    return -1;
+    return 0;
 }
 
 void init_pci(void) {
