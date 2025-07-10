@@ -17,6 +17,25 @@ typedef struct {
 } NVMeQueue;
 
 typedef struct {
+    uint32_t command;
+    uint32_t namespace_id;
+    uint64_t rsvd;
+    uint64_t metadata_ptr;
+    uint64_t data_ptr0; // ->these are PRPs
+    uint64_t data_ptr1; // ---^
+    uint32_t command_specific[6];
+} __attribute__((packed)) NVMeSubmissionEntry;
+
+typedef struct {
+    uint32_t command_specific;
+    uint32_t rsvd;
+    uint16_t submission_queue_head_ptr;
+    uint16_t submission_queue_identifier;
+    uint16_t command_id;
+    uint16_t status_and_phase_bit;
+} NVMeCompletionEntry;
+
+typedef struct {
     uintptr_t base;
     NVMeQueue submission_queue;
     NVMeQueue completion_queue;
