@@ -64,6 +64,5 @@ void nvme_init(uint8_t bus, uint8_t device, uint8_t function, uint8_t capabiliti
     uint64_t capabilities = (uint64_t) nvme_read_reg(0x0) | ((uint64_t) nvme_read_reg(0x4) << 32);
     nvme_list_capabilities(capabilities);
     printf("NVMe device initiated.\n");
-    for (;;);
 }
 
