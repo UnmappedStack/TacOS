@@ -10,15 +10,19 @@ void nvme_interrupt_handler(void*) {
     printf("Got NVMe interrupt\n");
 }
 
-uintptr_t nvme_base = 0;
+typedef struct {
+    uintptr_t base;
+} NVMeDevice;
+
+NVMeDevice nvme_dev = {0};
 
 uint32_t nvme_read_reg(uint32_t offset) {
-	volatile uint32_t *ptr = (volatile uint32_t *)(nvme_base + offset);
+	volatile uint32_t *ptr = (volatile uint32_t *)(nvme_dev.base + offset);
 	return *ptr;
 }
 
 void nvme_write_reg(uint32_t offset, uint32_t value) {
-	volatile uint32_t *ptr = (volatile uint32_t *)(nvme_base + offset);
+	volatile uint32_t *ptr = (volatile uint32_t *)(nvme_dev.base + offset);
 	*ptr = value;
 }
 
@@ -37,7 +41,7 @@ static void nvme_list_capabilities(uint64_t capabilities) {
     if (ams & 0b10)
         printf("    - Vendor Specific (VS)\n");
     if (!ams)
-        printf("    - None\n");
+        printf("    - Only round robin arbitration is supported.\n");
     printf("Timeout                          (TO): %ims\n", to * 500);
     printf("Doorbell Stride               (DSTRT): 0x%x\n", dstrt);
 }
@@ -47,8 +51,8 @@ static void nvme_list_capabilities(uint64_t capabilities) {
 void nvme_init(uint8_t bus, uint8_t device, uint8_t function, uint8_t capabilities_list) {
     printf("Found NVMe device, initiating...\n");
     set_IDT_entry(50, (void *)nvme_interrupt_handler, 0x8E, kernel.IDT);
-    nvme_base = pci_enable_msi(bus, device, function, capabilities_list, 50);
-    if (!nvme_base) {
+    nvme_dev.base = pci_enable_msi(bus, device, function, capabilities_list, 50);
+    if (!nvme_dev.base) {
         printf("NVMe could not be initiated.\n");
         return;
     }
