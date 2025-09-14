@@ -42,6 +42,7 @@ typedef struct {
     NVMeQueue asq;
     NVMeQueue acq;
     uint64_t stride;
+    bool phase;
 } NVMeDevice;
 
 NVMeDevice nvme_dev = {0};
@@ -103,6 +104,8 @@ static void create_completion_queue(NVMeQueue *queue) {
     nvme_write_reg64(0x30, queue->addr - kernel.hhdm);
 }
 
+static uint16_t command_id = 69;
+
 // This assumes that there are only two sets of queues, 0=admin & 1=IO.
 int nvme_send_command(uint32_t queueID, uint8_t opcode,
         uint64_t prps[2], uint32_t namespaceID, uint32_t args[6]) {
@@ -115,9 +118,7 @@ int nvme_send_command(uint32_t queueID, uint8_t opcode,
         return -1;
     }
     uint64_t sq_entry_addr = submission_queue->addr + (submission_queue->at * sizeof(NVMeSubmissionEntry));
-	uint64_t cq_entry_addr = completion_queue->addr + (completion_queue->at * sizeof(NVMeCompletionEntry));
     NVMeSubmissionEntry entry = {0};
-    static uint16_t command_id = 69;
     entry.command = opcode | (command_id++ << 16);
     entry.namespace_id = namespaceID;
     entry.prp1 = prps[0];
@@ -128,29 +129,32 @@ int nvme_send_command(uint32_t queueID, uint8_t opcode,
     __sync_synchronize();
     if (++submission_queue->at == submission_queue->sz) submission_queue->at = 0;
 
-printf("Before doorbell write:\n");
-printf("  Doorbell offset: 0x%x\n", 0x1000 + (2 * queueID) * nvme_dev.stride);
-printf("  Writing tail value: %i\n", submission_queue->at);
-printf("  Command: 0x%x\n", entry.command);
-printf("  PRP1: 0x%x\n", entry.prp1);
+    printf("Before doorbell write:\n");
+    printf("  Doorbell offset: 0x%x\n", 0x1000 + (2 * queueID) * nvme_dev.stride);
+    printf("  Writing tail value: %i\n", submission_queue->at);
+    printf("  Command: 0x%x\n", entry.command);
+    printf("  PRP1: 0x%x\n", entry.prp1);
     nvme_write_reg(0x1000 + (2 * queueID) * nvme_dev.stride, submission_queue->at);
     // wait for command to complete
     volatile NVMeCompletionEntry *cq = (volatile NVMeCompletionEntry*) completion_queue->addr;
-    while (!(cq[completion_queue->at].phase_and_status & 0b01));
-    printf("done\n");
-    // it never gets here (yes ik there's more I should do here but I haven't gotten to that yet
-    // cos I just wanna get commands submitted :(
-    (void) cq_entry_addr;
-    return 0;
+    volatile NVMeCompletionEntry *cqe = &cq[completion_queue->at];
+    while ((cqe->phase_and_status & 0b01) == nvme_dev.phase);
+    nvme_dev.phase = !nvme_dev.phase;
+    completion_queue->at++;
+
+    nvme_write_reg(0x1000 + 3 * (4 << nvme_dev.stride), completion_queue->at);
+    if (completion_queue->at == completion_queue->sz)
+        completion_queue->at = 0;
+    return cqe->phase_and_status & ~0b1;
 }
 
 // it occurs to me it could be problematic that this is using one single IDT vector,
 // so if there are multiple NVMe devices, then it would be overwritten each time. (TODO)
 void nvme_init(uint8_t bus, uint8_t device, uint8_t function, uint8_t capabilities_list) {
-    return;
     printf("Found NVMe device, initiating...\n");
     set_IDT_entry(50, (void *)nvme_interrupt_handler, 0x8E, kernel.IDT);
     nvme_dev.base = pci_enable_msi(bus, device, function, capabilities_list, 50);
+    nvme_dev.phase = 1;
     if (!nvme_dev.base) {
         printf("NVMe could not be initiated.\n");
         return;
@@ -173,6 +177,9 @@ void nvme_init(uint8_t bus, uint8_t device, uint8_t function, uint8_t capabiliti
     while (!(nvme_read_reg(0x1C) & 0x01));
     printf("Controller ready!\n");
     // send a test command
-    nvme_send_command(0, 0x06, (uint64_t[2]) {kmalloc(1), 0}, 0, (uint32_t [6]) {});
+    int s = nvme_send_command(0, 0x06, (uint64_t[2]) {kmalloc(1), 0}, 0, (uint32_t [6]) {});
+    printf("test command returned %x\n", s);
     printf("NVMe device initiated.\n");
 }
+
+
