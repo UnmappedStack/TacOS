@@ -1,7 +1,7 @@
 #pragma once
 #include <stdint.h>
 #include <stddef.h>
-#include <stdio.h>
+#include <mman.h>
 
 typedef int pid_t;
 
