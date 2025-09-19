@@ -31,7 +31,7 @@ libc:
 .PHONY: initrd
 initrd:
 	mkdir -p sysroot/boot
-	tar --create --file=sysroot/boot/initrd --format=ustar -C initrd home usr
+	tar --create --file=sysroot/boot/initrd --format=ustar -C initrd home usr media
 
 .PHONY: disk
 disk:

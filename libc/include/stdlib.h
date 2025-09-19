@@ -26,3 +26,5 @@ int setenv(char *key, char *val, int overwrite);
 int abs(int j);
 int atexit(void* fn);
 void abort(void);
+long strtol(const char *nptr,
+                   char **endptr, int base);

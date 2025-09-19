@@ -133,6 +133,8 @@ int __fopen_internal(const char *restrict pathname, const char *restrict mode, F
     ret->bufsz = 0;
     ret->bufmode = _IOFBF;
     ret->err=ret->eof=false;
+    ret->pushed_chars = NULL;
+    ret->num_pushed_chars = 0;
     return 0;
 }
 
@@ -222,10 +224,17 @@ int setvbuf(FILE *stream, char *buffer, int mode, size_t size) {
     stream->bufmode = mode;
 }
 
+#define min(a, b) (((a) < (b)) ? (a) : (b))
 size_t fread(void *ptr, size_t size, size_t nmemb, FILE *stream) {
     if (!size) return 0;
+    size_t off = 0;
+    if (stream->num_pushed_chars) {
+        size_t stream_bytes_to_read = min(size * nmemb, stream->num_pushed_chars);
+        memcpy(ptr, stream->pushed_chars, stream_bytes_to_read);
+        off += stream_bytes_to_read;
+    }
     size_t bytes;
-    if ((bytes=read(stream->fd, ptr, size * nmemb)) < size * nmemb) {
+    if ((bytes=read(stream->fd, ptr + off, size * nmemb)) < size * nmemb) {
         // we'll assume this means end of file for now. Probably not the smartest assumption to make.
         stream->eof = true;
     }
@@ -256,12 +265,6 @@ int fputc(int ch, FILE *stream) {
     return ch;
 }
 
-int fgetc(FILE *stream) {
-    char ret;
-    fread(&ret, 1, 1, stream);
-    return (ret) ? (int) ret : EOF;
-}
-
 int getchar() {
     return getc(stdin);
 }
@@ -284,4 +287,16 @@ FILE *freopen(const char *pathname, const char *mode, FILE *stream) {
     char *fname = (pathname) ? pathname : stream->fname;
     __fopen_internal(fname, mode, stream);
     return stream;
+}
+
+int fgetc(FILE *stream) {
+    char ret;
+    fread(&ret, 1, 1, stream);
+    return (ret) ? (int) ret : EOF;
+}
+
+int ungetc(int ch, FILE *stream) {
+    stream->pushed_chars = (char*) realloc(stream->pushed_chars, ++stream->num_pushed_chars);
+    stream->pushed_chars[stream->num_pushed_chars-1] = (char) ch;
+    return 0;
 }

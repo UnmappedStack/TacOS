@@ -1,3 +1,11 @@
+
+
+// WARNING NOTE INFO IMPORTANT
+// DO NOT USE THIS FILE AS A LEARNING RESOURCE
+// IT IS INCOMPLETE, BROKEN, AND CURRENTLY, GIVEN UP ON
+//
+// I REPEAT, DO NOT USE IT AS SOMETHING TO LEARN FROM
+
 #include <printf.h>
 #include <mem/pmm.h>
 #include <kernel.h>
@@ -138,6 +146,7 @@ int nvme_send_command(uint32_t queueID, uint8_t opcode,
     // wait for command to complete
     volatile NVMeCompletionEntry *cq = (volatile NVMeCompletionEntry*) completion_queue->addr;
     volatile NVMeCompletionEntry *cqe = &cq[completion_queue->at];
+    printf("phase bit is %b\n", nvme_dev.phase);
     while ((cqe->phase_and_status & 0b01) == nvme_dev.phase);
     nvme_dev.phase = !nvme_dev.phase;
     completion_queue->at++;
@@ -176,6 +185,7 @@ void nvme_init(uint8_t bus, uint8_t device, uint8_t function, uint8_t capabiliti
     printf("Waiting for controller ready...\n");
     while (!(nvme_read_reg(0x1C) & 0x01));
     printf("Controller ready!\n");
+
     // send a test command
     int s = nvme_send_command(0, 0x06, (uint64_t[2]) {kmalloc(1), 0}, 0, (uint32_t [6]) {});
     printf("test command returned %x\n", s);
@@ -183,3 +193,5 @@ void nvme_init(uint8_t bus, uint8_t device, uint8_t function, uint8_t capabiliti
 }
 
 
+//int nvme_send_command(uint32_t queueID, uint8_t opcode,
+//        uint64_t prps[2], uint32_t namespaceID, uint32_t args[6]) {

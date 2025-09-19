@@ -8,4 +8,6 @@
 #define SHRT_MAX   ((short)((1U << (SHRT_BITS - 1)) - 1))
 #define SHRT_MIN   (-SHRT_MAX - 1)
 
+#define UINT_MAX  ((unsigned int)-1)
+
 #define CHAR_BIT   8

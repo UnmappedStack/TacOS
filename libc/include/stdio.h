@@ -31,6 +31,8 @@ typedef struct {
     BufMode bufmode;
     bool eof, err;
     char *fname;
+    char *pushed_chars; // from ungetc
+    size_t num_pushed_chars;
 } FILE;
 
 extern FILE *stdin;
@@ -70,3 +72,4 @@ int fileno(FILE *stream);
 int feof(FILE *stream);
 int ferror(FILE *stream);
 FILE *freopen(const char *pathname, const char *mode, FILE *stream);
+int ungetc(int ch, FILE *stream);
