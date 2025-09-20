@@ -63,20 +63,6 @@ typedef struct {
 typedef struct {
     uint8_t r, g, b, a;
 } Pixel;
-typedef struct {
-    uint8_t type; // RGBPixelType
-    Pixel pixel;
-} RGBPixelChunk;
-typedef struct {
-    uint8_t tag_and_diff_green; // high 2 bits are tag, low 6 bits are green diff
-    uint8_t drdg_and_dbdg; // diffred - diffgr & diffblue - diffgreen
-} LumaChunk;
-typedef uint8_t IndexChunk; // high 2 bits is IndexType, low 6 bits is index
-typedef uint8_t DiffChunk;  /* Low 2 bits is blue channel diff from prev pixel
-                             * Next 2 bits is green channel diff from prev pixel
-                             * Next 2 bits is red channel diff from prev pixel
-                             * High 2 bits is DiffType */
-typedef uint8_t RunChunk;  // high 2 bits are RunType,  low 6 bits are run
 
 #define COLOR_HASH(x) (x.r*3 + x.g*5 + x.b*7 + x.a*11)
 uint32_t *decode_image(const char *path, size_t *width, size_t *height) {
@@ -101,10 +87,6 @@ err:
     header->height = big_to_little_endian_32(header->height);
     if (memcmp(header->magic, "qoif", 4) != 0) {
         fprintf(stderr, "Invalid QOI file, either corrupt or not QOI\n");
-        goto err;
-    }
-    if (header->channels != 3) {
-        fprintf(stderr, "Only 3 channels supported, no alpha channel\n");
         goto err;
     }
     printf(" === QOI Details: === \n"
@@ -135,8 +117,10 @@ err:
             pixel.b = at[3];
             at += 4;
         } else if (*at == RGBAPixelType) {
-            fprintf(stderr, "Got RGBA pixel, not supported\n");
-            goto err;
+            pixel.r = at[1];
+            pixel.g = at[2];
+            pixel.b = at[3];
+            pixel.a = at[4];
             at += 5;
         } else if ((*at & 0xc0) == IndexType) {
             pixel = pixels[*at];
@@ -161,7 +145,7 @@ err:
         }
         pixels[COLOR_HASH(pixel) & (64 - 1)] = pixel;
 add_to_buf:
-        retpixels[i] = (pixel.r << 16) | (pixel.g << 8) | pixel.b;
+        retpixels[i] = (pixel.r << 24) | (pixel.g << 16) | (pixel.b << 8) | pixel.a;
     }
 
     free(buf);
@@ -171,7 +155,32 @@ add_to_buf:
     return retpixels;
 }
 
-extern const char *stbi__g_failure_reason;
+void draw_wallpaper(size_t bgwidth, size_t bgheight, uint32_t *bgpixels) {
+    uint8_t *upto = (uint8_t*) fb.ptr;
+    for (size_t y = 0; y < bgheight; y++) {
+        if (y >= fb.height - 1) break;
+        for (size_t x = 0; x < bgwidth; x++) {
+            if (x > fb.width) break;
+            ((uint32_t*) upto)[x] = bgpixels[y * bgwidth + x] >> 8;
+        }
+        upto += fb.pitch;
+    }
+}
+
+void draw_cursor(size_t cwidth, size_t cheight, uint32_t *cpixels, size_t xs, size_t ys) {
+    uint8_t *upto = ((uint8_t*) fb.ptr) + fb.pitch * ys;
+    for (size_t y = 0; y < cheight; y++) {
+        if (y >= fb.height - 1) break;
+        for (size_t x = 0; x < cwidth; x++) {
+            if (x > fb.width) break;
+            size_t idx = y * cwidth + x;
+            if (!(cpixels[idx] & 0xff)) continue; // skip transparent pixels
+            ((uint32_t*) upto)[x + xs] = cpixels[idx] >> 8;
+        }
+        upto += fb.pitch;
+    }
+}
+
 int main(int argc, char **argv) {
     if (argc > 1 && argv[1][0] == '-') {
         printf("TacOS HabaneroWM: Window Manager\n"
@@ -179,7 +188,7 @@ int main(int argc, char **argv) {
                "See LICENSE in the source repo for more information.\n");
         exit(-1);
     }
-
+    
     // map the framebuffer into mem
     fb.fd = open("/dev/fb0", 0, 0);
     get_fb_info(fb.fd, &fb.pitch, &fb.bpp);
@@ -191,21 +200,19 @@ int main(int argc, char **argv) {
     printf("fb ptr = %p, pitch = %zu, bpp = %zu\n", fb.ptr, fb.pitch, fb.bpp);
     
     // load/decode background image
-    uint32_t *pixels;
-    size_t width, height;
-    if ((pixels=decode_image("/media/bg.qoi", &width, &height)) == NULL) return -1;
-    printf("Successfully decoded image\n");
-    printf("w=%zu,h=%zu\n", fb.width, fb.height);
+    uint32_t *bgpixels;
+    size_t bgwidth, bgheight;
+    if ((bgpixels=decode_image("/media/bg.qoi", &bgwidth, &bgheight)) == NULL) return -1;
+    printf("Successfully decoded background image\n");
 
-    // draw initial background image
-    uint8_t *upto = (uint8_t*) fb.ptr;
-    for (size_t y = 0; y < height; y++) {
-        if (y >= fb.height - 1) break;
-        for (size_t x = 0; x < width; x++) {
-            if (x > fb.width) break;
-            ((uint32_t*) upto)[x] = pixels[y * width + x];
-        }
-        upto += fb.pitch;
-    }
+    // load/decode cursor image
+    uint32_t *cpixels;
+    size_t cwidth, cheight;
+    if ((cpixels=decode_image("/media/cursor.qoi", &cwidth, &cheight)) == NULL) return -1;
+    printf("Successfully decoded cursor image\n");    
+    
+    draw_wallpaper(bgwidth, bgheight, bgpixels);
+
+    draw_cursor(cwidth, cheight, cpixels, 50, 50);
     for(;;);
 }
