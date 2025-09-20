@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <TacOS.h> // for keyboard stuff
 #include <string.h>
 #include <sys/mman.h>
 #include <stdlib.h>
@@ -19,7 +20,11 @@ typedef struct {
     uint64_t height;
 } FbDevInfo;
 
-int kb_fd;
+typedef struct {
+    size_t x, y;
+    bool ccm; // cursor control mode
+} Cursor;
+
 Fb fb = {0};
 
 void get_fb_info(int fd, uint64_t *pitchbuf, uint64_t *bppbuf) {
@@ -186,6 +191,37 @@ void doublebuf_swap(void) {
     memcpy(fb.ptr, fb.doublebuf, fb.pitch * fb.height);
 }
 
+Key getkey(int kb_fd) {
+    Key key;
+    if (read(kb_fd, &key, 1) < 0) return KeyNoPress;
+    return key;
+}
+
+
+void cursor_getkey(Cursor *cursor, int kb_fd) {
+#define speed 7
+    Key key = getkey(kb_fd);
+    if (key == KeyNoPress) return;
+    if (key != KeySuper && !cursor->ccm) return;
+    switch (key) {
+    case KeySuper:
+        cursor->ccm = !cursor->ccm;
+        return;
+    case CharL:
+        cursor->x += speed;
+        return;
+    case CharJ:
+        cursor->x -= speed;
+        return;
+    case CharI:
+        cursor->y -= speed;
+        return;
+    case CharK:
+        cursor->y += speed;
+        return;
+    }
+}
+
 int main(int argc, char **argv) {
     if (argc > 1 && argv[1][0] == '-') {
         printf("TacOS HabaneroWM: Window Manager\n"
@@ -194,6 +230,8 @@ int main(int argc, char **argv) {
         exit(-1);
     }
     
+    Cursor cursor = { .x=5, .y=5, .ccm=false };
+
     // map the framebuffer into mem
     fb.fd = open("/dev/fb0", 0, 0);
     get_fb_info(fb.fd, &fb.pitch, &fb.bpp);
@@ -205,6 +243,13 @@ int main(int argc, char **argv) {
     fb.doublebuf = (void*) malloc(fb.height * fb.pitch);
     printf("fb ptr = %p, pitch = %zu, bpp = %zu\n", fb.ptr, fb.pitch, fb.bpp);
     
+    // open keyboard device etc for non blocking IO keyboard events
+    int kb_fd = open("/dev/kb0", 0, 0);
+    if (kb_fd < 0) {
+        printf("Failed to open keyboard device.\n");
+        exit(-1);
+    }
+
     // load/decode background image
     uint32_t *bgpixels;
     size_t bgwidth, bgheight;
@@ -218,8 +263,9 @@ int main(int argc, char **argv) {
     printf("Successfully decoded cursor image\n");    
     
     for(;;) {
+        cursor_getkey(&cursor, kb_fd);
         draw_wallpaper(bgwidth, bgheight, bgpixels);
-        draw_cursor(cwidth, cheight, cpixels, 50, 50);
+        draw_cursor(cwidth, cheight, cpixels, cursor.x, cursor.y);
         doublebuf_swap();
     }
 }
