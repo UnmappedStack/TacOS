@@ -1,8 +1,12 @@
 #include <stdio.h>
+#include "font.h"
 #include <TacOS.h> // for keyboard stuff
 #include <string.h>
 #include <sys/mman.h>
 #include <stdlib.h>
+
+#define WINDOW_BORDER_COLOUR 0x8dc1ee
+#define EXIT_BUTTON_COLOUR   0xc75050
 
 typedef struct {
     int fd;
@@ -38,7 +42,7 @@ void get_fb_info(int fd, uint64_t *pitchbuf, uint64_t *bppbuf) {
 }
 
 void draw_pixel(uint64_t x, uint64_t y, uint32_t colour) {
-    uint32_t *location = (uint32_t *) (fb.ptr +
+    uint32_t *location = (uint32_t *) (fb.doublebuf +
                                       y * fb.pitch);
     location[x] = colour;
 }
@@ -222,6 +226,79 @@ void cursor_getkey(Cursor *cursor, int kb_fd) {
     }
 }
 
+void draw_char(char ch, uint64_t x_coord, uint64_t y_coord, uint32_t colour) {
+    uint64_t first_byte_idx = ch * 16;
+    for (size_t y = 0; y < 16; y++) {
+        for (size_t x = 0; x < 8; x++) {
+            if ((font[first_byte_idx + y] >> (7 - x)) & 1)
+                draw_pixel(x_coord + x, y_coord + y, colour);
+        }
+    }
+}
+
+void draw_text(const char *s, uint64_t x, uint64_t y, uint32_t colour) {
+    for (size_t i = 0; s[i]; i++) {
+        draw_char(s[i], x + i * 9, y, colour);
+    }
+}
+
+void draw_text_bold(const char *s, uint64_t x, uint64_t y, uint32_t colour) {
+    draw_text(s, x, y, colour);
+    draw_text(s, x + 1, y, colour);
+    draw_text(s, x, y + 1, colour);
+    draw_text(s, x + 1, y + 1, colour);
+}
+
+void draw_window(size_t x, size_t y, const char *title, size_t width, size_t height) {
+    // Draw rectangle for the main shape
+    uint32_t *where = (uint32_t*) (fb.doublebuf + (y+1) * fb.pitch);
+    for (size_t i = 0; i < height; i++) {
+        for (size_t j = x; j < width + x; j++) {
+            where[j] = WINDOW_BORDER_COLOUR;
+        }
+        where = (uint32_t*) ((uint8_t*) where + fb.pitch);
+    }
+
+    // draw a thin white border
+    //top
+    where = (uint32_t*) (fb.doublebuf + y * fb.pitch);
+    for (size_t i = x; i < width + x; i++)
+        where[i] = 0xFFFFFF;
+    //bottom
+    where = (uint32_t*) (fb.doublebuf + (y+height+1) * fb.pitch);
+    for (size_t i = x; i < width + x; i++)
+        where[i] = 0xFFFFFF;
+    // sides
+    where = (uint32_t*) (fb.doublebuf + y * fb.pitch);
+    for (size_t i = y; i < height + y + 1; i++) {
+        where[x-1    ] = 0xFFFFFF;
+        where[x+width] = 0xFFFFFF;
+        where = (uint32_t*) ((uint8_t*) where + fb.pitch);
+    }
+
+    // draw the area where the frame would be (temp)
+    where = (uint32_t*) (fb.doublebuf + (y+41) * fb.pitch);
+    for (size_t i = 0; i < height - 46; i++) {
+        for (size_t j = x + 5; j < width + x - 5; j++) {
+            where[j] = 0xFFFFFF;
+        }
+        where = (uint32_t*) ((uint8_t*) where + fb.pitch);
+    }
+
+    // draw title
+    draw_text_bold(title, x + 25, y + 11, 0x00);
+
+    // draw close button (doesn't do anything yet, just stylezzzz)
+    where = (uint32_t*) (fb.doublebuf + (y+1) * fb.pitch);
+    for (size_t i = 0; i < 33; i++) {
+        for (size_t j = x + width - 60; j < width + x - 5; j++) {
+            where[j] = EXIT_BUTTON_COLOUR;
+        }
+        where = (uint32_t*) ((uint8_t*) where + fb.pitch);
+    }
+    draw_text_bold("x", x + width - 37, y + 8, 0xFFFFFF);
+}
+
 int main(int argc, char **argv) {
     if (argc > 1 && argv[1][0] == '-') {
         printf("TacOS HabaneroWM: Window Manager\n"
@@ -265,6 +342,7 @@ int main(int argc, char **argv) {
     for(;;) {
         cursor_getkey(&cursor, kb_fd);
         draw_wallpaper(bgwidth, bgheight, bgpixels);
+        draw_window(50, 50, "Test Window", 500, 300);
         draw_cursor(cwidth, cheight, cpixels, cursor.x, cursor.y);
         doublebuf_swap();
     }
