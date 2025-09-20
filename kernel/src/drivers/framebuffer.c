@@ -106,6 +106,10 @@ int fbdevread(void *f, char *buf, size_t len, size_t off) {
     uint64_t *nbuf = (uint64_t*) buf;
     nbuf[0] = kernel.framebuffer.pitch;
     nbuf[1] = kernel.framebuffer.bytes_per_pix;
+    if (len > sizeof(uint64_t) * 2) {
+        nbuf[2] = kernel.framebuffer.width;
+        nbuf[3] = kernel.framebuffer.height;
+    }
     return 0;
 }
 void init_framebuffer(void) {
