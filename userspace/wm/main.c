@@ -9,6 +9,7 @@ typedef struct {
     uint64_t pitch;
     uint32_t *ptr;
     uint64_t width, height;
+    void *doublebuf;
 } Fb;
 
 typedef struct {
@@ -156,7 +157,7 @@ add_to_buf:
 }
 
 void draw_wallpaper(size_t bgwidth, size_t bgheight, uint32_t *bgpixels) {
-    uint8_t *upto = (uint8_t*) fb.ptr;
+    uint8_t *upto = (uint8_t*) fb.doublebuf;
     for (size_t y = 0; y < bgheight; y++) {
         if (y >= fb.height - 1) break;
         for (size_t x = 0; x < bgwidth; x++) {
@@ -168,7 +169,7 @@ void draw_wallpaper(size_t bgwidth, size_t bgheight, uint32_t *bgpixels) {
 }
 
 void draw_cursor(size_t cwidth, size_t cheight, uint32_t *cpixels, size_t xs, size_t ys) {
-    uint8_t *upto = ((uint8_t*) fb.ptr) + fb.pitch * ys;
+    uint8_t *upto = ((uint8_t*) fb.doublebuf) + fb.pitch * ys;
     for (size_t y = 0; y < cheight; y++) {
         if (y >= fb.height - 1) break;
         for (size_t x = 0; x < cwidth; x++) {
@@ -179,6 +180,10 @@ void draw_cursor(size_t cwidth, size_t cheight, uint32_t *cpixels, size_t xs, si
         }
         upto += fb.pitch;
     }
+}
+
+void doublebuf_swap(void) {
+    memcpy(fb.ptr, fb.doublebuf, fb.pitch * fb.height);
 }
 
 int main(int argc, char **argv) {
@@ -197,6 +202,7 @@ int main(int argc, char **argv) {
         exit(-1);
     }
     fb.ptr = mmap(NULL, 0, 0, 0, fb.fd, 0);
+    fb.doublebuf = (void*) malloc(fb.height * fb.pitch);
     printf("fb ptr = %p, pitch = %zu, bpp = %zu\n", fb.ptr, fb.pitch, fb.bpp);
     
     // load/decode background image
@@ -211,8 +217,9 @@ int main(int argc, char **argv) {
     if ((cpixels=decode_image("/media/cursor.qoi", &cwidth, &cheight)) == NULL) return -1;
     printf("Successfully decoded cursor image\n");    
     
-    draw_wallpaper(bgwidth, bgheight, bgpixels);
-
-    draw_cursor(cwidth, cheight, cpixels, 50, 50);
-    for(;;);
+    for(;;) {
+        draw_wallpaper(bgwidth, bgheight, bgpixels);
+        draw_cursor(cwidth, cheight, cpixels, 50, 50);
+        doublebuf_swap();
+    }
 }
