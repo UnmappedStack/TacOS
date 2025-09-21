@@ -20,6 +20,9 @@ pid_t fork(CallFrame *callframe) {
     Task *new_task = task_add();
     memcpy(new_task->resources, initial_task->resources,
            sizeof(new_task->resources));
+    for (int i = 0; i < MAX_RESOURCES; i++) {
+        printf("resources %i = %p\n", i, new_task->resources[i].f);
+    }
     memcpy(new_task->cwd, initial_task->cwd, MAX_PATH_LEN);
     memset(new_task->children, 0, sizeof(new_task->children));
     new_task->entry = kernel.scheduler.current_task->entry;

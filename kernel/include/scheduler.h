@@ -9,7 +9,7 @@
 
 #define CURRENT_TASK kernel.scheduler.current_task
 
-#define MAX_RESOURCES 20 // TODO: Dynamically allocate this.
+#define MAX_RESOURCES 30
 #define MAX_CHILDREN 20
 #define TASK_PRESENT 0b0001
 #define TASK_RUNNING 0b0010

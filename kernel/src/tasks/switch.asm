@@ -17,10 +17,10 @@ extern scheduler_is_initiated
 %define TASK_RSP_OFF         32
 %define TASK_ENTRY_OFF       40
 %define TASK_FLAGS_OFF       64
-%define TASK_ARGV_OFF        720
-%define TASK_ARGC_OFF        728
-%define TASK_FIRST_RSP_OFF   736
-%define TASK_ENVP_OFF        744
+%define TASK_ARGV_OFF        880
+%define TASK_ARGC_OFF        888
+%define TASK_FIRST_RSP_OFF   896
+%define TASK_ENVP_OFF        904
 
 context_switch:
     cli

@@ -1,4 +1,5 @@
 #pragma once
+#include <stdbool.h>
 
 #define AF_UNIX 0
 #define AF_LOCAL AF_UNIX
@@ -10,7 +11,8 @@ typedef int socklen_t;
 // This will be referenced in task resource lists
 // and anchor points in tempfs file lists
 typedef struct {
-    char tag[20]; // tag of this socket to be used for testing mostly
+    bool listening;
+    int backlog_max_len;
 } Socket;
 
 struct sockaddr {

@@ -10,3 +10,7 @@ int bind(int sockfd, const struct sockaddr *addr,
                 socklen_t addrlen) {
     return __syscall3(26, sockfd, addr, addrlen);
 }
+
+int listen(int sockfd, int backlog) {
+    return __syscall2(27, sockfd, backlog);
+}

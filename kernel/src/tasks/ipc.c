@@ -7,6 +7,13 @@ void init_ipc(void) {
     kernel.ipc_socket_cache = init_slab_cache(sizeof(Socket), "IPC Sockets");
 }
 
+int sys_listen(int sockfd, int backlog) {
+    Socket *socket = kernel.scheduler.current_task->resources[sockfd].f->private;
+    socket->listening = true;
+    socket->backlog_max_len = backlog;
+    return 0;
+}
+
 int sys_socket(int domain, int type, int protocol) {
     if (domain != AF_UNIX) {
         printf("Only Unix local sockets are supported, invalid domain\n");
@@ -30,6 +37,7 @@ int sys_socket(int domain, int type, int protocol) {
         kernel.scheduler.current_task->resources[i].f = file;
         kernel.scheduler.current_task->resources[i].offset = 0;
         fd = i;
+        break;
     }
     if (fd < 0) {
         printf("Too many resources open to open socket\n");
@@ -56,3 +64,4 @@ int sys_bind(int sockfd, const struct sockaddr *addr,
     memcpy(f, kernel.scheduler.current_task->resources[sockfd].f, sizeof(VfsFile));
     return 0;
 }
+
