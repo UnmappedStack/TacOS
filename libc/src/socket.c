@@ -5,3 +5,8 @@
 int socket(int domain, int type, int protocol) {
     return __syscall3(25, domain, type, protocol); 
 }
+
+int bind(int sockfd, const struct sockaddr *addr,
+                socklen_t addrlen) {
+    return __syscall3(26, sockfd, addr, addrlen);
+}

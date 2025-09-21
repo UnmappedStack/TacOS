@@ -22,7 +22,7 @@ int sys_socket(int domain, int type, int protocol) {
     }
     Socket *socket = (Socket*) slab_alloc(kernel.ipc_socket_cache);
     VfsFile *file = slab_alloc(kernel.vfs_file_cache);
-    file->ops = (FSOps) { 0 }; // TODO: add relevant operations
+    file->ops = tempfs_regfile_ops; // TODO: this needs to have separate read/write ops
     file->private = socket;
     int fd = -1;
     for (size_t i = 0; i < MAX_RESOURCES; i++) {
@@ -36,4 +36,23 @@ int sys_socket(int domain, int type, int protocol) {
         return -1;
     }
     return fd;
+}
+
+int sys_bind(int sockfd, const struct sockaddr *addr,
+                socklen_t addrlen) {
+    (void) addrlen;
+    if (addr->family != AF_UNIX) {
+        printf("bind() only supports local unix sockets, invalid family\n");
+        return -1;
+    }
+    VfsFile *f = vfs_access((char*) addr->data, 0, VAT_mkfile);
+    if (f->drive.fs.fs_id != fs_tempfs) {
+        printf("bind() only supports anchor creation on TempFS\n");
+        return -1;
+    }
+    TempfsInode *private = f->private;
+    private->ops = kernel.scheduler.current_task->resources[sockfd].f->ops;
+    private->private = kernel.scheduler.current_task->resources[sockfd].f->private;
+    memcpy(f, kernel.scheduler.current_task->resources[sockfd].f, sizeof(VfsFile));
+    return 0;
 }

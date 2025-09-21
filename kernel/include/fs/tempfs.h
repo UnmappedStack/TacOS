@@ -21,11 +21,12 @@ struct TempfsDirEntry {
 };
 
 struct TempfsInode {
-    char name[MAX_FILENAME_LEN]; // TODO: Allocate dynamically
+    char name[MAX_FILENAME_LEN];
     TempfsInode *parent;
     VFSFileType type;
     size_t size;
     FSOps ops;
+    void *private; // used for stuff like IPC, not always used
     union {
         TempfsFileNode *first_file_node;
         TempfsDirEntry *first_dir_entry;

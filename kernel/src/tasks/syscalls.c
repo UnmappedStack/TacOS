@@ -409,6 +409,7 @@ int sys_stat(char *file, void *statbuf) {
 
 pid_t sys_fork();
 int sys_socket(int domain, int type, int protocol);
+int sys_bind(int sockfd, void *addr, int addrlen);
 
 void *syscalls[] = {
     sys_read,
@@ -437,6 +438,7 @@ void *syscalls[] = {
     sys_readdir,
     sys_stat,
     sys_socket,
+    sys_bind,
 };
 
 uint64_t num_syscalls = sizeof(syscalls) / sizeof(syscalls[0]);
