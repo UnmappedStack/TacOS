@@ -25,12 +25,6 @@ typedef struct {
     uint64_t height;
 } FbDevInfo;
 
-typedef struct {
-    size_t x, y;
-    bool clicking;
-    bool ccm; // cursor control mode
-} Cursor;
-
 typedef struct Window Window;
 struct Window {
     Window *next;
@@ -39,6 +33,14 @@ struct Window {
     const char *title;
     bool focused;
 };
+
+typedef struct {
+    size_t x, y;
+    bool clicking;
+    bool ccm; // cursor control mode
+    Window *windragging; // The window it's currently dragging (or NULL if none)
+    size_t wdxoff, wdyoff; // offsets from top left of bar that we're dragging from (for windragging)
+} Cursor;
 
 Fb fb = {0};
 
@@ -213,7 +215,10 @@ Key getkey(int kb_fd) {
 }
 
 void handle_click(Window *winlist, Cursor *cursor) {
-    if (cursor->clicking) return; // currently trying to drag (TODO)
+    if (cursor->clicking) {
+        if (cursor->windragging) cursor->windragging = NULL;
+        return;
+    }
     // go through each window and check if it's within the coords, preferring top windows
     Window *last_window = winlist;
     Window *within_window = NULL;
@@ -253,6 +258,14 @@ void handle_click(Window *winlist, Cursor *cursor) {
          cursor->y <= close_butt_y + 33) {
         second_last->next = NULL;
         free(within_window);
+        return;
+    }
+
+    // if it's clicking on the title bar, set the cursor to be dragging this window
+    if (cursor->y <= within_window->y + 40) {
+        cursor->windragging = within_window;
+        cursor->wdxoff = cursor->x - within_window->x;
+        cursor->wdyoff = cursor->y - within_window->y;
     }
 }
 
@@ -261,6 +274,11 @@ void cursor_getkey(Cursor *cursor, Window *winlist, int kb_fd) {
     Key key = getkey(kb_fd);
     if (key == KeyNoPress) return;
     if (key != KeySuper && !cursor->ccm) return;
+    if ((key == CharL || key == CharJ || key == CharI || key == CharK)
+            && cursor->windragging) {
+        cursor->windragging->x = cursor->x - cursor->wdxoff;
+        cursor->windragging->y = cursor->y - cursor->wdyoff;
+    }
     switch (key) {
     case KeySuper:
         cursor->ccm = !cursor->ccm;
@@ -393,7 +411,8 @@ int main(int argc, char **argv) {
         exit(-1);
     }
     
-    Cursor cursor = { .x=5, .y=5, .clicking=false, .ccm=false };
+    Cursor cursor = { .x=5, .y=5, .clicking=false, .ccm=false,
+                        .windragging=NULL, .wdxoff=0, .wdyoff=0 };
     Window winlist;
     winlist.next = NULL;
 
