@@ -5,8 +5,9 @@
 #include <sys/mman.h>
 #include <stdlib.h>
 
-#define WINDOW_BORDER_COLOUR 0x8dc1ee
-#define EXIT_BUTTON_COLOUR   0xc75050
+#define WINDOW_BORDER_COLOUR  0x8dc1ee
+#define WINDOW_BORDER_NOFOCUS 0x9acbf5
+#define EXIT_BUTTON_COLOUR    0xc75050
 
 typedef struct {
     int fd;
@@ -36,6 +37,7 @@ struct Window {
     size_t x, y;
     size_t width, height;
     const char *title;
+    bool focused;
 };
 
 Fb fb = {0};
@@ -210,8 +212,51 @@ Key getkey(int kb_fd) {
     return key;
 }
 
+void handle_click(Window *winlist, Cursor *cursor) {
+    if (cursor->clicking) return; // currently trying to drag (TODO)
+    // go through each window and check if it's within the coords, preferring top windows
+    Window *last_window = winlist;
+    Window *within_window = NULL;
+    Window *within_window_prev = NULL;
+    while (last_window->next) {
+        Window *prev = last_window;
+        last_window = last_window->next;
+        if ( cursor->x >= last_window->x &&
+             cursor->y >= last_window->y &&
+             cursor->x <= last_window->x + last_window->width &&
+             cursor->y <= last_window->y + last_window->height) {
+            within_window = last_window;
+            within_window_prev = prev;
+        }
+        last_window->focused = false; // anything else should be put out of focus
+    }
+    if (within_window == NULL) return;
+    // set the window clicked as being in focus
+    within_window->focused = true;
+    // and bring it to the front
+    within_window_prev->next = within_window->next;
+    last_window = winlist;
+    while (last_window->next) last_window = last_window->next;
+    last_window->next = within_window;
+    Window *second_last = last_window;
+    within_window->next = NULL;
 
-void cursor_getkey(Cursor *cursor, int kb_fd) {
+    // if it's within the close button area, close the window
+    // (NOTE: this is temporary, later it should just send a signal to the program
+    // via the window server so that the program responsible for the window can close it
+    // itself)
+    size_t close_butt_x = within_window->x + within_window->width - 60;
+    size_t close_butt_y = within_window->y + 1;
+    if ( cursor->x >= close_butt_x &&
+         cursor->y >= close_butt_y &&
+         cursor->x <= close_butt_x + 55 &&
+         cursor->y <= close_butt_y + 33) {
+        second_last->next = NULL;
+        free(within_window);
+    }
+}
+
+void cursor_getkey(Cursor *cursor, Window *winlist, int kb_fd) {
 #define speed 7
     Key key = getkey(kb_fd);
     if (key == KeyNoPress) return;
@@ -233,6 +278,7 @@ void cursor_getkey(Cursor *cursor, int kb_fd) {
         cursor->y += speed;
         return;
     case KeySpace:
+        handle_click(winlist, cursor);
         cursor->clicking = !cursor->clicking;
         return;
     }
@@ -264,8 +310,10 @@ void draw_text_bold(const char *s, uint64_t x, uint64_t y, uint32_t colour) {
 void open_window(Window *winlist, size_t x, size_t y, const char *title, size_t width, size_t height) {
     // find last window in queue
     Window *last_window = winlist;
-    while (last_window->next)
+    while (last_window->next) {
         last_window = last_window->next;
+        last_window->focused = false;
+    }
     // add to queue
     Window new = {
         .next = NULL,
@@ -274,6 +322,7 @@ void open_window(Window *winlist, size_t x, size_t y, const char *title, size_t 
         .width = width,
         .height = height,
         .title = title,
+        .focused = true,
     };
     Window *newwin = (Window*) malloc(sizeof(Window));
     *newwin = new;
@@ -290,25 +339,26 @@ void draw_window(Window *win) {
     uint32_t *where = (uint32_t*) (fb.doublebuf + (y+1) * fb.pitch);
     for (size_t i = 0; i < height; i++) {
         for (size_t j = x; j < width + x; j++) {
-            where[j] = WINDOW_BORDER_COLOUR;
+            where[j] = (win->focused) ? WINDOW_BORDER_COLOUR : WINDOW_BORDER_NOFOCUS;
         }
         where = (uint32_t*) ((uint8_t*) where + fb.pitch);
     }
 
     // draw a thin white border
+    uint32_t border_colour = 0xFFFFFF;
     //top
     where = (uint32_t*) (fb.doublebuf + y * fb.pitch);
     for (size_t i = x; i < width + x; i++)
-        where[i] = 0xFFFFFF;
+        where[i] = border_colour;
     //bottom
     where = (uint32_t*) (fb.doublebuf + (y+height+1) * fb.pitch);
     for (size_t i = x; i < width + x; i++)
-        where[i] = 0xFFFFFF;
+        where[i] = border_colour;
     // sides
     where = (uint32_t*) (fb.doublebuf + y * fb.pitch);
     for (size_t i = y; i < height + y + 1; i++) {
-        where[x-1    ] = 0xFFFFFF;
-        where[x+width] = 0xFFFFFF;
+        where[x-1    ] = border_colour;
+        where[x+width] = border_colour;
         where = (uint32_t*) ((uint8_t*) where + fb.pitch);
     }
 
@@ -379,9 +429,10 @@ int main(int argc, char **argv) {
     
     // open test window
     open_window(&winlist, 50, 50, "Test Window", 500, 300);
+    open_window(&winlist, 300, 200, "Test Window 2", 500, 300);
 
     for(;;) {
-        cursor_getkey(&cursor, kb_fd);
+        cursor_getkey(&cursor, &winlist, kb_fd);
         draw_wallpaper(bgwidth, bgheight, bgpixels);
 
         Window *at = &winlist;
