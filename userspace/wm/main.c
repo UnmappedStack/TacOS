@@ -26,6 +26,7 @@ typedef struct {
 
 typedef struct {
     size_t x, y;
+    bool clicking;
     bool ccm; // cursor control mode
 } Cursor;
 
@@ -231,6 +232,9 @@ void cursor_getkey(Cursor *cursor, int kb_fd) {
     case CharK:
         cursor->y += speed;
         return;
+    case KeySpace:
+        cursor->clicking = !cursor->clicking;
+        return;
     }
 }
 
@@ -339,7 +343,7 @@ int main(int argc, char **argv) {
         exit(-1);
     }
     
-    Cursor cursor = { .x=5, .y=5, .ccm=false };
+    Cursor cursor = { .x=5, .y=5, .clicking=false, .ccm=false };
     Window winlist;
     winlist.next = NULL;
 
@@ -387,6 +391,12 @@ int main(int argc, char **argv) {
         }
 
         draw_cursor(cwidth, cheight, cpixels, cursor.x, cursor.y);
+        if (cursor.clicking) {
+            for (size_t i = 0; i < 5; i++) {
+                for (size_t j = 0; j < 5; j++)
+                    draw_pixel(cursor.x - 2 + j, cursor.y - 2 + i, 0xFF0000);
+            }
+        }
         doublebuf_swap();
     }
 }
