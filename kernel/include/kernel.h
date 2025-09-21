@@ -48,6 +48,7 @@ typedef struct {
     uintptr_t ioapic_addr;
     size_t pit_counter;
     size_t vmm_upto;
+    Cache *ipc_socket_cache;
 } Kernel;
 
 extern Kernel kernel;

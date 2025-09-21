@@ -1,4 +1,5 @@
 #include <apic.h>
+#include <ipc.h>
 #include <pci.h>
 #include <cpu/msr.h>
 #include <syscalls.h>
@@ -114,6 +115,7 @@ void _start(void) {
     init_devices();
     init_memregion();
     init_scheduler();
+    init_ipc();
     init_apic();
     init_pit();
     init_syscalls();
