@@ -29,6 +29,14 @@ typedef struct {
     bool ccm; // cursor control mode
 } Cursor;
 
+typedef struct Window Window;
+struct Window {
+    Window *next;
+    size_t x, y;
+    size_t width, height;
+    const char *title;
+};
+
 Fb fb = {0};
 
 void get_fb_info(int fd, uint64_t *pitchbuf, uint64_t *bppbuf) {
@@ -249,7 +257,31 @@ void draw_text_bold(const char *s, uint64_t x, uint64_t y, uint32_t colour) {
     draw_text(s, x + 1, y + 1, colour);
 }
 
-void draw_window(size_t x, size_t y, const char *title, size_t width, size_t height) {
+void open_window(Window *winlist, size_t x, size_t y, const char *title, size_t width, size_t height) {
+    // find last window in queue
+    Window *last_window = winlist;
+    while (last_window->next)
+        last_window = last_window->next;
+    // add to queue
+    Window new = {
+        .next = NULL,
+        .x = x,
+        .y = y,
+        .width = width,
+        .height = height,
+        .title = title,
+    };
+    Window *newwin = (Window*) malloc(sizeof(Window));
+    *newwin = new;
+    last_window->next = newwin;
+}
+
+void draw_window(Window *win) {
+    size_t x = win->x;
+    size_t y = win->y;
+    size_t width  = win->width;
+    size_t height = win->height;
+    const char *title  = win->title;
     // Draw rectangle for the main shape
     uint32_t *where = (uint32_t*) (fb.doublebuf + (y+1) * fb.pitch);
     for (size_t i = 0; i < height; i++) {
@@ -308,6 +340,8 @@ int main(int argc, char **argv) {
     }
     
     Cursor cursor = { .x=5, .y=5, .ccm=false };
+    Window winlist;
+    winlist.next = NULL;
 
     // map the framebuffer into mem
     fb.fd = open("/dev/fb0", 0, 0);
@@ -339,10 +373,19 @@ int main(int argc, char **argv) {
     if ((cpixels=decode_image("/media/cursor.qoi", &cwidth, &cheight)) == NULL) return -1;
     printf("Successfully decoded cursor image\n");    
     
+    // open test window
+    open_window(&winlist, 50, 50, "Test Window", 500, 300);
+
     for(;;) {
         cursor_getkey(&cursor, kb_fd);
         draw_wallpaper(bgwidth, bgheight, bgpixels);
-        draw_window(50, 50, "Test Window", 500, 300);
+
+        Window *at = &winlist;
+        while (at->next) {
+            at = at->next;
+            draw_window(at);
+        }
+
         draw_cursor(cwidth, cheight, cpixels, cursor.x, cursor.y);
         doublebuf_swap();
     }
