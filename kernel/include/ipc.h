@@ -1,4 +1,5 @@
 #pragma once
+#include <list.h>
 #include <stdbool.h>
 
 #define AF_UNIX 0
@@ -13,7 +14,14 @@ typedef int socklen_t;
 typedef struct {
     bool listening;
     int backlog_max_len;
+    struct list pending_queue;
+    struct list connected_queue;
 } Socket;
+
+typedef struct {
+    struct list list;
+    Socket *socket;
+} SocketQueueItem;
 
 struct sockaddr {
     int family;

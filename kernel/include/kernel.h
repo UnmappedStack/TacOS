@@ -49,6 +49,7 @@ typedef struct {
     size_t pit_counter;
     size_t vmm_upto;
     Cache *ipc_socket_cache;
+    Cache *ipc_socketqueueitem_cache;
 } Kernel;
 
 extern Kernel kernel;

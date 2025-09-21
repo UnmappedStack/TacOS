@@ -5,6 +5,23 @@
 
 void init_ipc(void) {
     kernel.ipc_socket_cache = init_slab_cache(sizeof(Socket), "IPC Sockets");
+    kernel.ipc_socketqueueitem_cache = init_slab_cache(sizeof(SocketQueueItem), "IPC Socket Queue Item");
+}
+
+int sys_connect(int sockfd, const struct sockaddr *addr,
+                   socklen_t addrlen) {
+    (void) addrlen;
+    if (addr->family != AF_UNIX) {
+        printf("connect() only supports local unix sockets, invalid family\n");
+        return -1;
+    }
+    VfsFile *f = vfs_access((char*) addr->data, 0, VAT_open);
+    Socket *server_socket = ((TempfsInode*) f->private)->private;
+    SocketQueueItem *newentry = (SocketQueueItem*) slab_alloc(kernel.ipc_socketqueueitem_cache);
+    newentry->socket = kernel.scheduler.current_task->resources[sockfd].f->private;
+
+    list_insert(&server_socket->pending_queue, &newentry->list);
+    return 0;
 }
 
 int sys_listen(int sockfd, int backlog) {
@@ -28,6 +45,8 @@ int sys_socket(int domain, int type, int protocol) {
         return -1;
     }
     Socket *socket = (Socket*) slab_alloc(kernel.ipc_socket_cache);
+    list_init(&socket->pending_queue);
+    list_init(&socket->connected_queue);
     VfsFile *file = slab_alloc(kernel.vfs_file_cache);
     file->ops = tempfs_regfile_ops; // TODO: this needs to have separate read/write ops
     file->private = socket;

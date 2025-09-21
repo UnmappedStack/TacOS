@@ -14,3 +14,8 @@ int bind(int sockfd, const struct sockaddr *addr,
 int listen(int sockfd, int backlog) {
     return __syscall2(27, sockfd, backlog);
 }
+
+int connect(int sockfd, const struct sockaddr *addr,
+                   socklen_t addrlen) {
+    return __syscall3(28, sockfd, addr, addrlen);
+}

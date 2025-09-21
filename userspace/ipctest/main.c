@@ -40,6 +40,12 @@ err:
         return -1;
     }
     printf("Success! Resource FD = %d.\n", fd);
+    printf(" > Client trying to connect to server...\n");
+    struct sockaddr_un addr;
+    addr.sun_family = AF_UNIX;
+    strcpy(addr.sun_path, PATH);
+    if (connect(fd, (struct sockaddr*) &addr, sizeof(addr)) < 0) goto err;
+    printf("Successfully sent connect() request, waiting for server to respond...\n");
 }
 
 int main(int argc, char **argv) {
