@@ -1,10 +1,18 @@
 #include <stdio.h>
+#include <time.h>
 #include <unistd.h>
 #include <string.h>
 #include <stdlib.h>
 #include <sys/socket.h>
 
 #define PATH "/testsocket"
+
+void pause(void) {
+    struct timespec ts;
+    ts.tv_sec = 0;
+    ts.tv_nsec = 500;
+    nanosleep(&ts);
+}
 
 int server(void) {
     printf(" > Trying to open server socket...\n");
@@ -28,6 +36,11 @@ err:
     printf("Starting client...\n");
     int pid = fork();
     if (!pid) execve("/usr/bin/ipctest", (char*[]){"ipctest", "client", NULL}, (char*[]){NULL});
+    printf(" > Waiting for request to connect to accept()...\n");
+    pause();
+    int client = accept(fd, NULL, 0);
+    if (client < 0) goto err;
+    printf("Server successfully connected to client! Client fd=%d\n", client);
     return 0;
 }
 
@@ -45,7 +58,6 @@ err:
     addr.sun_family = AF_UNIX;
     strcpy(addr.sun_path, PATH);
     if (connect(fd, (struct sockaddr*) &addr, sizeof(addr)) < 0) goto err;
-    printf("Successfully sent connect() request, waiting for server to respond...\n");
 }
 
 int main(int argc, char **argv) {

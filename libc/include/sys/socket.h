@@ -24,3 +24,5 @@ int bind(int sockfd, const struct sockaddr *addr,
 int listen(int sockfd, int backlog);
 int connect(int sockfd, const struct sockaddr *addr,
                    socklen_t addrlen);
+int accept(int sockfd, struct sockaddr *addr,
+                  socklen_t *addrlen);

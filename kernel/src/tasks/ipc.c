@@ -8,6 +8,31 @@ void init_ipc(void) {
     kernel.ipc_socketqueueitem_cache = init_slab_cache(sizeof(SocketQueueItem), "IPC Socket Queue Item");
 }
 
+int sys_accept(int sockfd, struct sockaddr *addr,
+                  socklen_t *addrlen) {
+    if (addr) {
+        printf("addr must be NULL, writing address is not supported yet in accept()\n");
+        (void) addrlen;
+        return -1;
+    }
+    Socket *server = kernel.scheduler.current_task->resources[sockfd].f->private;
+    while (!server->pending_queue.next);
+    SocketQueueItem *client = (SocketQueueItem*) server->pending_queue.next;
+    list_remove(&client->list);
+    list_insert(&server->connected_queue, &client->list);
+
+    // Open to a resource
+    int fd = 0;
+    for (size_t i = 0; i < MAX_RESOURCES; i++) {
+        if (kernel.scheduler.current_task->resources[i].f) continue;
+        kernel.scheduler.current_task->resources[i].f = client->file;
+        kernel.scheduler.current_task->resources[i].offset = 0;
+        fd = i;
+        break;
+    }
+    return fd;
+}
+
 int sys_connect(int sockfd, const struct sockaddr *addr,
                    socklen_t addrlen) {
     (void) addrlen;
@@ -19,6 +44,7 @@ int sys_connect(int sockfd, const struct sockaddr *addr,
     Socket *server_socket = ((TempfsInode*) f->private)->private;
     SocketQueueItem *newentry = (SocketQueueItem*) slab_alloc(kernel.ipc_socketqueueitem_cache);
     newentry->socket = kernel.scheduler.current_task->resources[sockfd].f->private;
+    newentry->file = kernel.scheduler.current_task->resources[sockfd].f;
 
     list_insert(&server_socket->pending_queue, &newentry->list);
     return 0;

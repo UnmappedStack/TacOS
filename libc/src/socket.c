@@ -19,3 +19,8 @@ int connect(int sockfd, const struct sockaddr *addr,
                    socklen_t addrlen) {
     return __syscall3(28, sockfd, addr, addrlen);
 }
+
+int accept(int sockfd, struct sockaddr *addr,
+                  socklen_t *addrlen) {
+    return __syscall3(29, sockfd, addr, addrlen);
+}

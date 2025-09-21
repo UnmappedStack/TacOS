@@ -413,6 +413,8 @@ int sys_bind(int sockfd, void *addr, int addrlen);
 int sys_listen(int sockfd, int backlog);
 int sys_connect(int sockfd, void *addr,
                    int addrlen);
+int sys_accept(int sockfd, void *addr,
+                  int *addrlen);
 
 void *syscalls[] = {
     sys_read,
@@ -444,6 +446,7 @@ void *syscalls[] = {
     sys_bind,
     sys_listen,
     sys_connect,
+    sys_accept,
 };
 
 uint64_t num_syscalls = sizeof(syscalls) / sizeof(syscalls[0]);

@@ -1,4 +1,5 @@
 #pragma once
+#include <fs/vfs.h>
 #include <list.h>
 #include <stdbool.h>
 
@@ -21,6 +22,7 @@ typedef struct {
 typedef struct {
     struct list list;
     Socket *socket;
+    VfsFile *file; // to open as a resource
 } SocketQueueItem;
 
 struct sockaddr {

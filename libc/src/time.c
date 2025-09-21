@@ -26,7 +26,6 @@ int nanosleep(struct timespec *duration) {
         clock_gettime(CLOCK_REALTIME, &current_time);
         sched_yield();
     }
-    printf("Done\n");
     return 0;
 }
 
