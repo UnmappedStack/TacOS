@@ -72,8 +72,8 @@ int sys_accept(int sockfd, struct sockaddr *addr,
     VfsFile *srvfile = kernel.scheduler.current_task->resources[sockfd].f;
     Socket *server = srvfile->private;
     if (block)
-        while (!server->pending_queue.next);
-    else if (!server->pending_queue.next) return -1;
+        while (server->pending_queue.next == &server->pending_queue);
+    else if (server->pending_queue.next == &server->pending_queue) return -1;
     SocketQueueItem *client = (SocketQueueItem*) server->pending_queue.next;
     list_remove(&client->list);
     list_insert(&server->connected_queue, &client->list);

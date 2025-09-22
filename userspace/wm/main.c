@@ -1,13 +1,35 @@
 #include <stdio.h>
+#include <unistd.h>
+#include <sys/socket.h>
 #include "font.h"
 #include <TacOS.h> // for keyboard stuff
 #include <string.h>
-#include <sys/mman.h>
+#include <mman.h>
 #include <stdlib.h>
 
 #define WINDOW_BORDER_COLOUR  0x8dc1ee
 #define WINDOW_BORDER_NOFOCUS 0x9acbf5
 #define EXIT_BUTTON_COLOUR    0xc75050
+
+typedef enum {
+    WIN_CREATE,
+} SrvCommand;
+
+int server_init(void) {
+    int fd = socket(AF_UNIX, SOCK_STREAM, 0);
+    if (fd < 0) {
+err:
+        fprintf(stderr, "Window server could not be started\n");
+        return -1;
+    }
+    struct sockaddr_un addr;
+    addr.sun_family = AF_UNIX;
+    strcpy(addr.sun_path, "/winsrv");
+    if (bind(fd, (struct sockaddr*) &addr, sizeof(struct sockaddr_un)) < 0) goto err;
+    if (listen(fd, 10) < 0) goto err;
+    printf("Successfully started window server listening at /winsrv\n");
+    return fd;
+}
 
 typedef struct {
     int fd;
@@ -411,6 +433,7 @@ int main(int argc, char **argv) {
         exit(-1);
     }
     
+    int winsrv_fd = server_init();
     Cursor cursor = { .x=5, .y=5, .clicking=false, .ccm=false,
                         .windragging=NULL, .wdxoff=0, .wdyoff=0 };
     Window winlist;
@@ -449,10 +472,17 @@ int main(int argc, char **argv) {
     // open test window
     open_window(&winlist, 50, 50, "Test Window", 500, 300);
     open_window(&winlist, 300, 200, "Test Window 2", 500, 300);
+    
+    int pid = fork();
+    if (!pid)
+        execve("/usr/bin/testwin", (char*[]) {"testwin", NULL}, (char*[]) {NULL});
 
     for(;;) {
         cursor_getkey(&cursor, &winlist, kb_fd);
         draw_wallpaper(bgwidth, bgheight, bgpixels);
+        if (accept_b(winsrv_fd, NULL, 0, false) > 0) {
+            printf("Established new connection from client\n");
+        }
 
         Window *at = &winlist;
         while (at->next) {
