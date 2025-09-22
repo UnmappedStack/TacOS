@@ -414,7 +414,7 @@ int sys_listen(int sockfd, int backlog);
 int sys_connect(int sockfd, void *addr,
                    int addrlen);
 int sys_accept(int sockfd, void *addr,
-                  int *addrlen);
+                  int *addrlen, bool block);
 
 void *syscalls[] = {
     sys_read,

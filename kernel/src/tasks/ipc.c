@@ -63,7 +63,7 @@ int socket_write(Socket *file, char *buf, size_t len, size_t offset) {
 }
 
 int sys_accept(int sockfd, struct sockaddr *addr,
-                  socklen_t *addrlen) {
+                  socklen_t *addrlen, bool block) {
     if (addr) {
         printf("addr must be NULL, writing address is not supported yet in accept()\n");
         (void) addrlen;
@@ -71,7 +71,9 @@ int sys_accept(int sockfd, struct sockaddr *addr,
     }
     VfsFile *srvfile = kernel.scheduler.current_task->resources[sockfd].f;
     Socket *server = srvfile->private;
-    while (!server->pending_queue.next);
+    if (block)
+        while (!server->pending_queue.next);
+    else if (!server->pending_queue.next) return -1;
     SocketQueueItem *client = (SocketQueueItem*) server->pending_queue.next;
     list_remove(&client->list);
     list_insert(&server->connected_queue, &client->list);

@@ -1,4 +1,5 @@
 #pragma once
+#include <stdbool.h>
 
 #define AF_UNIX 0
 #define AF_LOCAL AF_UNIX
@@ -26,3 +27,5 @@ int connect(int sockfd, const struct sockaddr *addr,
                    socklen_t addrlen);
 int accept(int sockfd, struct sockaddr *addr,
                   socklen_t *addrlen);
+int accept_b(int sockfd, struct sockaddr *addr,
+                  socklen_t *addrlen, bool block);

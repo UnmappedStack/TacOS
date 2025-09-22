@@ -1,4 +1,5 @@
 #include <sys/socket.h>
+#include <stddef.h>
 #include <stdint.h>
 #include <syscall.h>
 
@@ -20,7 +21,12 @@ int connect(int sockfd, const struct sockaddr *addr,
     return __syscall3(28, sockfd, addr, addrlen);
 }
 
+int accept_b(int sockfd, struct sockaddr *addr,
+                  socklen_t *addrlen, bool block) {
+    return __syscall4(29, sockfd, (size_t) addr, (size_t) addrlen, block);
+}
+
 int accept(int sockfd, struct sockaddr *addr,
                   socklen_t *addrlen) {
-    return __syscall3(29, sockfd, addr, addrlen);
+    return accept_b(sockfd, addr, addrlen, true);
 }
