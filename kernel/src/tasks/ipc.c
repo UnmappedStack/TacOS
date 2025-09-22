@@ -8,6 +8,60 @@ void init_ipc(void) {
     kernel.ipc_socketqueueitem_cache = init_slab_cache(sizeof(SocketQueueItem), "IPC Socket Queue Item");
 }
 
+void ringbuffer_init(RingBuffer *rb) {
+    rb->read_at = rb->write_at = rb->avaliable_to_read = 0;
+}
+
+int ringbuf_read(RingBuffer *rb, size_t len, char *buf) {
+    printf("read rb=%p\n", rb);
+    for (size_t i = 0; i < len; i++) {
+        if (!rb->avaliable_to_read) return i;
+        buf[i] = rb->data[rb->read_at++];
+        if (rb->read_at >= RINGBUF_MAX_LEN) rb->read_at = 0;
+        rb->avaliable_to_read--;
+    }
+    return len;
+}
+
+int ringbuf_write(RingBuffer *rb, size_t len, char *buf) {
+    printf("write rb=%p\n", rb);
+    for (size_t i = 0; i < len; i++) {
+        rb->data[rb->write_at++] = buf[i];
+        if (rb->write_at >= RINGBUF_MAX_LEN) rb->write_at = 0;
+        rb->avaliable_to_read++;
+    }
+    return len;
+}
+
+int socket_read(Socket *file, char *buf, size_t len, size_t offset) {
+    (void) offset;
+    Socket *client = file;
+    Socket *server = client->connected_to_server;
+    printf("socket read is %p = %p\n", &client->connected_to_server, server);
+    if (!server) {
+        printf("Not connected to a server\n");
+        return -1;
+    }
+    printf("\nconnected yaey\n\n");
+    int pid = kernel.scheduler.current_task->pid;
+    RingBuffer *rb = (pid == server->owner_pid) ? &client->client_to_server_pipe : &client->server_to_client_pipe;
+    return ringbuf_read(rb, len, buf);
+}
+
+int socket_write(Socket *file, char *buf, size_t len, size_t offset) {
+    (void) offset;
+    Socket *client = file;
+    Socket *server = client->connected_to_server;
+    printf("socket write is %p = %p\n", &client->connected_to_server, server);
+    if (!server) {
+        printf("Client given is not connected to a server\n");
+        return -1;
+    }
+    int pid = kernel.scheduler.current_task->pid;
+    RingBuffer *rb = (pid == server->owner_pid) ? &client->server_to_client_pipe : &client->client_to_server_pipe;
+    return ringbuf_write(rb, len, buf);
+}
+
 int sys_accept(int sockfd, struct sockaddr *addr,
                   socklen_t *addrlen) {
     if (addr) {
@@ -15,11 +69,15 @@ int sys_accept(int sockfd, struct sockaddr *addr,
         (void) addrlen;
         return -1;
     }
-    Socket *server = kernel.scheduler.current_task->resources[sockfd].f->private;
+    VfsFile *srvfile = kernel.scheduler.current_task->resources[sockfd].f;
+    Socket *server = srvfile->private;
     while (!server->pending_queue.next);
     SocketQueueItem *client = (SocketQueueItem*) server->pending_queue.next;
     list_remove(&client->list);
     list_insert(&server->connected_queue, &client->list);
+
+    client->file->ops.read_fn  = (int (*)(void *file, char *buf, size_t len, size_t offset)) socket_read;
+    client->file->ops.write_fn = (int (*)(void *file, char *buf, size_t len, size_t offset)) socket_write;
 
     // Open to a resource
     int fd = 0;
@@ -47,6 +105,7 @@ int sys_connect(int sockfd, const struct sockaddr *addr,
     newentry->file = kernel.scheduler.current_task->resources[sockfd].f;
 
     list_insert(&server_socket->pending_queue, &newentry->list);
+    newentry->socket->connected_to_server = server_socket;
     return 0;
 }
 
@@ -71,11 +130,17 @@ int sys_socket(int domain, int type, int protocol) {
         return -1;
     }
     Socket *socket = (Socket*) slab_alloc(kernel.ipc_socket_cache);
+    socket->connected_to_server = NULL;
+    socket->owner_pid = kernel.scheduler.current_task->pid;
+    ringbuffer_init(&socket->server_to_client_pipe);
+    ringbuffer_init(&socket->client_to_server_pipe);
     list_init(&socket->pending_queue);
     list_init(&socket->connected_queue);
     VfsFile *file = slab_alloc(kernel.vfs_file_cache);
-    file->ops = tempfs_regfile_ops; // TODO: this needs to have separate read/write ops
+    file->ops = tempfs_regfile_ops; 
     file->private = socket;
+    file->ops.read_fn  = (int (*)(void *file, char *buf, size_t len, size_t offset)) socket_read;
+    file->ops.write_fn = (int (*)(void *file, char *buf, size_t len, size_t offset)) socket_write;
     int fd = -1;
     for (size_t i = 0; i < MAX_RESOURCES; i++) {
         if (kernel.scheduler.current_task->resources[i].f) continue;

@@ -41,6 +41,10 @@ err:
     int client = accept(fd, NULL, 0);
     if (client < 0) goto err;
     printf("Server successfully connected to client! Client fd=%d\n", client);
+    printf(" > Waiting for something in the buffer to read...\n");
+    char buf[20];
+    while (!read(client, buf, 20));
+    printf("Successfully read message from client! Message: \"%s\"\n", buf);
     return 0;
 }
 
@@ -58,6 +62,10 @@ err:
     addr.sun_family = AF_UNIX;
     strcpy(addr.sun_path, PATH);
     if (connect(fd, (struct sockaddr*) &addr, sizeof(addr)) < 0) goto err;
+    printf(" > Client writing to CTS pipe...\n");
+    char *msg = "Hello, world! (CTS)";
+    if (write(fd, msg, strlen(msg) + 1) < 0) goto err;
+    printf("Successfully written!\n");
 }
 
 int main(int argc, char **argv) {

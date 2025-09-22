@@ -10,14 +10,27 @@
 
 typedef int socklen_t;
 
+#define RINGBUF_MAX_LEN 512
+typedef struct {
+    char data[RINGBUF_MAX_LEN];
+    size_t read_at;
+    size_t write_at;
+    size_t avaliable_to_read;
+} RingBuffer;
+
 // This will be referenced in task resource lists
 // and anchor points in tempfs file lists
-typedef struct {
+typedef struct Socket Socket;
+struct Socket {
+    int owner_pid;
+    Socket *connected_to_server; // NULL if this is a server or it's not connected
     bool listening;
     int backlog_max_len;
     struct list pending_queue;
     struct list connected_queue;
-} Socket;
+    RingBuffer server_to_client_pipe;
+    RingBuffer client_to_server_pipe;;
+};
 
 typedef struct {
     struct list list;
