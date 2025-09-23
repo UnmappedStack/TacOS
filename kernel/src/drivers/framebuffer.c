@@ -112,11 +112,18 @@ int fbdevread(void *f, char *buf, size_t len, size_t off) {
     }
     return 0;
 }
+int fbdevwrite(void *f, char *buf, size_t len, size_t off) {
+    (void) f, (void) off;
+    int fbsz = kernel.framebuffer.pitch * kernel.framebuffer.height;
+    int bytes = ((int) len > fbsz) ? fbsz : len;
+    memcpy(kernel.framebuffer.addr, buf, bytes);
+    return bytes;
+}
 void init_framebuffer(void) {
     kernel.framebuffer = boot_get_framebuffer();
     // raw framebuffer device
     DeviceOps fbdev_ops = {
-        .open = &fbdevopen, .close = &fbdevclose, .read = &fbdevread
+        .open = &fbdevopen, .close = &fbdevclose, .read = &fbdevread, .write = &fbdevwrite,
     };
     mkdevice("/dev/fb0", fbdev_ops);
     // Fill the screen and finish up

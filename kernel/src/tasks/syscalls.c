@@ -259,27 +259,70 @@ void sys_sched_yield(void) {
     for (size_t i = 0; i < 3; i++) __asm__ volatile("hlt\n");
 }
 
-// major stub
+typedef struct {
+    struct list list;
+    uintptr_t paddr_start;
+    VfsFile *f;
+    size_t len;
+    bool shared;
+} FileVMemMapping;
+struct list file_mappings = {0};
+#define MS_SYNC  0b01
+#define MS_ASYNC 0b10
+int sys_msync(void *addr, size_t length, int flags) {
+    (void) length;
+    if ((flags & MS_ASYNC) || !(flags & MS_SYNC)) {
+        printf("TODO: MS_ASYNC not supported yet\n");
+        return -1;
+    }
+    uintptr_t paddr = virt_to_phys((uint64_t*) CURRENT_TASK->pml4, (uint64_t) addr);
+    for (struct list *entry = file_mappings.next; entry != &file_mappings; entry = entry->next) {
+        FileVMemMapping *mapping = (FileVMemMapping*) entry;
+        if (mapping->paddr_start != paddr) continue;
+        vfs_write(mapping->f, addr, mapping->len, 0);
+        return 0;
+    }
+    return -1; // not found
+}
+
+#define MAP_ANONYMOUS 0b01
+#define MAP_SHARED    0b10
 void *sys_mmap(void *addr, size_t length, int prot, int flags, int fd,
                size_t offset) {
-    (void)prot; // TODO: don't ignore prot and map (MAP_SHARED and MAP_ANONYMOUS
-                // are default)
-    (void)flags;
-    (void)addr;
-    (void)length;
-    char fname[30];
-    vfs_identify(CURRENT_TASK->resources[fd].f, fname, NULL, NULL);
-    if (strcmp(fname, "fb0")) {
-        printf("TODO: mmap currently can only map in the framebuffer device "
-               "because why would you do things properly when you can just... "
-               "not.\n");
-        return NULL;
+    static Cache *fmcache;
+    if (file_mappings.next == NULL) {
+        list_init(&file_mappings);
+        fmcache = init_slab_cache(sizeof(FileVMemMapping), "mmap cache");
     }
-    if (offset) {
-        printf("TODO: offset currently must be 0 in mmap syscall\n");
-        return NULL;
+
+    (void) length, (void) prot, (void) flags, (void) fd, (void) offset;
+    // dw sbrk will return a vaddr who's mem is physically contiguous
+    addr = (void*) ((addr) ? PAGE_ALIGN_UP((uintptr_t)addr) : sys_sbrk(length));
+    if (flags & MAP_ANONYMOUS) return addr;
+   
+    /* Check if a file has already mapped this file into memory.
+     *  - If one has, just map the same memory into this task
+     *  - Otherwise, copy the file into the memory and add the paddr of it with the file to
+     *    the list of file mappings */
+    if (!(flags & MAP_SHARED)) {
+        FileVMemMapping *mapping = slab_alloc(fmcache);
+        mapping->paddr_start = virt_to_phys((uint64_t*) CURRENT_TASK->pml4, (uint64_t) addr);
+        mapping->f = CURRENT_TASK->resources[fd].f;
+        mapping->shared = (flags & MAP_SHARED) ? true : false; // seems dumb but it's cos of the goto thing
+        mapping->len = length;
+        sys_read(fd, addr, length);
+        list_insert(&file_mappings, &mapping->list);
+        return addr;
     }
-    return kernel.framebuffer.addr;
+    for (struct list *entry = file_mappings.next; entry != &file_mappings; entry = entry->next) {
+        FileVMemMapping *mapping = (FileVMemMapping*) entry;
+        if (mapping->shared && CURRENT_TASK->resources[fd].f->private == mapping->f->private) {
+            printf("TODO: map as shared, existing\n");
+            return NULL;
+        }
+    }
+    printf("TODO: map as shared, not existing\n");
+    return NULL;
 }
 
 // kinda assumes the path is perfectly formatted etc. This is why you should use
@@ -447,6 +490,7 @@ void *syscalls[] = {
     sys_listen,
     sys_connect,
     sys_accept,
+    sys_msync,
 };
 
 uint64_t num_syscalls = sizeof(syscalls) / sizeof(syscalls[0]);

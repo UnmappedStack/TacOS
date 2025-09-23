@@ -10,7 +10,7 @@
 
 typedef int socklen_t;
 
-#define RINGBUF_MAX_LEN 512
+#define RINGBUF_MAX_LEN 4096 * 1000
 typedef struct {
     char data[RINGBUF_MAX_LEN];
     size_t read_at;

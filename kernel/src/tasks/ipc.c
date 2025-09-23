@@ -13,7 +13,6 @@ void ringbuffer_init(RingBuffer *rb) {
 }
 
 int ringbuf_read(RingBuffer *rb, size_t len, char *buf) {
-    printf("read rb=%p\n", rb);
     for (size_t i = 0; i < len; i++) {
         if (!rb->avaliable_to_read) return i;
         buf[i] = rb->data[rb->read_at++];
@@ -24,7 +23,6 @@ int ringbuf_read(RingBuffer *rb, size_t len, char *buf) {
 }
 
 int ringbuf_write(RingBuffer *rb, size_t len, char *buf) {
-    printf("write rb=%p\n", rb);
     for (size_t i = 0; i < len; i++) {
         rb->data[rb->write_at++] = buf[i];
         if (rb->write_at >= RINGBUF_MAX_LEN) rb->write_at = 0;
@@ -37,12 +35,10 @@ int socket_read(Socket *file, char *buf, size_t len, size_t offset) {
     (void) offset;
     Socket *client = file;
     Socket *server = client->connected_to_server;
-    printf("socket read is %p = %p\n", &client->connected_to_server, server);
     if (!server) {
         printf("Not connected to a server\n");
         return -1;
     }
-    printf("\nconnected yaey\n\n");
     int pid = kernel.scheduler.current_task->pid;
     RingBuffer *rb = (pid == server->owner_pid) ? &client->client_to_server_pipe : &client->server_to_client_pipe;
     return ringbuf_read(rb, len, buf);
@@ -52,7 +48,6 @@ int socket_write(Socket *file, char *buf, size_t len, size_t offset) {
     (void) offset;
     Socket *client = file;
     Socket *server = client->connected_to_server;
-    printf("socket write is %p = %p\n", &client->connected_to_server, server);
     if (!server) {
         printf("Client given is not connected to a server\n");
         return -1;

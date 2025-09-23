@@ -11,9 +11,72 @@
 #define WINDOW_BORDER_NOFOCUS 0x9acbf5
 #define EXIT_BUTTON_COLOUR    0xc75050
 
+typedef struct Window Window;
+
 typedef enum {
     WIN_CREATE,
+    WIN_SET_TITLE,
 } SrvCommand;
+
+typedef enum {
+    EVENT_RESPONSE,
+} SrvEvent;
+
+uint8_t open_window(Window *winlist, size_t x, size_t y, const char *title, size_t width, size_t height);
+Window *get_window_by_id(Window *winlist, uint8_t id);
+void set_win_title(Window *win, char *title, size_t slen);
+void win_draw_pixel(Window *win, uint16_t x, uint16_t y, uint32_t colour);
+
+void send_event(int fd, char *data, size_t data_len) {
+    write(fd, data, data_len); // we kinda just hope for the best
+}
+
+void send_response(int fd, uint8_t cmd_id, uint8_t ret) {
+    send_event(fd, (char[]) {4, EVENT_RESPONSE, cmd_id, ret}, 4);
+}
+
+void handle_command(int fd, Window *winlist) {
+    uint8_t num_bytes;
+    if (read(fd, &num_bytes, 1) < 1) return; // nothing to read
+    if (num_bytes < 3) {
+        fprintf(stderr, "Command and command ID aren't in packet (num_bytes=%u)\n", num_bytes);
+        exit(-1);
+    }
+    char *packet = (char*) malloc(num_bytes + 1);
+    packet[0] = num_bytes;
+    if (read(fd, &packet[1], num_bytes-1) < num_bytes-1) {
+        fprintf(stderr, "Got packet that claimed to be a bigger size than reality\n");
+        // the things people will lie about these days... ):
+        exit(-1);
+    }
+    SrvEvent cmd = packet[1];
+    uint8_t cid = packet[2];
+    Window *win;
+    switch (cmd) {
+    case WIN_CREATE:
+        // format:
+        // PACKSIZE | COMMAND | CMDID
+        uint8_t wid = open_window(winlist, 50, 50, "", 500, 300);
+        send_response(fd, cid, wid);
+        break;
+    case WIN_SET_TITLE:
+        // format:
+        // PACKSIZE | COMMAND | CMDID | WINID | (>1b) STRING
+        win = get_window_by_id(winlist, packet[3]);
+        char *t = &packet[4];
+        set_win_title(win, t, num_bytes - 3);
+        break;
+    default:
+        fprintf(stderr, "Invalid command: %u\n", cmd);
+        exit(-1);
+    }
+    free(packet);
+}
+
+void accept_commands(int *clients, size_t num_clients, Window *winlist) {
+    for (size_t i = 0; i < num_clients; i++)
+        handle_command(clients[i], winlist);
+}
 
 int server_init(void) {
     int fd = socket(AF_UNIX, SOCK_STREAM, 0);
@@ -47,13 +110,14 @@ typedef struct {
     uint64_t height;
 } FbDevInfo;
 
-typedef struct Window Window;
 struct Window {
     Window *next;
     size_t x, y;
     size_t width, height;
-    const char *title;
+    char *title;
     bool focused;
+    uint8_t wid;
+    uint32_t *imgbuf;
 };
 
 typedef struct {
@@ -63,6 +127,19 @@ typedef struct {
     Window *windragging; // The window it's currently dragging (or NULL if none)
     size_t wdxoff, wdyoff; // offsets from top left of bar that we're dragging from (for windragging)
 } Cursor;
+
+void win_draw_pixel(Window *win, uint16_t x, uint16_t y, uint32_t colour) {
+    win->imgbuf[y * win->width + x] = colour;
+}
+
+Window *get_window_by_id(Window *winlist, uint8_t id) {
+    while (winlist->next) {
+        winlist = winlist->next;
+        if (winlist->wid == id) return winlist;
+    }
+    fprintf(stderr, "window now found (invalid ID)\n");
+    exit(-1);
+}
 
 Fb fb = {0};
 
@@ -228,6 +305,7 @@ void draw_cursor(size_t cwidth, size_t cheight, uint32_t *cpixels, size_t xs, si
 
 void doublebuf_swap(void) {
     memcpy(fb.ptr, fb.doublebuf, fb.pitch * fb.height);
+    msync(fb.ptr, fb.pitch * fb.height, MS_SYNC);
 }
 
 Key getkey(int kb_fd) {
@@ -347,7 +425,13 @@ void draw_text_bold(const char *s, uint64_t x, uint64_t y, uint32_t colour) {
     draw_text(s, x + 1, y + 1, colour);
 }
 
-void open_window(Window *winlist, size_t x, size_t y, const char *title, size_t width, size_t height) {
+void set_win_title(Window *win, char *title, size_t slen) {
+    win->title = realloc(win->title, slen);
+    strcpy(win->title, title);
+}
+
+uint8_t open_window(Window *winlist, size_t x, size_t y, const char *title, size_t width, size_t height) {
+    static uint8_t wid = 0;
     // find last window in queue
     Window *last_window = winlist;
     while (last_window->next) {
@@ -363,10 +447,14 @@ void open_window(Window *winlist, size_t x, size_t y, const char *title, size_t 
         .height = height,
         .title = title,
         .focused = true,
+        .wid = wid,
+        .imgbuf = (uint32_t*) malloc(width * height * sizeof(uint32_t)),
     };
+    memset(new.imgbuf, 0xFF, width * height * sizeof(uint32_t));
     Window *newwin = (Window*) malloc(sizeof(Window));
     *newwin = new;
     last_window->next = newwin;
+    return wid;
 }
 
 void draw_window(Window *win) {
@@ -405,8 +493,9 @@ void draw_window(Window *win) {
     // draw the area where the frame would be (temp)
     where = (uint32_t*) (fb.doublebuf + (y+41) * fb.pitch);
     for (size_t i = 0; i < height - 46; i++) {
-        for (size_t j = x + 5; j < width + x - 5; j++) {
-            where[j] = 0xFFFFFF;
+        size_t ax = 0;
+        for (size_t j = x + 5; j < width + x - 5; j++, ax++) {
+            where[j] = win->imgbuf[i * width + ax];
         }
         where = (uint32_t*) ((uint8_t*) where + fb.pitch);
     }
@@ -446,7 +535,7 @@ int main(int argc, char **argv) {
         printf("Failed to open framebuffer device.\n");
         exit(-1);
     }
-    fb.ptr = mmap(NULL, 0, 0, 0, fb.fd, 0);
+    fb.ptr = mmap(NULL, fb.pitch * fb.height, 0, 0, fb.fd, 0);
     fb.doublebuf = (void*) malloc(fb.height * fb.pitch);
     printf("fb ptr = %p, pitch = %zu, bpp = %zu\n", fb.ptr, fb.pitch, fb.bpp);
     
@@ -470,20 +559,24 @@ int main(int argc, char **argv) {
     printf("Successfully decoded cursor image\n");    
     
     // open test window
-    open_window(&winlist, 50, 50, "Test Window", 500, 300);
-    open_window(&winlist, 300, 200, "Test Window 2", 500, 300);
     
     int pid = fork();
     if (!pid)
         execve("/usr/bin/testwin", (char*[]) {"testwin", NULL}, (char*[]) {NULL});
-
+    
+    int *connected_clients = NULL;
+    size_t num_clients = 0;
     for(;;) {
         cursor_getkey(&cursor, &winlist, kb_fd);
         draw_wallpaper(bgwidth, bgheight, bgpixels);
-        if (accept_b(winsrv_fd, NULL, 0, false) > 0) {
+        int c;
+        if ((c=accept_b(winsrv_fd, NULL, 0, false)) > 0) {
+            connected_clients = realloc(connected_clients, ++num_clients * sizeof(int));
+            connected_clients[num_clients-1] = c;
             printf("Established new connection from client\n");
         }
 
+        accept_commands(connected_clients, num_clients, &winlist);
         Window *at = &winlist;
         while (at->next) {
             at = at->next;
