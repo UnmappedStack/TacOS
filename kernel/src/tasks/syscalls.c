@@ -305,6 +305,7 @@ void *sys_mmap(void *addr, size_t length, int prot, int flags, int fd,
      *  - Otherwise, copy the file into the memory and add the paddr of it with the file to
      *    the list of file mappings */
     if (!(flags & MAP_SHARED)) {
+add_to_list:
         FileVMemMapping *mapping = slab_alloc(fmcache);
         mapping->paddr_start = virt_to_phys((uint64_t*) CURRENT_TASK->pml4, (uint64_t) addr);
         mapping->f = CURRENT_TASK->resources[fd].f;
@@ -316,13 +317,12 @@ void *sys_mmap(void *addr, size_t length, int prot, int flags, int fd,
     }
     for (struct list *entry = file_mappings.next; entry != &file_mappings; entry = entry->next) {
         FileVMemMapping *mapping = (FileVMemMapping*) entry;
-        if (mapping->shared && CURRENT_TASK->resources[fd].f->private == mapping->f->private) {
-            printf("TODO: map as shared, existing\n");
-            return NULL;
-        }
+        if (!mapping->shared || CURRENT_TASK->resources[fd].f->private != mapping->f->private) continue;
+        map_pages((void*) CURRENT_TASK->pml4, (uintptr_t) addr, mapping->paddr_start,
+                PAGE_ALIGN_UP(length) / PAGE_SIZE, KERNEL_PFLAG_PRESENT | KERNEL_PFLAG_WRITE);
+        return addr;
     }
-    printf("TODO: map as shared, not existing\n");
-    return NULL;
+    goto add_to_list; // not found, create new shared mem thingy
 }
 
 // kinda assumes the path is perfectly formatted etc. This is why you should use
