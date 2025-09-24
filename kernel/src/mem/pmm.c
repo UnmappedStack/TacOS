@@ -16,7 +16,7 @@ const char *mem_types[] = {
 
 void init_chunk(void *addr, size_t len) {
     Chunk *chunk = (Chunk *)addr;
-    chunk->length = PAGE_ALIGN_DOWN(len) / 4096;
+    chunk->length = PAGE_ALIGN_DOWN(len) / PAGE_SIZE;
     // NOTE: The list is already initialised.
 }
 
@@ -84,5 +84,5 @@ uintptr_t kmalloc(size_t num_pages) {
 
 void kfree(uintptr_t addr, size_t num_pages) {
     list_insert(kernel.pmm_chunklist, (struct list *)(addr + kernel.hhdm));
-    init_chunk((Chunk *)addr, num_pages + 1);
+    init_chunk((Chunk *)(addr + kernel.hhdm), (num_pages + 1) * PAGE_SIZE);
 }

@@ -299,11 +299,6 @@ void *sys_mmap(void *addr, size_t length, int prot, int flags, int fd,
     // dw sbrk will return a vaddr who's mem is physically contiguous
     addr = (void*) ((addr) ? PAGE_ALIGN_UP((uintptr_t)addr) : sys_sbrk(length));
     if (flags & MAP_ANONYMOUS) return addr;
-   
-    /* Check if a file has already mapped this file into memory.
-     *  - If one has, just map the same memory into this task
-     *  - Otherwise, copy the file into the memory and add the paddr of it with the file to
-     *    the list of file mappings */
     if (!(flags & MAP_SHARED)) {
 add_to_list:
         FileVMemMapping *mapping = slab_alloc(fmcache);
@@ -450,6 +445,11 @@ int sys_stat(char *file, void *statbuf) {
     return -1;
 }
 
+int sys_ftruncate(int fd, size_t sz) {
+    VfsFile *f = CURRENT_TASK->resources[fd].f;
+    return vfs_truncate(f, sz);
+}
+
 pid_t sys_fork();
 int sys_socket(int domain, int type, int protocol);
 int sys_bind(int sockfd, void *addr, int addrlen);
@@ -491,6 +491,7 @@ void *syscalls[] = {
     sys_connect,
     sys_accept,
     sys_msync,
+    sys_ftruncate,
 };
 
 uint64_t num_syscalls = sizeof(syscalls) / sizeof(syscalls[0]);

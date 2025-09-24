@@ -245,12 +245,31 @@ TempfsInode *tempfs_find_inode_in_dir(TempfsInode *dir, char *fname, FSOps *ops_
     return NULL;
 }
 
+int tempfs_truncate(TempfsInode *f, size_t sz) {
+    // TODO: actually truncate if it's becoming shorter
+    if (sz < f->size) {
+        f->size = sz;
+        return 0;
+    }
+    // TODO: this is hacky and fucking stupid, don't use this if you're tyring
+    // to get an example, fix this, what the fuck was I doing
+    size_t buf_sz = PAGE_ALIGN_UP(sz) / PAGE_SIZE;
+    uintptr_t buf_phys = kmalloc(buf_sz);
+    void *buf_virt = (void*) (buf_phys + kernel.hhdm);
+    memset(buf_virt, 0, sz);
+    tempfs_access(f, buf_virt, sz - f->size, f->size, true);
+    printf("sz is now %i\n", f->size);
+    kfree(buf_phys, buf_sz);
+    return 0;
+}
+
 FSOps tempfs_regfile_ops = (FSOps) {
     .open_fn = (int (*)(void **, void *))tempfs_open,
     .close_fn = (int (*)(void *))tempfs_close,
     .write_fn = (int (*)(void *, char *, size_t, size_t))tempfs_write,
     .read_fn = (int (*)(void *, char *, size_t, size_t))tempfs_read,
     .identify_fn = (int (*)(void *, char *, VFSFileType *, size_t *))tempfs_identify,
+    .truncate_fn = (int (*)(void *, size_t))tempfs_truncate,
 };
 
 FSOps tempfs_dir_ops = (FSOps) {

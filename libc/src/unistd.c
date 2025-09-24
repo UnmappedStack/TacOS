@@ -67,3 +67,7 @@ int chdir(const char *path) {
 char *getcwd(char *buf, size_t size) {
     return (char*) __syscall2(20, (size_t) buf, size);
 }
+
+int ftruncate(int fd, off_t length) {
+    return __syscall2(31, (size_t) fd, (size_t) length);
+}

@@ -12,3 +12,4 @@ int execve(const char *path, char **argv, char **envp);
 int execvp(const char *path, char **argv);
 int chdir(const char *path);
 char *getcwd(char *buf, size_t size);
+int ftruncate(int fd, off_t length);

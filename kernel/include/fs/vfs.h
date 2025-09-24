@@ -46,6 +46,7 @@ struct FSOps {
     int (*identify_fn)(void *priv, char *buf, VFSFileType *type, size_t *fsize);
     void *(*file_from_diriter)(void *iter);
     void *(*find_inode_in_dir)(void *dir, char *fname, FSOps *ops);
+    int (*truncate_fn)(void *file, size_t sz);
 };
 
 typedef struct {
@@ -100,3 +101,4 @@ VfsDirIter vfs_file_to_diriter(VfsFile *f);
 int vfs_read(VfsFile *file, char *buffer, size_t len, size_t offset);
 int vfs_write(VfsFile *file, char *buffer, size_t len, size_t offset);
 int vfs_dir_exists(char *path);
+int vfs_truncate(VfsFile *f, size_t sz);

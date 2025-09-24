@@ -256,6 +256,10 @@ int closedir(VfsDirIter *dir) {
     return dir->ops.close_fn(dir->private);
 }
 
+int vfs_truncate(VfsFile *f, size_t sz) {
+    return f->ops.truncate_fn(f->private, sz);
+}
+
 int rm_file(VfsFile *file) { return file->ops.rmfile_fn(file->private); }
 
 int rm_dir(VfsDirIter *dir) { return dir->ops.rmdir_fn(dir->private); }
