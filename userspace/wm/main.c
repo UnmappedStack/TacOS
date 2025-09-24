@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <fcntl.h>
 #include <unistd.h>
 #include <sys/socket.h>
 #include "font.h"
@@ -22,10 +23,10 @@ typedef enum {
     EVENT_RESPONSE,
 } SrvEvent;
 
-uint8_t open_window(Window *winlist, size_t x, size_t y, const char *title, size_t width, size_t height);
+uint8_t open_window(Window *winlist, size_t x, size_t y, const char *title,
+        size_t width, size_t height, uint32_t *imgbuf);
 Window *get_window_by_id(Window *winlist, uint8_t id);
 void set_win_title(Window *win, char *title, size_t slen);
-void win_draw_pixel(Window *win, uint16_t x, uint16_t y, uint32_t colour);
 
 void send_event(int fd, char *data, size_t data_len) {
     write(fd, data, data_len); // we kinda just hope for the best
@@ -56,7 +57,12 @@ void handle_command(int fd, Window *winlist) {
     case WIN_CREATE:
         // format:
         // PACKSIZE | COMMAND | CMDID
-        uint8_t wid = open_window(winlist, 50, 50, "", 500, 300);
+        char buf[15];
+        sprintf(buf, "wmsrvbuf%u", cid);
+        int shmfd = shm_open(buf, O_CREAT, 0);
+        ftruncate(shmfd, 500 * 300 * sizeof(uint32_t));
+        uint32_t *imgbuf = mmap(NULL, 500 * 300 * sizeof(uint32_t), 0, MAP_SHARED, shmfd, 0);
+        uint8_t wid = open_window(winlist, 50, 50, "", 500, 300, imgbuf);
         send_response(fd, cid, wid);
         break;
     case WIN_SET_TITLE:
@@ -127,10 +133,6 @@ typedef struct {
     Window *windragging; // The window it's currently dragging (or NULL if none)
     size_t wdxoff, wdyoff; // offsets from top left of bar that we're dragging from (for windragging)
 } Cursor;
-
-void win_draw_pixel(Window *win, uint16_t x, uint16_t y, uint32_t colour) {
-    win->imgbuf[y * win->width + x] = colour;
-}
 
 Window *get_window_by_id(Window *winlist, uint8_t id) {
     while (winlist->next) {
@@ -430,7 +432,8 @@ void set_win_title(Window *win, char *title, size_t slen) {
     strcpy(win->title, title);
 }
 
-uint8_t open_window(Window *winlist, size_t x, size_t y, const char *title, size_t width, size_t height) {
+uint8_t open_window(Window *winlist, size_t x, size_t y, const char *title, size_t width,
+        size_t height, uint32_t *imgbuf) {
     static uint8_t wid = 0;
     // find last window in queue
     Window *last_window = winlist;
@@ -448,9 +451,8 @@ uint8_t open_window(Window *winlist, size_t x, size_t y, const char *title, size
         .title = title,
         .focused = true,
         .wid = wid,
-        .imgbuf = (uint32_t*) malloc(width * height * sizeof(uint32_t)),
+        .imgbuf = imgbuf,
     };
-    memset(new.imgbuf, 0xFF, width * height * sizeof(uint32_t));
     Window *newwin = (Window*) malloc(sizeof(Window));
     *newwin = new;
     last_window->next = newwin;
@@ -495,11 +497,10 @@ void draw_window(Window *win) {
     for (size_t i = 0; i < height - 46; i++) {
         size_t ax = 0;
         for (size_t j = x + 5; j < width + x - 5; j++, ax++) {
-            where[j] = win->imgbuf[i * width + ax];
+            where[j] = win->imgbuf[i * (width-10) + ax];
         }
         where = (uint32_t*) ((uint8_t*) where + fb.pitch);
     }
-
     // draw title
     draw_text_bold(title, x + 25, y + 11, 0x00);
 

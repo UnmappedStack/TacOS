@@ -1,9 +1,10 @@
 #include <stdio.h>
+#include <mman.h>
 #include <stdlib.h>
 #include <string.h>
 #include <sys/socket.h>
 
-#define DEF_WIDTH  500
+#define DEF_WIDTH  490
 #define DEF_HEIGHT 300
 
 typedef enum {
@@ -59,10 +60,22 @@ err:
     strcpy(addr.sun_path, "/winsrv");
     if (connect(fd, (struct sockaddr*) &addr, sizeof(struct sockaddr_un)) < 0) goto err;
     printf("Successfully connected to window server\n");
-    uint32_t *imgbuf = (uint32_t*) malloc(sizeof(uint32_t) * DEF_WIDTH * DEF_HEIGHT);
-    for (size_t i = 0; i < DEF_WIDTH * DEF_HEIGHT; i++)
-        imgbuf[i] = 0xFF0000;
     uint8_t wid = open_window(fd);
     win_set_title(fd, wid, "Title set by client :)");
+
+    char shmfname[15];
+    sprintf(shmfname, "wmsrvbuf%u", wid);
+    int shmfd = shm_open(shmfname, 0, 0);
+    if (shmfd < 0) {
+        fprintf(stderr, "Failed to open shm object\n");
+        return -1;
+    }
+    uint32_t *imgbuf = mmap(NULL, sizeof(uint32_t) * DEF_WIDTH * DEF_HEIGHT, 0, MAP_SHARED, shmfd, 0);
+    printf("successfully opened %s\n", shmfname);
+    for (size_t y = 0; y < DEF_HEIGHT; y++) {
+        for (size_t x = 0; x < DEF_WIDTH; x++) {
+            imgbuf[y * DEF_WIDTH + x] = 0x00FF00;
+        }
+    }
     return 0;
 }

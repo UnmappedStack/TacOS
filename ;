@@ -1,5 +1,4 @@
 #include <cpu.h>
-#include <mem/pmm.h>
 #include <cpu/msr.h>
 #include <exec.h>
 #include <fork.h>
@@ -151,11 +150,10 @@ uintptr_t sys_sbrk(intptr_t increment) {
     CURRENT_TASK->program_break += PAGE_ALIGN_UP(increment);
     if (CURRENT_TASK->program_break > previous_break) {
         size_t num_new_pages = PAGE_ALIGN_UP(increment) / 4096;
-        uintptr_t phys_pages = kmalloc(num_new_pages);
-        map_pages((uint64_t *)(CURRENT_TASK->pml4 + kernel.hhdm),
-                  previous_break, phys_pages, num_new_pages,
-                  KERNEL_PFLAG_WRITE | KERNEL_PFLAG_PRESENT |
-                      KERNEL_PFLAG_USER);
+        alloc_pages((uint64_t *)(CURRENT_TASK->pml4 + kernel.hhdm),
+                    previous_break, num_new_pages,
+                    KERNEL_PFLAG_WRITE | KERNEL_PFLAG_PRESENT |
+                        KERNEL_PFLAG_USER);
         add_memregion(
             &CURRENT_TASK->memregion_list, previous_break, num_new_pages, true,
             KERNEL_PFLAG_WRITE | KERNEL_PFLAG_PRESENT | KERNEL_PFLAG_USER);
@@ -291,7 +289,6 @@ int sys_msync(void *addr, size_t length, int flags) {
 #define MAP_SHARED    0b10
 void *sys_mmap(void *addr, size_t length, int prot, int flags, int fd,
                size_t offset) {
-    length += PAGE_SIZE;
     static Cache *fmcache;
     if (file_mappings.next == NULL) {
         list_init(&file_mappings);
@@ -300,13 +297,12 @@ void *sys_mmap(void *addr, size_t length, int prot, int flags, int fd,
 
     (void) prot, (void) offset;
     // dw sbrk will return a vaddr who's mem is physically contiguous
-    addr = (void*) ((addr) ? PAGE_ALIGN_UP((uintptr_t)addr) : sys_sbrk(length));
+    addr = (void*) ((addr) ? PAGE_ALIGN_UP((uintptr_t)addr) : sys_sbrk(length + PAGE_SIZE));
     if (flags & MAP_ANONYMOUS) return addr;
     if (!(flags & MAP_SHARED)) {
 add_to_list:
         FileVMemMapping *mapping = slab_alloc(fmcache);
         mapping->paddr_start = virt_to_phys((uint64_t*) (CURRENT_TASK->pml4 + kernel.hhdm), (uint64_t) addr);
-        printf("paddr start is %p\n", mapping->paddr_start);
         mapping->f = CURRENT_TASK->resources[fd].f;
         mapping->shared = (flags & MAP_SHARED) ? true : false; // seems dumb but it's cos of the goto thing
         mapping->len = length;
