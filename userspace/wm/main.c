@@ -43,7 +43,7 @@ void handle_command(int fd, Window *winlist) {
         fprintf(stderr, "Command and command ID aren't in packet (num_bytes=%u)\n", num_bytes);
         exit(-1);
     }
-    char *packet = (char*) malloc(num_bytes + 1);
+    uint8_t *packet = (char*) malloc(num_bytes + 1);
     packet[0] = num_bytes;
     if (read(fd, &packet[1], num_bytes-1) < num_bytes-1) {
         fprintf(stderr, "Got packet that claimed to be a bigger size than reality\n");
@@ -56,13 +56,15 @@ void handle_command(int fd, Window *winlist) {
     switch (cmd) {
     case WIN_CREATE:
         // format:
-        // PACKSIZE | COMMAND | CMDID
+        // PACKSIZE | COMMAND | CMDID | WIDTH (x2) | HEIGHT (x2)
+        uint16_t width  = packet[3] | ((uint16_t)packet[4] << 8);
+        uint16_t height = packet[5] | ((uint16_t)packet[6] << 8);
         char buf[15];
         sprintf(buf, "wmsrvbuf%u", cid);
         int shmfd = shm_open(buf, O_CREAT, 0);
-        ftruncate(shmfd, 500 * 300 * sizeof(uint32_t));
-        uint32_t *imgbuf = mmap(NULL, 500 * 300 * sizeof(uint32_t), 0, MAP_SHARED, shmfd, 0);
-        uint8_t wid = open_window(winlist, 50, 50, "", 500, 300, imgbuf);
+        ftruncate(shmfd, width * height * sizeof(uint32_t));
+        uint32_t *imgbuf = mmap(NULL, width * height * sizeof(uint32_t), 0, MAP_SHARED, shmfd, 0);
+        uint8_t wid = open_window(winlist, 50, 50, "", width+10, height, imgbuf);
         send_response(fd, cid, wid);
         break;
     case WIN_SET_TITLE:
@@ -502,7 +504,7 @@ void draw_window(Window *win) {
         where = (uint32_t*) ((uint8_t*) where + fb.pitch);
     }
     // draw title
-    draw_text_bold(title, x + 25, y + 11, 0x00);
+    draw_text_bold(title, x + 10, y + 11, 0x00);
 
     // draw close button (doesn't do anything yet, just stylezzzz)
     where = (uint32_t*) (fb.doublebuf + (y+1) * fb.pitch);
