@@ -1,4 +1,6 @@
 #include <stdio.h>
+#include <fcntl.h>
+#include <mman.h>
 #include <time.h>
 #include <unistd.h>
 #include <string.h>
