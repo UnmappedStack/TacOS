@@ -11,4 +11,4 @@ all:
 	mkdir -p $(OUTDIR)
 	mkdir -p $(OBJDIR)
 	gcc -c main.c -o $(OBJDIR)/main.o -ffreestanding -I $(HEADERS) -I $(LIBMEDIAINC) -static -nostdlib -fno-stack-protector -fno-pie -g -mno-tls-direct-seg-refs
-	gcc $(OBJDIR)/main.o $(LIBMEDIA)/libmedia.o $(LIBC)/bin/* -o $(OUT) -static -nostdlib -g -fno-pie 
+	gcc $(OBJDIR)/main.o $(LIBMEDIA)/libmedia.a $(LIBC)/bin/* -o $(OUT) -static -nostdlib -g -fno-pie 

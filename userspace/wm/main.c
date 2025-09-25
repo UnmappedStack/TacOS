@@ -3,7 +3,6 @@
 #include <fcntl.h>
 #include <unistd.h>
 #include <sys/socket.h>
-#include "font.h"
 #include <TacOS.h> // for keyboard stuff
 #include <string.h>
 #include <mman.h>
@@ -289,29 +288,6 @@ void cursor_getkey(Cursor *cursor, Window *winlist, int kb_fd) {
     }
 }
 
-void draw_char(char ch, uint64_t x_coord, uint64_t y_coord, uint32_t colour) {
-    uint64_t first_byte_idx = ch * 16;
-    for (size_t y = 0; y < 16; y++) {
-        for (size_t x = 0; x < 8; x++) {
-            if ((font[first_byte_idx + y] >> (7 - x)) & 1)
-                draw_pixel(x_coord + x, y_coord + y, colour);
-        }
-    }
-}
-
-void draw_text(const char *s, uint64_t x, uint64_t y, uint32_t colour) {
-    for (size_t i = 0; s[i]; i++) {
-        draw_char(s[i], x + i * 9, y, colour);
-    }
-}
-
-void draw_text_bold(const char *s, uint64_t x, uint64_t y, uint32_t colour) {
-    draw_text(s, x, y, colour);
-    draw_text(s, x + 1, y, colour);
-    draw_text(s, x, y + 1, colour);
-    draw_text(s, x + 1, y + 1, colour);
-}
-
 void set_win_title(Window *win, char *title, size_t slen) {
     win->title = realloc(win->title, slen);
     strcpy(win->title, title);
@@ -387,7 +363,7 @@ void draw_window(Window *win) {
         where = (uint32_t*) ((uint8_t*) where + fb.pitch);
     }
     // draw title
-    draw_text_bold(title, x + 10, y + 11, 0x00);
+    draw_text_bold(title, x + 10, y + 11, 0x00, (void*) draw_pixel);
 
     // draw close button (doesn't do anything yet, just stylezzzz)
     where = (uint32_t*) (fb.doublebuf + (y+1) * fb.pitch);
@@ -397,7 +373,7 @@ void draw_window(Window *win) {
         }
         where = (uint32_t*) ((uint8_t*) where + fb.pitch);
     }
-    draw_text_bold("x", x + width - 37, y + 8, 0xFFFFFF);
+    draw_text_bold("x", x + width - 37, y + 8, 0xFFFFFF, (void*) draw_pixel);
 }
 
 int main(int argc, char **argv) {
@@ -448,7 +424,7 @@ int main(int argc, char **argv) {
     
     int pid = fork();
     if (!pid)
-        execve("/usr/bin/testwin", (char*[]) {"testwin", NULL}, (char*[]) {NULL});
+        execve("/usr/bin/info", (char*[]) {"info", NULL}, (char*[]) {NULL});
     
     int *connected_clients = NULL;
     size_t num_clients = 0;
