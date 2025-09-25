@@ -96,6 +96,7 @@ int sys_connect(int sockfd, const struct sockaddr *addr,
         return -1;
     }
     VfsFile *f = vfs_access((char*) addr->data, 0, VAT_open);
+    if (f == NULL) return -1;
     Socket *server_socket = ((TempfsInode*) f->private)->private;
     SocketQueueItem *newentry = (SocketQueueItem*) slab_alloc(kernel.ipc_socketqueueitem_cache);
     newentry->socket = kernel.scheduler.current_task->resources[sockfd].f->private;

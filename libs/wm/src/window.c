@@ -27,7 +27,10 @@ int lwm_client_init(LWMClient *client) {
     struct sockaddr_un addr;
     addr.sun_family = AF_UNIX;
     strcpy(addr.sun_path, "/winsrv");
-    if (connect(fd, (struct sockaddr*) &addr, sizeof(struct sockaddr_un)) < 0) return -1;
+    if (connect(fd, (struct sockaddr*) &addr, sizeof(struct sockaddr_un)) < 0) {
+        fprintf(stderr, "Failed to connect to server\n");
+        return -1;
+    }
     client->sockfd = fd;
     client->cid = 0;
     return 0;
