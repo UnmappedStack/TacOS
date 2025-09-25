@@ -1,4 +1,4 @@
-all: bootloader kernel libc userspace initrd disk
+all: bootloader kernel libc libs userspace initrd disk
 
 override XORRISO_FLAGS += \
 						  -as mkisofs -b boot/limine/limine-bios-cd.bin \
@@ -27,6 +27,13 @@ libc:
 	sudo cp libc/bin/tacoc.a /home/TacOSlibc/tacoc.a
 	sudo cp libc/bin/crt0.o /home/TacOSlibc/crt0.o
 	sudo cp -r libc/include /home/TacOSlibc/include
+
+
+LIBS := $(wildcard libs/*)
+.PHONY: userspace $(LIBS)
+libs: $(LIBS)
+$(LIBS):
+	$(MAKE) -C $@
 
 .PHONY: initrd
 initrd:
