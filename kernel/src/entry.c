@@ -1,4 +1,5 @@
 #include <apic.h>
+#include <pty.h>
 #include <ipc.h>
 #include <pci.h>
 #include <cpu/msr.h>
@@ -119,6 +120,7 @@ void _start(void) {
     init_apic();
     init_pit();
     init_syscalls();
+    init_usrptys();
     ls("/");
     ls("/home");
     init_pci();

@@ -50,6 +50,7 @@ typedef struct {
     size_t vmm_upto;
     Cache *ipc_socket_cache;
     Cache *ipc_socketqueueitem_cache;
+    Cache *usrptys_cache;
 } Kernel;
 
 extern Kernel kernel;

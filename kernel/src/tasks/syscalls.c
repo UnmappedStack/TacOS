@@ -462,6 +462,8 @@ int sys_connect(int sockfd, void *addr,
                    int addrlen);
 int sys_accept(int sockfd, void *addr,
                   int *addrlen, bool block);
+int sys_openpty(int *amaster, int *aslave, char *name,
+            void *termp, void *winp);
 
 void *syscalls[] = {
     sys_read,
@@ -496,6 +498,7 @@ void *syscalls[] = {
     sys_accept,
     sys_msync,
     sys_ftruncate,
+    sys_openpty,
 };
 
 uint64_t num_syscalls = sizeof(syscalls) / sizeof(syscalls[0]);

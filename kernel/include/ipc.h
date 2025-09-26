@@ -1,4 +1,5 @@
 #pragma once
+#include <ringbuffer.h>
 #include <fs/vfs.h>
 #include <list.h>
 #include <stdbool.h>
@@ -9,14 +10,6 @@
 #define SOCK_STREAM 0
 
 typedef int socklen_t;
-
-#define RINGBUF_MAX_LEN 4096 * 1000
-typedef struct {
-    char data[RINGBUF_MAX_LEN];
-    size_t read_at;
-    size_t write_at;
-    size_t avaliable_to_read;
-} RingBuffer;
 
 // This will be referenced in task resource lists
 // and anchor points in tempfs file lists
