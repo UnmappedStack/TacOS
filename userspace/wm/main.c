@@ -377,7 +377,7 @@ void draw_window(Window *win) {
         where = (uint32_t*) ((uint8_t*) where + fb.pitch);
     }
     // draw title
-    draw_text_bold(title, x + 10, y + 11, 0x00, (void*) draw_pixel);
+    draw_text_bold(title, x + 10, y + 11, 0x00, fb.doublebuf, fb.width);
 
     // draw close button (doesn't do anything yet, just stylezzzz)
     where = (uint32_t*) (fb.doublebuf + (y+1) * fb.pitch);
@@ -387,7 +387,7 @@ void draw_window(Window *win) {
         }
         where = (uint32_t*) ((uint8_t*) where + fb.pitch);
     }
-    draw_text_bold("x", x + width - 37, y + 8, 0xFFFFFF, (void*) draw_pixel);
+    draw_text_bold("x", x + width - 37, y + 8, 0xFFFFFF, fb.doublebuf, fb.width);
 }
 
 int main(int argc, char **argv) {
@@ -444,7 +444,6 @@ int main(int argc, char **argv) {
     size_t num_clients = 0;
     for(;;) {
         cursor_getkey(&cursor, &winlist, kb_fd);
-        draw_wallpaper(bgwidth, bgheight, bgpixels);
         int c;
         if ((c=accept_b(winsrv_fd, NULL, 0, false)) > 0) {
             connected_clients = realloc(connected_clients, ++num_clients * sizeof(int));
@@ -453,6 +452,8 @@ int main(int argc, char **argv) {
         }
 
         accept_commands(connected_clients, num_clients, &winlist);
+
+        draw_wallpaper(bgwidth, bgheight, bgpixels);
         Window *at = &winlist;
         while (at->next) {
             at = at->next;

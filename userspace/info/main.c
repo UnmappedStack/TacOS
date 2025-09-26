@@ -2,12 +2,6 @@
 #include <LibMedia.h>
 #include <stdlib.h>
 
-uint32_t *buf;
-uint16_t winwidth;
-static void draw_pixel(int x, int y, uint32_t colour) {
-    buf[y * winwidth + x] = colour;
-}
-
 int main(int argc, char **argv) {
     LWMClient client;
     LWMWindow win;
@@ -16,7 +10,6 @@ int main(int argc, char **argv) {
     if (lwm_client_init(&client) < 0) return -1;
     if (lwm_open_window(&client, &win, width, height) < 0) return -1;
     if (lwm_set_window_title(&win, "Info") < 0) return -1;
-    buf = win.imgbuf, winwidth = width;
     for (int y = 0; y < height; y++) {
         for (int x = 0; x < width; x++) {
             win.imgbuf[y * width + x] = 0xFDFBD4;
@@ -38,7 +31,7 @@ int main(int argc, char **argv) {
                       "This project is under MPL 2.0, licensed by UnmappedStack.\n"
                       "See LICENSE in the source repo for more information:\n\n"
                       "https://github.com/\nUnmappedStack/TacOS";
-    draw_text_wrap(txt, 10, 20 + imgheight, 0, draw_pixel, width - 10);
+    draw_text_wrap(txt, 10, 20 + imgheight, 0, win.imgbuf, width, width-10);
     lwm_flip_image(&win);
     return 0;
 }
