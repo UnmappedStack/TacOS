@@ -71,3 +71,7 @@ char *getcwd(char *buf, size_t size) {
 int ftruncate(int fd, off_t length) {
     return __syscall2(31, (size_t) fd, (size_t) length);
 }
+
+int dup2(int oldfd, int newfd) {
+    return __syscall2(33, (size_t) oldfd, (size_t) newfd);
+}

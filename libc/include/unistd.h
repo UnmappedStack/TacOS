@@ -13,3 +13,4 @@ int execvp(const char *path, char **argv);
 int chdir(const char *path);
 char *getcwd(char *buf, size_t size);
 int ftruncate(int fd, off_t length);
+int dup2(int oldfd, int newfd);

@@ -454,6 +454,11 @@ int sys_ftruncate(int fd, size_t sz) {
     return vfs_truncate(f, sz);
 }
 
+int sys_dup2(int oldfd, int newfd) {
+    CURRENT_TASK->resources[newfd] = CURRENT_TASK->resources[oldfd];
+    return 0;
+}
+
 pid_t sys_fork();
 int sys_socket(int domain, int type, int protocol);
 int sys_bind(int sockfd, void *addr, int addrlen);
@@ -499,6 +504,7 @@ void *syscalls[] = {
     sys_msync,
     sys_ftruncate,
     sys_openpty,
+    sys_dup2,
 };
 
 uint64_t num_syscalls = sizeof(syscalls) / sizeof(syscalls[0]);
