@@ -25,7 +25,7 @@ typedef enum {
 } SrvEvent;
 
 uint8_t open_window(Window *winlist, size_t x, size_t y, const char *title,
-        size_t width, size_t height, uint32_t *imgbuf);
+        size_t width, size_t height, uint32_t *imgbuf, uint8_t wid);
 Window *get_window_by_id(Window *winlist, uint8_t id);
 void set_win_title(Window *win, char *title, size_t slen);
 void win_flip(Window *win);
@@ -59,15 +59,16 @@ void handle_command(int fd, Window *winlist) {
     case WIN_CREATE:
         // format:
         // PACKSIZE | COMMAND | CMDID | WIDTH (x2) | HEIGHT (x2)
+        static uint8_t wid = 0;
         uint16_t width  = packet[3] | ((uint16_t)packet[4] << 8);
         uint16_t height = packet[5] | ((uint16_t)packet[6] << 8);
         char buf[15];
-        sprintf(buf, "wmsrvbuf%u", cid);
+        sprintf(buf, "wmsrvbuf%u", wid);
         int shmfd = shm_open(buf, O_CREAT, 0);
         ftruncate(shmfd, width * height * sizeof(uint32_t));
         uint32_t *imgbuf = mmap(NULL, width * height * sizeof(uint32_t), 0, MAP_SHARED, shmfd, 0);
-        uint8_t wid = open_window(winlist, 50, 50, "", width+10, height, imgbuf);
-        send_response(fd, cid, wid);
+        open_window(winlist, 50, 50, "", width+10, height, imgbuf, wid);
+        send_response(fd, cid, wid++);
         break;
     case WIN_SET_TITLE:
         // format:
@@ -307,8 +308,7 @@ void set_win_title(Window *win, char *title, size_t slen) {
 }
 
 uint8_t open_window(Window *winlist, size_t x, size_t y, const char *title, size_t width,
-        size_t height, uint32_t *imgbuf) {
-    static uint8_t wid = 0;
+        size_t height, uint32_t *imgbuf, uint8_t wid) {
     // find last window in queue
     Window *last_window = winlist;
     while (last_window->next) {
@@ -438,7 +438,7 @@ int main(int argc, char **argv) {
     
     int pid = fork();
     if (!pid)
-        execve("/usr/bin/info", (char*[]) {"info", NULL}, (char*[]) {NULL});
+        execve("/usr/bin/gterm", (char*[]) {"gterm", NULL}, (char*[]) {NULL});
     
     int *connected_clients = NULL;
     size_t num_clients = 0;

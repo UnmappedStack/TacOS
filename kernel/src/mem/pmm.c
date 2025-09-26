@@ -78,6 +78,8 @@ uintptr_t kmalloc(size_t num_pages) {
         return (uintptr_t)chunk - kernel.hhdm;
     }
     printf("\nPANIC: OUT OF MEMORY\n\n");
+    printf("Tried to allocate %i pages\n", num_pages);
+    __asm__ volatile("int $0");
     HALT_DEVICE();
     return 0;
 }

@@ -99,7 +99,7 @@ int execve(Task *task, char *filename, char **argv, char **envp) {
         if (vfs_read(f, (char *)&program_header, sizeof(elf_program_header),
                      offset) < 0)
             goto elf_read_err;
-        if (program_header.type == 1) {
+        if (program_header.type == 1 && program_header.virtual_address) {
             uint64_t header_data_phys = kmalloc(
                 bytes_to_pages(PAGE_ALIGN_UP(program_header.size_in_memory)));
             if (vfs_read(f, (void *)(header_data_phys + kernel.hhdm),
@@ -117,13 +117,13 @@ int execve(Task *task, char *filename, char **argv, char **envp) {
                       program_header.virtual_address, header_data_phys,
                       bytes_to_pages(program_header.size_in_memory), flags);
             add_memregion(&task->memregion_list, program_header.virtual_address,
-                          program_header.size_in_memory, true, flags);
+                          PAGE_ALIGN_UP(program_header.size_in_memory) / 4096, true, flags);
+            printf("Header with type = %i, num %i, vaddr = %p, off = %i, size_vmem "
+                   "= %i, is writable = %i\n",
+                   program_header.type, i, program_header.virtual_address,
+                   program_header.offset, program_header.size_in_memory,
+                   (uint64_t)(program_header.flags & ELF_FLAG_WRITABLE));
         }
-        printf("Header with type = %i, num %i, vaddr = %p, off = %i, size_vmem "
-               "= %i, is writable = %i\n",
-               program_header.type, i, program_header.virtual_address,
-               program_header.offset, program_header.size_in_memory,
-               (uint64_t)(program_header.flags & ELF_FLAG_WRITABLE));
         offset += file_header.program_header_entry_size;
     }
     map_pages((uint64_t *)(task->pml4 + kernel.hhdm), USER_STACK_ADDR,

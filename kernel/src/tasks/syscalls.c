@@ -143,7 +143,7 @@ int sys_waitpid(int pid, int *status, int options) {
     return -1; // pid not found in children
 }
 
-uintptr_t sys_sbrk(intptr_t increment) {
+uintptr_t __sbrk(intptr_t increment, bool map_to_phys) {
     if (!increment) {
         return CURRENT_TASK->program_break;
     }
@@ -151,16 +151,22 @@ uintptr_t sys_sbrk(intptr_t increment) {
     CURRENT_TASK->program_break += PAGE_ALIGN_UP(increment);
     if (CURRENT_TASK->program_break > previous_break) {
         size_t num_new_pages = PAGE_ALIGN_UP(increment) / 4096;
-        uintptr_t phys_pages = kmalloc(num_new_pages);
-        map_pages((uint64_t *)(CURRENT_TASK->pml4 + kernel.hhdm),
-                  previous_break, phys_pages, num_new_pages,
-                  KERNEL_PFLAG_WRITE | KERNEL_PFLAG_PRESENT |
-                      KERNEL_PFLAG_USER);
+        if (map_to_phys) {
+            uintptr_t phys_pages = kmalloc(num_new_pages);
+            map_pages((uint64_t *)(CURRENT_TASK->pml4 + kernel.hhdm),
+                      previous_break, phys_pages, num_new_pages,
+                      KERNEL_PFLAG_WRITE | KERNEL_PFLAG_PRESENT |
+                          KERNEL_PFLAG_USER);
+        }
         add_memregion(
             &CURRENT_TASK->memregion_list, previous_break, num_new_pages, true,
             KERNEL_PFLAG_WRITE | KERNEL_PFLAG_PRESENT | KERNEL_PFLAG_USER);
     }
     return previous_break;
+}
+
+uintptr_t sys_sbrk(intptr_t increment) {
+    return __sbrk(increment, true);
 }
 
 /* TODO: Right now, this just deletes a file.
@@ -292,6 +298,7 @@ int sys_msync(void *addr, size_t length, int flags) {
 void *sys_mmap(void *addr, size_t length, int prot, int flags, int fd,
                size_t offset) {
     length += PAGE_SIZE;
+    printf("mmap %i pages\n", PAGE_ALIGN_UP(length) / 4096);
     static Cache *fmcache;
     if (file_mappings.next == NULL) {
         list_init(&file_mappings);
@@ -299,14 +306,13 @@ void *sys_mmap(void *addr, size_t length, int prot, int flags, int fd,
     }
 
     (void) prot, (void) offset;
-    // dw sbrk will return a vaddr who's mem is physically contiguous
-    addr = (void*) ((addr) ? PAGE_ALIGN_UP((uintptr_t)addr) : sys_sbrk(length));
     if (flags & MAP_ANONYMOUS) return addr;
     if (!(flags & MAP_SHARED)) {
 add_to_list:
+        // dw sbrk will return a vaddr who's mem is physically contiguous
+        addr = (void*) ((addr) ? PAGE_ALIGN_UP((uintptr_t)addr) : sys_sbrk(length));
         FileVMemMapping *mapping = slab_alloc(fmcache);
         mapping->paddr_start = virt_to_phys((uint64_t*) (CURRENT_TASK->pml4 + kernel.hhdm), (uint64_t) addr);
-        printf("paddr start is %p\n", mapping->paddr_start);
         mapping->f = CURRENT_TASK->resources[fd].f;
         mapping->shared = (flags & MAP_SHARED) ? true : false; // seems dumb but it's cos of the goto thing
         mapping->len = length;
@@ -317,6 +323,7 @@ add_to_list:
     for (struct list *entry = file_mappings.next; entry != &file_mappings; entry = entry->next) {
         FileVMemMapping *mapping = (FileVMemMapping*) entry;
         if (!mapping->shared || CURRENT_TASK->resources[fd].f->private != mapping->f->private) continue;
+        addr = (void*) __sbrk(length, false);
         map_pages((void*) (CURRENT_TASK->pml4 + kernel.hhdm), (uintptr_t) addr, mapping->paddr_start,
                 PAGE_ALIGN_UP(length) / PAGE_SIZE, KERNEL_PFLAG_PRESENT | KERNEL_PFLAG_WRITE | KERNEL_PFLAG_USER);
         return addr;

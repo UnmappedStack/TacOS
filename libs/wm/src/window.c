@@ -46,7 +46,7 @@ int lwm_open_window(LWMClient *client, LWMWindow *win, uint16_t width, uint16_t 
     win->wid = resp;
     win->client = client;
     char shmfname[15];
-    sprintf(shmfname, "wmsrvbuf%u", win->wid);
+    sprintf(shmfname, "wmsrvbuf%u", resp);
     int shmfd = shm_open(shmfname, 0, 0);
     if (shmfd < 0) return -1;
     win->imgbuf = mmap(NULL, sizeof(uint32_t) * width * height, 0, MAP_SHARED, shmfd, 0);
