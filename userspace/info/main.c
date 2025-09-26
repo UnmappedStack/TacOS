@@ -39,5 +39,6 @@ int main(int argc, char **argv) {
                       "See LICENSE in the source repo for more information:\n\n"
                       "https://github.com/\nUnmappedStack/TacOS";
     draw_text_wrap(txt, 10, 20 + imgheight, 0, draw_pixel, width - 10);
+    lwm_flip_image(&win);
     return 0;
 }

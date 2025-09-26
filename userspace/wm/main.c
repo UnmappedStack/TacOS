@@ -17,6 +17,7 @@ typedef struct Window Window;
 typedef enum {
     WIN_CREATE,
     WIN_SET_TITLE,
+    WIN_FLIP_IMG,
 } SrvCommand;
 
 typedef enum {
@@ -27,6 +28,7 @@ uint8_t open_window(Window *winlist, size_t x, size_t y, const char *title,
         size_t width, size_t height, uint32_t *imgbuf);
 Window *get_window_by_id(Window *winlist, uint8_t id);
 void set_win_title(Window *win, char *title, size_t slen);
+void win_flip(Window *win);
 
 void send_event(int fd, char *data, size_t data_len) {
     write(fd, data, data_len); // we kinda just hope for the best
@@ -73,6 +75,12 @@ void handle_command(int fd, Window *winlist) {
         win = get_window_by_id(winlist, packet[3]);
         char *t = &packet[4];
         set_win_title(win, t, num_bytes - 3);
+        break;
+    case WIN_FLIP_IMG:
+        // format:
+        // PACKSIZE | COMMAND | CMDID | WINID
+        win = get_window_by_id(winlist, packet[3]);
+        win_flip(win);
         break;
     default:
         fprintf(stderr, "Invalid command: %u\n", cmd);
@@ -126,6 +134,7 @@ struct Window {
     bool focused;
     uint8_t wid;
     uint32_t *imgbuf;
+    uint32_t *draw_from;
 };
 
 typedef struct {
@@ -146,6 +155,10 @@ Window *get_window_by_id(Window *winlist, uint8_t id) {
 }
 
 Fb fb = {0};
+
+void win_flip(Window *win) {
+    memcpy(win->draw_from, win->imgbuf, win->width * win->height * sizeof(uint32_t));
+}
 
 void get_fb_info(int fd, uint64_t *pitchbuf, uint64_t *bppbuf) {
     FbDevInfo info;
@@ -313,6 +326,7 @@ uint8_t open_window(Window *winlist, size_t x, size_t y, const char *title, size
         .focused = true,
         .wid = wid,
         .imgbuf = imgbuf,
+        .draw_from = malloc(width * height * sizeof(uint32_t)),
     };
     Window *newwin = (Window*) malloc(sizeof(Window));
     *newwin = new;
@@ -358,7 +372,7 @@ void draw_window(Window *win) {
     for (size_t i = 0; i < height - 46; i++) {
         size_t ax = 0;
         for (size_t j = x + 5; j < width + x - 5; j++, ax++) {
-            where[j] = win->imgbuf[i * (width-10) + ax];
+            where[j] = win->draw_from[i * (width-10) + ax];
         }
         where = (uint32_t*) ((uint8_t*) where + fb.pitch);
     }

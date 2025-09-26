@@ -16,6 +16,7 @@ typedef struct {
 typedef enum {
     WIN_CREATE,
     WIN_SET_TITLE,
+    WIN_FLIP_IMG,
 } SrvCommand;
 
 typedef enum {
@@ -25,3 +26,4 @@ typedef enum {
 int lwm_client_init(LWMClient *client);
 int lwm_open_window(LWMClient *client, LWMWindow *win, uint16_t width, uint16_t height);
 int lwm_set_window_title(LWMWindow *win, char *title);
+int lwm_flip_image(LWMWindow *win);

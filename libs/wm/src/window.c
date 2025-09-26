@@ -61,3 +61,9 @@ int lwm_set_window_title(LWMWindow *win, char *title) {
     if (write(win->client->sockfd, cmd, packet_len) < 0) -1;
     return 0;
 }
+
+int lwm_flip_image(LWMWindow *win) {
+    if (write(win->client->sockfd, 
+                (uint8_t[]) {4, WIN_FLIP_IMG, win->client->cid, win->wid}, 4) < 0) return -1;
+    return 0;
+}
