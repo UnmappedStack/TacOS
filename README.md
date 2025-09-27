@@ -3,7 +3,7 @@ My from-scratch OS with its own kernel written in C and assembly
 
 TacOS is a UNIX-like kernel which is able to run DOOM, among various other smaller userspace programs. It has things like a VFS, scheduler, TempFS, devices, context switching, virtual memory management, physical page frame allocation, and a port of Doom. It runs both on real hardware (tested on my laptop) and in the Qemu emulator.
 
-![A screenshot of TacOS's shell](/screenshots/perfectscreenshot.webp)
+![A screenshot of TacOS](/screenshots/perfectscreenshot.webp)
 
 Please note that TacOS is a hobby toy OS and is not complete enough for real usage. It has multiple known bugs.
 
@@ -13,12 +13,7 @@ I have a Discord server for TacOS where I will share most updates, and you can a
 To build and run TacOS, simply run in your shell:
 ```
 git clone https://github.com/UnmappedStack/TacOS
-cd TacOS
-git clone https://github.com/limine-bootloader/limine
-cd limine
-git checkout v9.x-binary
-cd ..
-make run
+cd TacOS && make run
 ```
 You'll need to have Xorriso, Qemu, NASM, and Clang installed. It will automatically run in the Qemu emulator.
 
@@ -55,4 +50,3 @@ I'm open to contributions, however I have some simple ground rules and conventio
  - I ***will not*** merge any pull requests with a simple typo or grammar mistake! Open an issue if it is a problem.
  - Commit messages should be in the following format: `[component] change`, where `component` is the general area of the project you have changed.
  - Break down your commits and pull requests. I will not even bother reviewing a huge pull request with one single massive commit with thousands of lines changed in completely unrelated components.
- - Before staging your commits, run `make lint` to run the linter+format checker on your code, and modify accordingly. Do not make any modifications to the linter rules.

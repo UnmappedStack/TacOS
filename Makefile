@@ -12,6 +12,9 @@ kernel:
 	make -C kernel
 
 bootloader:
+	@if [ ! -d "limine" ]; then \
+		git clone https://github.com/limine-bootloader/limine -b v9.x-binary --depth=1; \
+	fi
 	make -C limine
 
 USER_PROGRAMS := $(wildcard userspace/*)
