@@ -16,6 +16,16 @@ void pause(void) {
     nanosleep(&ts);
 }
 
+// return 0 if it's not a printable char
+char key_to_char(Key key) {
+    if (key >= Dec0 && key <= Dec9) return '0' + (key - Dec0);
+    switch (key) {
+    case KeyMinus: return '-';
+    case KeySpace: return ' ';
+    default: return 0;
+    };
+}
+
 extern char **environ;
 int main(int argc, char **argv) {
     if (argc > 1 && argv[1][0] == '-') {
@@ -72,11 +82,16 @@ int main(int argc, char **argv) {
         if (lwm_get_event(&client, buf) < 0) continue;
         if (buf[1] != EVENT_KEYPRESS) continue;
         Key key = (buf[3]) | ((uint16_t)buf[4]<<8);
+        char chbuf;
         if (key <= CharZ) {
             char start = (caps) ? 'A' : 'a';
             char ch = start + key;
             kbbuf[kbidx++] = ch;
             flanterm_write(ft_ctx, &ch, 1);
+            lwm_flip_image(&win);
+        } else if ((chbuf=key_to_char(key))) {
+            kbbuf[kbidx++] = chbuf;
+            flanterm_write(ft_ctx, &chbuf, 1);
             lwm_flip_image(&win);
         } else if (key == KeyCapsLock)
             caps = !caps;
