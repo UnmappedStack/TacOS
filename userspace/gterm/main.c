@@ -1,4 +1,6 @@
 #include <stdlib.h>
+#include <time.h>
+#include <TacOS.h>
 #include <unistd.h>
 #include <LibWM.h>
 #include <string.h>
@@ -6,6 +8,13 @@
 #include <stdio.h>
 #include <flanterm.h>
 #include <flanterm_backends/fb.h>
+
+void pause(void) {
+    struct timespec ts;
+    ts.tv_sec = 0;
+    ts.tv_nsec = 500;
+    nanosleep(&ts);
+}
 
 extern char **environ;
 int main(int argc, char **argv) {
@@ -46,14 +55,41 @@ int main(int argc, char **argv) {
     if (!ft_ctx) return -1;
     int pid = fork();
     if (!pid) {
+        dup2(slave, 0);
         dup2(slave, 1);
+        dup2(slave, 2);
         execve("/usr/bin/shell", (char*[]) {"shell", NULL}, environ);
     }
+    char kbbuf[256] = {0};
+    size_t kbidx = 0;
+    bool caps = false;
     for (;;) {
-        char buf[256];
+        uint8_t buf[256];
         if ((e=read(master, buf, 256)) > 0) {
             flanterm_write(ft_ctx, buf, e);
             lwm_flip_image(&win);
+        }
+        if (lwm_get_event(&client, buf) < 0) continue;
+        if (buf[1] != EVENT_KEYPRESS) continue;
+        Key key = (buf[3]) | ((uint16_t)buf[4]<<8);
+        if (key <= CharZ) {
+            char start = (caps) ? 'A' : 'a';
+            char ch = start + key;
+            kbbuf[kbidx++] = ch;
+            flanterm_write(ft_ctx, &ch, 1);
+            lwm_flip_image(&win);
+        } else if (key == KeyCapsLock)
+            caps = !caps;
+        else if (key == KeyBackspace && kbidx) {
+            kbidx--;
+            const char *back_seq = "\x1b[1D \x1b[1D";
+            flanterm_write(ft_ctx, back_seq, strlen(back_seq));
+            lwm_flip_image(&win);
+        } else if (key == KeyEnter) {
+            kbbuf[kbidx++] = '\0';
+            for (int i = 0; i < 2; i++) pause();
+            write(master, kbbuf, kbidx);
+            kbidx = 0;
         }
     }
     return 0;

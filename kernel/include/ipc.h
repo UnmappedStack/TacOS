@@ -1,4 +1,5 @@
 #pragma once
+#include <spinlock.h>
 #include <ringbuffer.h>
 #include <fs/vfs.h>
 #include <list.h>
@@ -15,6 +16,7 @@ typedef int socklen_t;
 // and anchor points in tempfs file lists
 typedef struct Socket Socket;
 struct Socket {
+    Spinlock lock;
     int owner_pid;
     Socket *connected_to_server; // NULL if this is a server or it's not connected
     bool listening;
@@ -22,7 +24,7 @@ struct Socket {
     struct list pending_queue;
     struct list connected_queue;
     RingBuffer server_to_client_pipe;
-    RingBuffer client_to_server_pipe;;
+    RingBuffer client_to_server_pipe;
 };
 
 typedef struct {

@@ -21,6 +21,16 @@ static uint8_t wait_for_response(int fd, uint8_t cid) {
         return ret;
     }
 }
+
+int lwm_get_event(LWMClient *client, uint8_t *buf) {
+    size_t sz;
+    if (read(client->sockfd, &sz, 1) < 1) return -1;
+    if (sz < 2) return -1;
+    if (read(client->sockfd, &buf[1], sz-1) < sz-1) return -1;
+    buf[0] = sz;
+    return 0;
+}
+
 int lwm_client_init(LWMClient *client) {
     int fd = socket(AF_UNIX, SOCK_STREAM, 0);
     if (fd < 0) return -1;

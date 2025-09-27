@@ -1,4 +1,5 @@
 #include <ipc.h>
+#include <spinlock.h>
 #include <printf.h>
 #include <kernel.h>
 #include <mem/slab.h>
@@ -12,26 +13,32 @@ int socket_read(Socket *file, char *buf, size_t len, size_t offset) {
     (void) offset;
     Socket *client = file;
     Socket *server = client->connected_to_server;
+    spinlock_acquire(&client->lock);
     if (!server) {
         printf("Not connected to a server\n");
         return -1;
     }
     int pid = kernel.scheduler.current_task->pid;
     RingBuffer *rb = (pid == server->owner_pid) ? &client->client_to_server_pipe : &client->server_to_client_pipe;
-    return ringbuf_read(rb, len, buf);
+    int ret = ringbuf_read(rb, len, buf);
+    spinlock_release(&client->lock);
+    return ret;
 }
 
 int socket_write(Socket *file, char *buf, size_t len, size_t offset) {
     (void) offset;
     Socket *client = file;
     Socket *server = client->connected_to_server;
+    spinlock_acquire(&client->lock);
     if (!server) {
         printf("Client given is not connected to a server\n");
         return -1;
     }
     int pid = kernel.scheduler.current_task->pid;
     RingBuffer *rb = (pid == server->owner_pid) ? &client->server_to_client_pipe : &client->client_to_server_pipe;
-    return ringbuf_write(rb, len, buf);
+    int ret = ringbuf_write(rb, len, buf);
+    spinlock_release(&client->lock);
+    return ret;
 }
 
 int sys_accept(int sockfd, struct sockaddr *addr,

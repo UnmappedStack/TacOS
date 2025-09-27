@@ -21,9 +21,11 @@ typedef enum {
 
 typedef enum {
     EVENT_RESPONSE,
+    EVENT_KEYPRESS,
 } SrvEvent;
 
 int lwm_client_init(LWMClient *client);
 int lwm_open_window(LWMClient *client, LWMWindow *win, uint16_t width, uint16_t height);
 int lwm_set_window_title(LWMWindow *win, char *title);
 int lwm_flip_image(LWMWindow *win);
+int lwm_get_event(LWMClient *client, uint8_t *buf);

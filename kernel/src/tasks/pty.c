@@ -27,7 +27,11 @@ int pty_write(void *file, char *buf, size_t len, size_t offset) {
 int pty_read(void *file, char *buf, size_t len, size_t offset) {
     (void) offset;
     PtyDev *dev = (PtyDev*) ((TempfsInode*)file)->private;
-    return ringbuf_read(&dev->data, len, buf);
+    if (dev->is_master)
+        return ringbuf_read(&dev->data, len, buf);
+    int ret;
+    while ((ret=ringbuf_read(&dev->data, len, buf)) < 1);
+    return ret;
 }
 
 int sys_openpty(int *amaster, int *aslave, char *name,
@@ -60,6 +64,8 @@ int sys_openpty(int *amaster, int *aslave, char *name,
     ((PtyDev*) slave_tprivate->private)->other = (PtyDev*) master_tprivate->private;
     ringbuffer_init(&((PtyDev*) master_tprivate->private)->data);
     ringbuffer_init(&((PtyDev*) slave_tprivate->private)->data);
+    ((PtyDev*)master_tprivate->private)->is_master = true;
+    ((PtyDev*)slave_tprivate->private)->is_master  = false;
 
     int master_resource = next_avaliable_resource_slot();
     if (master_resource < 0) return -1;

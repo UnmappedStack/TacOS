@@ -8,6 +8,8 @@
 #include <mman.h>
 #include <stdlib.h>
 
+extern char **environ;
+
 #define WINDOW_BORDER_COLOUR  0x8dc1ee
 #define WINDOW_BORDER_NOFOCUS 0x9acbf5
 #define EXIT_BUTTON_COLOUR    0xc75050
@@ -22,10 +24,11 @@ typedef enum {
 
 typedef enum {
     EVENT_RESPONSE,
+    EVENT_KEYPRESS,
 } SrvEvent;
 
 uint8_t open_window(Window *winlist, size_t x, size_t y, const char *title,
-        size_t width, size_t height, uint32_t *imgbuf, uint8_t wid);
+        size_t width, size_t height, uint32_t *imgbuf, uint8_t wid, int clientfd);
 Window *get_window_by_id(Window *winlist, uint8_t id);
 void set_win_title(Window *win, char *title, size_t slen);
 void win_flip(Window *win);
@@ -67,7 +70,7 @@ void handle_command(int fd, Window *winlist) {
         int shmfd = shm_open(buf, O_CREAT, 0);
         ftruncate(shmfd, width * height * sizeof(uint32_t));
         uint32_t *imgbuf = mmap(NULL, width * height * sizeof(uint32_t), 0, MAP_SHARED, shmfd, 0);
-        open_window(winlist, 50, 50, "", width+10, height, imgbuf, wid);
+        open_window(winlist, 50, 50, "", width+10, height+46, imgbuf, wid, fd);
         send_response(fd, cid, wid++);
         break;
     case WIN_SET_TITLE:
@@ -136,6 +139,7 @@ struct Window {
     uint8_t wid;
     uint32_t *imgbuf;
     uint32_t *draw_from;
+    int clientfd;
 };
 
 typedef struct {
@@ -273,7 +277,17 @@ void cursor_getkey(Cursor *cursor, Window *winlist, int kb_fd) {
 #define speed 7
     Key key = getkey(kb_fd);
     if (key == KeyNoPress) return;
-    if (key != KeySuper && !cursor->ccm) return;
+    if (key != KeySuper && !cursor->ccm) {
+        Window *last_window = winlist;
+        while (last_window->next)
+            last_window = last_window->next;
+        if (last_window == winlist) return;
+        uint8_t keylow  = (uint8_t) key;
+        uint8_t keyhigh = (uint8_t) (key >> 8);
+        send_event(last_window->clientfd,
+                (uint8_t[]){5, EVENT_KEYPRESS, last_window->wid, keylow, keyhigh}, 5);
+        return;
+    }
     if ((key == CharL || key == CharJ || key == CharI || key == CharK)
             && cursor->windragging) {
         cursor->windragging->x = cursor->x - cursor->wdxoff;
@@ -308,7 +322,7 @@ void set_win_title(Window *win, char *title, size_t slen) {
 }
 
 uint8_t open_window(Window *winlist, size_t x, size_t y, const char *title, size_t width,
-        size_t height, uint32_t *imgbuf, uint8_t wid) {
+        size_t height, uint32_t *imgbuf, uint8_t wid, int clientfd) {
     // find last window in queue
     Window *last_window = winlist;
     while (last_window->next) {
@@ -327,6 +341,7 @@ uint8_t open_window(Window *winlist, size_t x, size_t y, const char *title, size
         .wid = wid,
         .imgbuf = imgbuf,
         .draw_from = malloc(width * height * sizeof(uint32_t)),
+        .clientfd = clientfd,
     };
     Window *newwin = (Window*) malloc(sizeof(Window));
     *newwin = new;
@@ -438,12 +453,11 @@ int main(int argc, char **argv) {
     
     int pid = fork();
     if (!pid)
-        execve("/usr/bin/gterm", (char*[]) {"gterm", NULL}, (char*[]) {NULL});
+        execve("/usr/bin/gterm", (char*[]) {"gterm", NULL}, environ);
     
     int *connected_clients = NULL;
     size_t num_clients = 0;
     for(;;) {
-        cursor_getkey(&cursor, &winlist, kb_fd);
         int c;
         if ((c=accept_b(winsrv_fd, NULL, 0, false)) > 0) {
             connected_clients = realloc(connected_clients, ++num_clients * sizeof(int));
@@ -452,6 +466,7 @@ int main(int argc, char **argv) {
         }
 
         accept_commands(connected_clients, num_clients, &winlist);
+        cursor_getkey(&cursor, &winlist, kb_fd);
 
         draw_wallpaper(bgwidth, bgheight, bgpixels);
         Window *at = &winlist;

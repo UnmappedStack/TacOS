@@ -8,7 +8,8 @@ int main(int argc, char **argv) {
                "See LICENSE in the source repo for more information.\n");
         exit(-1);
     }
-    printf("\x1b[2J");
+    printf("\x1b[2J"); // clear
+    printf("\x1b[H");  // goto 0,0
     fflush(stdout);
     return 0;
 }
