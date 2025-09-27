@@ -10,5 +10,5 @@ typedef enum {
     KeySingleQuote, KeySemiColon, KeyLeftSquareBracket, KeyRightSquareBracket,
     KeyEquals, KeyMinus, KeyBackTick, KeyAlt, KeySuper, KeyTab,
     KeyCapsLock, KeyEscape, KeyBackspace, KeyLeftArrow, KeyRightArrow,
-    KeyUpArrow, KeyDownArrow, KeyControl, KeyUnknown, KeyNoPress,
+    KeyUpArrow, KeyDownArrow, KeyControl, KeyFullStop, KeyUnknown, KeyNoPress,
 } Key;

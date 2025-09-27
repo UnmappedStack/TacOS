@@ -452,8 +452,7 @@ int main(int argc, char **argv) {
     
     // open test window
     
-    int pid = fork();
-    if (!pid)
+    if (!fork())
         execve("/usr/bin/gterm", (char*[]) {"gterm", NULL}, environ);
     
     int *connected_clients = NULL;

@@ -20,8 +20,9 @@ void pause(void) {
 char key_to_char(Key key) {
     if (key >= Dec0 && key <= Dec9) return '0' + (key - Dec0);
     switch (key) {
-    case KeyMinus: return '-';
-    case KeySpace: return ' ';
+    case KeyMinus:      return '-';
+    case KeySpace:      return ' ';
+    case KeyFullStop:   return '.';
     default: return 0;
     };
 }
@@ -37,7 +38,7 @@ int main(int argc, char **argv) {
     LWMClient client;
     LWMWindow win;
     uint16_t width  = 500;
-    uint16_t height = 300;
+    uint16_t height = 250;
     if (lwm_client_init(&client) < 0) return -1;
     if (lwm_open_window(&client, &win, width, height) < 0) return -1;
     if (lwm_set_window_title(&win, "GTerm") < 0) return -1;

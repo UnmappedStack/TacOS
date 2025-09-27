@@ -72,6 +72,7 @@ typedef enum {
     KeyUpArrow,
     KeyDownArrow,
     KeyControl,
+    KeyFullStop,
     KeyUnknown,
     KeyNoPress,
 } Key;
@@ -189,6 +190,8 @@ Key scancode_to_key(uint8_t scancode) {
         return release_flag | KeyUpArrow;
     case 0x50:
         return release_flag | KeyDownArrow;
+    case 0x34:
+        return release_flag | KeyFullStop;
     default:
         return release_flag | KeyUnknown;
     }
