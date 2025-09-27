@@ -23,10 +23,11 @@ static uint8_t wait_for_response(int fd, uint8_t cid) {
 }
 
 int lwm_get_event(LWMClient *client, uint8_t *buf) {
-    size_t sz;
+    uint8_t sz;
     if (read(client->sockfd, &sz, 1) < 1) return -1;
     if (sz < 2) return -1;
-    if (read(client->sockfd, &buf[1], sz-1) < sz-1) return -1;
+    ssize_t bytes_read = read(client->sockfd, &buf[1], sz-1);
+    if (bytes_read < sz-1) return -1;
     buf[0] = sz;
     return 0;
 }

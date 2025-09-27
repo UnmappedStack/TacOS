@@ -70,6 +70,7 @@ void handle_command(int fd, Window *winlist) {
         int shmfd = shm_open(buf, O_CREAT, 0);
         ftruncate(shmfd, width * height * sizeof(uint32_t));
         uint32_t *imgbuf = mmap(NULL, width * height * sizeof(uint32_t), 0, MAP_SHARED, shmfd, 0);
+        printf("client fd = %d\n", fd);
         open_window(winlist, 50, 50, "", width+10, height+46, imgbuf, wid, fd);
         send_response(fd, cid, wid++);
         break;
