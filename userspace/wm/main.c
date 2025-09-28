@@ -144,9 +144,8 @@ struct Window {
 };
 
 typedef struct {
-    size_t x, y;
+    int x, y;
     bool clicking;
-    bool ccm; // cursor control mode
     Window *windragging; // The window it's currently dragging (or NULL if none)
     size_t wdxoff, wdyoff; // offsets from top left of bar that we're dragging from (for windragging)
 } Cursor;
@@ -213,7 +212,7 @@ void doublebuf_swap(void) {
     msync(fb.ptr, fb.pitch * fb.height, MS_SYNC);
 }
 
-Key getkey(int kb_fd) {
+Key getkey_raw(int kb_fd) {
     Key key;
     if (read(kb_fd, &key, 1) < 0) return KeyNoPress;
     return key;
@@ -265,7 +264,6 @@ void handle_click(Window *winlist, Cursor *cursor) {
         free(within_window);
         return;
     }
-
     // if it's clicking on the title bar, set the cursor to be dragging this window
     if (cursor->y <= within_window->y + 40) {
         cursor->windragging = within_window;
@@ -274,47 +272,36 @@ void handle_click(Window *winlist, Cursor *cursor) {
     }
 }
 
-void cursor_getkey(Cursor *cursor, Window *winlist, int kb_fd) {
-#define speed 7
-    Key key = getkey(kb_fd);
-    if (key == KeyNoPress) return;
-    if (key != KeySuper && !cursor->ccm) {
-        Window *last_window = winlist;
-        while (last_window->next)
-            last_window = last_window->next;
-        if (last_window == winlist) return;
-        uint8_t keylow  = (uint8_t) key;
-        uint8_t keyhigh = (uint8_t) (key >> 8);
-        send_event(last_window->clientfd,
-                (uint8_t[]){5, EVENT_KEYPRESS, last_window->wid, keylow, keyhigh}, 5);
-        return;
-    }
-    if ((key == CharL || key == CharJ || key == CharI || key == CharK)
-            && cursor->windragging) {
+void getmouse(Cursor *cursor, int mouse_fd, Window *winlist, size_t cwidth, size_t cheight) {
+    MouseEvent event;
+    read(mouse_fd, &event, 1);
+    if (event.ignoreme) return;
+    if (event.left_click != cursor->clicking)
+        handle_click(winlist, cursor);
+    cursor->clicking = event.left_click;
+    cursor->x += event.xmovement;
+    cursor->y -= event.ymovement;
+    if (cursor->x < 0) cursor->x = 0;
+    if (cursor->y < 0) cursor->y = 0;
+    if (cursor->x > fb.width  - cwidth ) cursor->x = fb.width  - cwidth;
+    if (cursor->y > fb.height - cheight) cursor->y = fb.height - cheight;
+    if (cursor->windragging) {
         cursor->windragging->x = cursor->x - cursor->wdxoff;
         cursor->windragging->y = cursor->y - cursor->wdyoff;
     }
-    switch (key) {
-    case KeySuper:
-        cursor->ccm = !cursor->ccm;
-        return;
-    case CharL:
-        cursor->x += speed;
-        return;
-    case CharJ:
-        cursor->x -= speed;
-        return;
-    case CharI:
-        cursor->y -= speed;
-        return;
-    case CharK:
-        cursor->y += speed;
-        return;
-    case KeySpace:
-        handle_click(winlist, cursor);
-        cursor->clicking = !cursor->clicking;
-        return;
-    }
+}
+
+void getkey(Window *winlist, int kb_fd) {
+    Key key = getkey_raw(kb_fd);
+    if (key == KeyNoPress) return;
+    Window *last_window = winlist;
+    while (last_window->next)
+        last_window = last_window->next;
+    if (last_window == winlist) return;
+    uint8_t keylow  = (uint8_t) key;
+    uint8_t keyhigh = (uint8_t) (key >> 8);
+    send_event(last_window->clientfd,
+            (uint8_t[]){5, EVENT_KEYPRESS, last_window->wid, keylow, keyhigh}, 5);
 }
 
 void set_win_title(Window *win, char *title, size_t slen) {
@@ -415,7 +402,7 @@ int main(int argc, char **argv) {
     }
     
     int winsrv_fd = server_init();
-    Cursor cursor = { .x=5, .y=5, .clicking=false, .ccm=false,
+    Cursor cursor = { .x=5, .y=5, .clicking=false,
                         .windragging=NULL, .wdxoff=0, .wdyoff=0 };
     Window winlist;
     winlist.next = NULL;
@@ -435,7 +422,14 @@ int main(int argc, char **argv) {
     int kb_fd = open("/dev/kb0", 0, 0);
     if (kb_fd < 0) {
         printf("Failed to open keyboard device.\n");
-        exit(-1);
+        return -1;
+    }
+
+    // open mouse device
+    int mouse_fd = open("/dev/mouse0", 0, 0);
+    if (mouse_fd < 0) {
+        printf("Failed to open mouse device\n");
+        return -1;
     }
 
     // load/decode background image
@@ -451,7 +445,6 @@ int main(int argc, char **argv) {
     printf("Successfully decoded cursor image\n");    
     
     // open test window
-    
     if (!fork())
         execve("/usr/bin/gterm", (char*[]) {"gterm", NULL}, environ);
     
@@ -466,7 +459,8 @@ int main(int argc, char **argv) {
         }
 
         accept_commands(connected_clients, num_clients, &winlist);
-        cursor_getkey(&cursor, &winlist, kb_fd);
+        getkey(&winlist, kb_fd);
+        getmouse(&cursor, mouse_fd, &winlist, cwidth, cheight);
 
         draw_wallpaper(bgwidth, bgheight, bgpixels);
         Window *at = &winlist;
@@ -476,7 +470,7 @@ int main(int argc, char **argv) {
         }
 
         draw_cursor(cwidth, cheight, cpixels, cursor.x, cursor.y);
-        if (cursor.clicking) {
+        if (cursor.windragging) {
             for (size_t i = 0; i < 5; i++) {
                 for (size_t j = 0; j < 5; j++)
                     draw_pixel(cursor.x - 2 + j, cursor.y - 2 + i, 0xFF0000);

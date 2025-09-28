@@ -1,14 +1,11 @@
 #include <cpu.h>
+#include <ps2.h>
 #include <framebuffer.h>
 #include <fs/tempfs.h>
 #include <io.h>
 #include <kernel.h>
 #include <pit.h>
 #include <printf.h>
-
-#define PS2_DATA_REGISTER 0x60
-#define PS2_STATUS_REGISTER 0x64
-#define PS2_COMMAND_REGISTER 0x64
 
 // this should also have a copy in the libc (see /libc/include/TacOS.h)
 typedef enum {
@@ -378,6 +375,169 @@ void init_keyboard(void) {
     };
     mkdevice("/dev/stdin0", stdindev_ops);
     mkdevice("/dev/kb0", kbdev_ops);
+    outb(PS2_DATA_REGISTER, 0xF4); // enable data reporting
     set_IDT_entry(33, (void *)keyboard_isr, 0x8E, kernel.IDT);
     map_ioapic(33, 1, 0, POLARITY_HIGH, TRIGGER_EDGE);
 }
+
+static void ps2_input_wait(void) {
+	uint64_t timeout = 100000;
+	while (timeout--) {
+		if (!(inb(PS2_STATUS_REGISTER) & (1 << 1))) return;
+	}
+}
+
+static void ps2_output_wait(void) {
+	uint64_t timeout = 100000;
+	while (timeout--) {
+		if (inb(PS2_STATUS_REGISTER) & (1 << 0)) return;
+	}
+}
+
+static uint8_t ps2_send_command_and_response(uint8_t cmd) {
+    ps2_input_wait();
+    outb(PS2_COMMAND_REGISTER, cmd);
+    ps2_output_wait();
+    return inb(PS2_DATA_REGISTER);
+}
+
+static void ps2_send_command_with_arg(uint8_t cmd, uint8_t arg) {
+    ps2_input_wait();
+    outb(PS2_COMMAND_REGISTER, cmd);
+    ps2_input_wait();
+    outb(PS2_DATA_REGISTER, arg);
+}
+
+typedef struct {
+    bool left_click;
+    bool right_click;
+    int xmovement;
+    int ymovement;
+    bool ignoreme;
+} MouseEvent;
+
+MouseEvent mouse_events[256];
+int num_mouse_events = 0;
+__attribute__((interrupt))
+void mouse_isr(void*) {
+    static uint8_t mouse_packet[3];
+    static int idx = 0;
+    uint8_t data = inb(PS2_DATA_REGISTER);
+    if (!idx && !(data & 0b1000)) goto ret;
+    mouse_packet[idx++] = data;
+    if (idx != 3) goto ret;
+    // handle packet now that it's complete
+    MouseEvent event;
+    event.left_click  = mouse_packet[0] & 0b01;
+    event.right_click = mouse_packet[0] & 0b10;
+    if (mouse_packet[0] & (0b1 << 6)) {
+        event.xmovement = (mouse_packet[0] & (0b1 << 4)) ? -255 : 255;
+    } else {
+        event.xmovement = (int8_t)mouse_packet[1];
+    }
+    if (mouse_packet[0] & (0b1 << 7)) {
+        event.ymovement = (mouse_packet[0] & (0b1 << 5)) ? -255 : 255;
+    } else {
+        event.ymovement = (int8_t)mouse_packet[2];
+    }
+    event.ignoreme  = false;
+    mouse_events[num_mouse_events++] = event;
+    if (nkbevents > 255) {
+        // shift everything back
+        memmove(mouse_events, &mouse_events[1], 255);
+        num_mouse_events--;
+    }
+    idx = 0;
+ret:
+    end_of_interrupt();
+}
+
+int mouse_read(void *f, MouseEvent *buf, size_t len, size_t off) {
+    (void)f, (void)off;
+    if (len < 1)
+        return 0;
+    if (!num_mouse_events) {
+        buf->ignoreme = true;
+        return 0;
+    }
+    *buf = mouse_events[--num_mouse_events];
+    return 0;
+}
+
+void init_mouse(void) {
+    DeviceOps mousedev_ops = (DeviceOps){
+        .read = (void *)&mouse_read,
+        .write = &stdin_write,
+        .open = &stdin_open,
+        .close = &stdin_close,
+    };
+    mkdevice("/dev/mouse0", mousedev_ops);
+    ps2_send_command_with_arg(0xD4, 0xF4); // enable data reporting
+    //ps2_send_command_with_arg(0xD4, 0xF6); // set defaults
+    set_IDT_entry(44, (void *)mouse_isr, 0x8E, kernel.IDT);
+    map_ioapic(44, 12, 0, POLARITY_HIGH, TRIGGER_EDGE);
+}
+
+static void disable_ps2_controller(void) {
+    ps2_input_wait();
+    outb(PS2_COMMAND_REGISTER, 0xAD); // port 1
+    ps2_input_wait();
+    outb(PS2_COMMAND_REGISTER, 0xA7); // port 2
+}
+
+static void enable_ps2_controller(void) {
+    ps2_input_wait();
+    outb(PS2_COMMAND_REGISTER, 0xAE); // port 1
+    ps2_input_wait();
+    outb(PS2_COMMAND_REGISTER, 0xA8); // port 2
+}
+
+static void set_ps2_config_and_disable_irqs(void) {
+    uint8_t configb = ps2_send_command_and_response(PS2_CMD_GET_CONTROLLER_CONFIG);
+    configb &= ~0b1;        // disable IRQs
+    configb &= ~(0b1 << 4); // enable clock signal
+    ps2_send_command_with_arg(PS2_CMD_SET_CONTROLLER_CONFIG, configb);
+}
+
+static void ps2_enable_irqs(void) {
+    uint8_t configb = ps2_send_command_and_response(PS2_CMD_GET_CONTROLLER_CONFIG);
+    configb |= (0b1 | 0b01); // enable IRQs for both devices
+    ps2_send_command_with_arg(PS2_CMD_SET_CONTROLLER_CONFIG, configb);
+}
+
+static void ps2_check_dual_channels(void) {
+    ps2_input_wait();
+    outb(PS2_COMMAND_REGISTER, 0xA8); // try enable port 2
+    uint8_t configb = ps2_send_command_and_response(PS2_CMD_GET_CONTROLLER_CONFIG);
+    if (configb & (0b1 << 5)) {
+        printf("PS/2 mouse not supported - not dual channel PS/2 controller\n");
+        HALT_DEVICE();
+    }
+    ps2_input_wait();
+    outb(PS2_COMMAND_REGISTER, 0xA7); // disable port 2 again
+    configb &= ~((0b1 << 1) | (0b1 << 5)); // disable IRQs & enable clock port
+    ps2_input_wait();
+    outb(PS2_CMD_SET_CONTROLLER_CONFIG, configb);
+}
+
+static void ps2_reset_devices(void) {
+    ps2_input_wait();
+    outb(1, 0xFF); // port 1
+    ps2_input_wait();
+    outb(2, 0xFF); // port 2
+}
+
+void init_ps2(void) {
+    disable_ps2_controller();
+    ps2_output_wait();
+    inb(PS2_DATA_REGISTER); // flush buffer
+    set_ps2_config_and_disable_irqs();
+    ps2_check_dual_channels();
+    ps2_enable_irqs();
+    enable_ps2_controller();
+    ps2_reset_devices();
+}
+
+
+
+
