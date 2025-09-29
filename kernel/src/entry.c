@@ -1,4 +1,5 @@
 #include <apic.h>
+#include <smp.h>
 #include <pty.h>
 #include <ipc.h>
 #include <pci.h>
@@ -115,6 +116,7 @@ void _start(void) {
     unpack_initrd();
     init_devices();
     init_memregion();
+    init_smp();
     init_scheduler();
     init_ipc();
     init_apic();

@@ -1,6 +1,6 @@
+#include <kernel.h>
 #include <acpi.h>
 #include <cpu.h>
-#include <kernel.h>
 #include <mem/paging.h>
 #include <printf.h>
 

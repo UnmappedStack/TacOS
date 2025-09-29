@@ -23,6 +23,8 @@ extern "C" {
 
 #include <stdint.h>
 
+#define LIMINE_API_REVISION 1
+
 /* Misc */
 
 #ifdef LIMINE_NO_POINTERS
