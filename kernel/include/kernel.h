@@ -49,6 +49,7 @@ typedef struct {
     Cache *ipc_socketqueueitem_cache;
     Cache *usrptys_cache;
     struct limine_mp_response *smp_response;
+    bool init_complete;
 } Kernel;
 
 extern Kernel kernel;

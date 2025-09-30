@@ -37,4 +37,5 @@ static void init_kernel_info() {
     kernel.rsdp_table = (void*) rsdp_request.response->address;
     kernel.smp_response = (struct limine_mp_response*) smp_request.response;
     kernel.scheduler.initiated = false;
+    kernel.init_complete = false; 
 }

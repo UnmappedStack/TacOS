@@ -1,4 +1,5 @@
 #include <cpu/idt.h>
+#include <printf.h>
 #include <kernel.h>
 #include <mem/pmm.h>
 #include <serial.h>

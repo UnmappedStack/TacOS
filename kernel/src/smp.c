@@ -17,9 +17,15 @@ void ap_entry(struct limine_mp_info *ap_info) {
     switch_page_structures();
     init_GDT((uintptr_t)cores[ap_info->lapic_id].stack + PAGE_SIZE * KERNEL_STACK_PAGES);
     load_IDT();
+    init_local_apic(kernel.lapic_addr);
+    init_lapic_timer();
+    lock_lapic_timer();
     printf("Successfully initialised CPU%i!\n", ap_info->lapic_id);
     __atomic_fetch_add(&num_initialised, 1, __ATOMIC_SEQ_CST);
     spinlock_release(&ap_init_lock);
+    while (!kernel.init_complete) __builtin_ia32_pause();
+    unlock_lapic_timer();
+    ENABLE_INTERRUPTS();
     for (;;);
 }
 
@@ -39,4 +45,5 @@ void init_smp(void) {
         while (num_initialised <= expected)
             __builtin_ia32_pause();
     }
+    printf("All APs initialised\n");
 }

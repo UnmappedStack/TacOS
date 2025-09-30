@@ -97,16 +97,10 @@ void unmask_ioapic(uint8_t irq, uint32_t lapic_id) {
 }
 
 void init_local_apic(uintptr_t lapic_addr) {
-    printf("Local APIC vaddr: 0x%x\n", lapic_addr);
-    printf("Setting task priority of LAPIC...\n");
     write_lapic(lapic_addr, LAPIC_TASK_PRIORITY_REGISTER, 0);
-    printf("Setting LAPIC destination format to flat mode...\n");
     write_lapic(lapic_addr, LAPIC_DESTINATION_FORMAT_REGISTER, 0xF0000000);
-    printf("Setting spurious interrupt vector (and enabling this LAPIC)...\n");
-    printf("Low value: 0b%b, high value: 0b%b\n", 0xFF, 0x100);
     write_lapic(lapic_addr, LAPIC_SPURIOUS_INTERRUPT_VECTOR_REGISTER,
                 0xFF | 0x100);
-    printf("This LAPIC was successfully set up!\n");
 }
 
 Spinlock current_cpu_lock;
@@ -119,32 +113,20 @@ uint64_t get_current_processor(void) {
 }
 
 void init_lapic_timer(void) {
+    static uint32_t count;
     uintptr_t lapic_addr = kernel.lapic_addr;
-    printf("Initiating LAPIC timer...\n");
-    printf("Got LAPIC registers address (vmem): 0x%x\n", lapic_addr);
+    if (!get_current_processor()) {
+        write_lapic(lapic_addr, LAPIC_TIMER_INITIAL_COUNT_REGISTER, 0);
+        write_lapic(lapic_addr, LAPIC_TIMER_DIVIDER_REGISTER, 3);
+        write_lapic(lapic_addr, LAPIC_TIMER_INITIAL_COUNT_REGISTER, 0xFFFFFFFF);
+        pit_wait(10); // wait & calibrate to 10 ms
+        count = read_lapic(lapic_addr, LAPIC_TIMER_CURRENT_COUNT_REGISTER);
+    }
     write_lapic(lapic_addr, LAPIC_TIMER_INITIAL_COUNT_REGISTER, 0);
-    write_lapic(lapic_addr, LAPIC_TIMER_DIVIDER_REGISTER, 3);
-    write_lapic(lapic_addr, LAPIC_TIMER_INITIAL_COUNT_REGISTER, 0xFFFFFFFF);
-    pit_wait(10); // wait & calibrate to 10 ms
-    printf("Back here, reading from lapic...\n");
-    uint32_t current_count =
-        read_lapic(lapic_addr, LAPIC_TIMER_CURRENT_COUNT_REGISTER);
-    printf("done, Writing to lapic...\n");
-    write_lapic(lapic_addr, LAPIC_TIMER_INITIAL_COUNT_REGISTER, 0);
-    uint32_t num_ticks = 0xFFFFFFFF - current_count;
-    printf("Previous LVT register value: 0b%b\n",
-           read_lapic(lapic_addr, LAPIC_TIMER_LVT_REGISTER));
+    uint32_t num_ticks = 0xFFFFFFFF - count;
     write_lapic(lapic_addr, LAPIC_TIMER_LVT_REGISTER, 40 | 0x20000);
-    printf("New LVT register value: 0b%b\n",
-           read_lapic(lapic_addr, LAPIC_TIMER_LVT_REGISTER));
-    printf("Error status register value: 0b%x\n",
-           read_lapic(lapic_addr, LAPIC_ERROR_STATUS_REGISTER));
     write_lapic(lapic_addr, LAPIC_TIMER_DIVIDER_REGISTER, 3);
-    printf("Num ticks: 0x%x\n", num_ticks);
-    printf("Current count: 0x%x\n", current_count);
     write_lapic(lapic_addr, LAPIC_TIMER_INITIAL_COUNT_REGISTER, num_ticks);
-    printf("New count: 0x%x\n",
-           read_lapic(lapic_addr, LAPIC_TIMER_LVT_REGISTER));
 }
 
 void lock_lapic_timer(void) {
@@ -209,7 +191,6 @@ void init_apic(void) {
     uint64_t lapic_registers_virt =
         (uint64_t)madt->local_apic_addr + kernel.hhdm;
     kernel.lapic_addr = lapic_registers_virt;
-    init_local_apic(lapic_registers_virt);
     MADTEntryHeader *entry =
         (MADTEntryHeader *)(((uint64_t)madt) + sizeof(MADT));
     uint64_t incremented = sizeof(MADT);
@@ -238,5 +219,6 @@ void init_apic(void) {
         incremented += entry->record_length;
         printf("Increment by %i, entry is %p\n", entry->record_length, entry);
     }
+    init_local_apic(lapic_registers_virt);
     printf("APIC set up successfully.\n");
 }

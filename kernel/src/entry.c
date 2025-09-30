@@ -94,7 +94,6 @@ void try_exec_init(void) {
                "program at /usr/bin/init).\n");
         HALT_DEVICE();
     }
-    printf("task ptr = 0x%p", task);
 }
 
 void _start(void) {
@@ -109,17 +108,15 @@ void _start(void) {
     init_exceptions();
     init_paging();
     switch_page_structures();
-    init_smp();
     init_acpi();
     init_apic();
+    init_pit();
     init_vfs();
     unpack_initrd();
     init_devices();
     init_memregion();
     init_scheduler();
     init_ipc();
-    init_apic();
-    init_pit();
     init_syscalls();
     init_usrptys();
     ls("/");
@@ -130,11 +127,13 @@ void _start(void) {
     init_ps2();
     init_mouse();
     init_keyboard();
-    lock_lapic_timer();
     try_exec_init();
     init_lapic_timer();
-    printf("Successful boot, init spawned, enabling scheduler to enter "
+    lock_lapic_timer();
+//    init_smp();
+    printf("\nSuccessful boot, init spawned, enabling scheduler to enter "
            "userspace\n");
+    kernel.init_complete = true;
     ENABLE_INTERRUPTS();
     unlock_lapic_timer();
     for (;;);
