@@ -1,7 +1,6 @@
 #pragma once
 #include <acpi.h>
 #include <apic.h>
-#include <cpu/gdt.h>
 #include <cpu/idt.h>
 #include <framebuffer.h>
 #include <fs/tempfs.h>
@@ -12,15 +11,13 @@
 #include <scheduler.h>
 #include <stddef.h>
 #include <stdint.h>
-#include <tss.h>
 #include <tty.h>
 
 typedef struct limine_memmap_entry *Memmap;
 
 typedef struct {
-    uint64_t *GDT;
     IDTEntry *IDT;
-    TSS *tss;
+    IDTR idtr;
     uintptr_t kernel_phys_addr;
     uintptr_t kernel_virt_addr;
     uintptr_t hhdm;

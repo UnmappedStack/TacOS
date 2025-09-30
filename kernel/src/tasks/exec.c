@@ -141,7 +141,7 @@ int execve(Task *task, char *filename, char **argv, char **envp) {
                       KERNEL_PFLAG_USER);
     close(f);
     task->flags = TASK_FIRST_EXEC | TASK_PRESENT;
-    printf("\n -> execve(): Task %i has flags 0b%b, task ptr = 0x%p\n",
+    printf("\n -> execve(): Task %i has flags 0b%b, task ptr = 0x%p\n\n",
            task->pid, task->flags, &task->flags);
     return 0;
 }

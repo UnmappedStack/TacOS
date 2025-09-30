@@ -1,4 +1,5 @@
 #include <printf.h>
+#include <spinlock.h>
 #include <serial.h>
 #include <stdarg.h>
 #include <stddef.h>
@@ -10,6 +11,8 @@ void write_text(char *text) { write_serial(text); }
 void write_character(char ch) { write_serial_char(ch); }
 
 void printf_template(char *format, va_list args) {
+    static volatile Spinlock printf_lock = {0};
+    spinlock_acquire(&printf_lock);
     size_t i = 0;
     size_t len = strlen(format);
     while (i < len) {
@@ -46,6 +49,7 @@ void printf_template(char *format, va_list args) {
         }
         i++;
     }
+    spinlock_release(&printf_lock);
 }
 
 void printf(char *format, ...) {

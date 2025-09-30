@@ -1,4 +1,5 @@
 #pragma once
+#include <cpu.h>
 #include <stdatomic.h>
 #define Spinlock atomic_flag
 

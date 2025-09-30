@@ -1,5 +1,6 @@
 #pragma once
 
+#include <apic.h>
 #include <limine.h>
 #include <stdbool.h>
 #include <stddef.h>
@@ -10,10 +11,8 @@
 #define KERNEL_PFLAG_USER 0b00000100
 #define KERNEL_PFLAG_WRITE_COMBINE 0b10000000
 
-#define PAGE_SIZE 4096
-#define KERNEL_STACK_PAGES 10LL
-#define KERNEL_STACK_PTR 0xFFFFFFFFFFFFF000LL
-#define KERNEL_STACK_ADDR KERNEL_STACK_PTR - (KERNEL_STACK_PAGES * PAGE_SIZE)
+#define KERNEL_STACK_ADDR ((uintptr_t)cores[get_current_processor()].stack)
+#define KERNEL_STACK_PTR  (KERNEL_STACK_ADDR + KERNEL_STACK_PAGES * PAGE_SIZE)
 
 #define USER_STACK_PAGES 10LL
 #define USER_STACK_ADDR (USER_STACK_PTR - USER_STACK_PAGES * PAGE_SIZE)
@@ -49,7 +48,4 @@ void clear_page_cache(uint64_t addr);
 uintptr_t valloc(size_t size_pages);
 
 #define switch_page_structures()                                               \
-    printf("Switching CR3 & kernel stack...\n");                               \
-    KERNEL_SWITCH_PAGE_TREE(kernel.cr3);                                       \
-    KERNEL_SWITCH_STACK(KERNEL_STACK_PTR);                                     \
-    printf("Successfully switched page structures.\n");
+    KERNEL_SWITCH_PAGE_TREE(kernel.cr3);

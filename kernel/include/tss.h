@@ -7,4 +7,4 @@ typedef struct {
     uint32_t rsvd1[23];
 } __attribute__((packed)) TSS;
 
-void init_TSS(void);
+TSS *init_TSS(uintptr_t kernel_rsp);

@@ -14,13 +14,17 @@ void set_IDT_entry(uint32_t vector, void *isr, uint8_t flags, IDTEntry *IDT) {
 extern void syscall_isr(void);
 extern void context_switch(void);
 
+void load_IDT(void) {
+    __asm__ volatile("lidt %0" : : "m"(kernel.idtr));
+}
+
 void init_IDT(void) {
     kernel.IDT = (IDTEntry *)(kmalloc(1) + kernel.hhdm);
     set_IDT_entry(0x80, (void *)&syscall_isr, 0xEF, kernel.IDT);
     set_IDT_entry(40, (void *)&context_switch, 0x8E, kernel.IDT);
-    IDTR idtr = (IDTR){
+    kernel.idtr = (IDTR){
         .size = (sizeof(IDTEntry) * 256) - 1,
         .offset = (uint64_t)kernel.IDT,
     };
-    __asm__ volatile("lidt %0" : : "m"(idtr));
+    load_IDT();
 }

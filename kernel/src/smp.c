@@ -1,10 +1,28 @@
 #include <smp.h>
+#include <mem/paging.h>
+#include <cpu/gdt.h>
+#include <spinlock.h>
 #include <kernel.h>
 #include <cpu.h>
 #include <printf.h>
 #include <limine.h>
 
-// bsp = base system processor
+CPUCore cores[MAX_CORES] __attribute__((section(".data")));
+
+volatile uint64_t num_initialised = 1; // starts at one aka bsp
+void ap_entry(struct limine_mp_info *ap_info) {
+    static volatile Spinlock ap_init_lock = {0};
+    spinlock_acquire(&ap_init_lock);
+    DISABLE_INTERRUPTS();
+    switch_page_structures();
+    init_GDT((uintptr_t)cores[ap_info->lapic_id].stack + PAGE_SIZE * KERNEL_STACK_PAGES);
+    load_IDT();
+    printf("Successfully initialised CPU%i!\n", ap_info->lapic_id);
+    __atomic_fetch_add(&num_initialised, 1, __ATOMIC_SEQ_CST);
+    spinlock_release(&ap_init_lock);
+    for (;;);
+}
+
 void init_smp(void) {
     bool x2apic           = kernel.smp_response->flags & 1;
     uint32_t bsp_lapic_id = kernel.smp_response->bsp_lapic_id;
@@ -15,9 +33,10 @@ void init_smp(void) {
     printf(" - Number of cores | %i\n", num_cores);
     for (size_t cpu = 0; cpu < num_cores; cpu++) {
         struct limine_mp_info *cpu_info = kernel.smp_response->cpus[cpu];
-        printf("== PROCESSOR FOUND ==\n");
-        printf("Processor ID | %i\n", cpu_info->processor_id);
-        printf("LAPIC ID     | %i\n", cpu_info->lapic_id);
-        printf("=====================\n");
+        if (cpu_info->lapic_id== 0) continue;
+        uint64_t expected = num_initialised;
+        cpu_info->goto_address = ap_entry;
+        while (num_initialised <= expected)
+            __builtin_ia32_pause();
     }
 }

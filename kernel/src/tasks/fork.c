@@ -1,4 +1,5 @@
 #include <cpu.h>
+#include <smp.h>
 #include <fork.h>
 #include <kernel.h>
 #include <mem/pmm.h>
@@ -84,6 +85,7 @@ endcopy:
                           ->flags; /* Flags are set last so that it's only
                                     * ever run after everything else is set up
                                     * (because of the TASK_PRESENT flag) */
+    printf("it was %p\n", KERNEL_STACK_PTR);
     ENABLE_INTERRUPTS();
     return new_task->pid;
 }

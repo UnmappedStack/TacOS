@@ -1,4 +1,5 @@
 #pragma once
+#include <smp.h>
 #include <fs/device.h>
 #include <fs/vfs.h>
 #include <mem/paging.h>

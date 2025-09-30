@@ -55,9 +55,8 @@ invalid_syscall:
     iretq
 
 section .rodata
-in_syscall_msg: db "In `syscall` handler :) rsp is %p", 10, 0
-rdi_msg: db "RDI = %i", 10, 0
-rsp_msg: db "RSP in syscall handler = %p", 10, 0
+in_syscall_msg: db "In `syscall` handler :)", 10, 0
+test_msg: db "val = %i", 10, 0
 
 section .data
 user_rsp:    dq 0
