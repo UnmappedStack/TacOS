@@ -17,14 +17,14 @@ void push_gprs_in_task(Task *task, uint64_t new_task_rsp, void *callframe) {
 pid_t fork(CallFrame *callframe) {
     DISABLE_INTERRUPTS();
     bool found = false;
-    Task *initial_task = kernel.scheduler.current_task;
+    Task *initial_task = CURRENT_TASK;
     Task *new_task = task_add();
     memcpy(new_task->resources, initial_task->resources,
            sizeof(new_task->resources));
     memcpy(new_task->cwd, initial_task->cwd, MAX_PATH_LEN);
     memset(new_task->children, 0, sizeof(new_task->children));
-    new_task->entry = kernel.scheduler.current_task->entry;
-    new_task->parent = kernel.scheduler.current_task;
+    new_task->entry = CURRENT_TASK->entry;
+    new_task->parent = CURRENT_TASK;
     new_task->pml4 = (uint64_t)init_paging_task();
     new_task->rsp = KERNEL_STACK_PTR;
     bool is_first = true;
@@ -32,16 +32,16 @@ pid_t fork(CallFrame *callframe) {
     map_pages((uint64_t *)(new_task->pml4 + kernel.hhdm), KERNEL_STACK_ADDR,
               mem, KERNEL_STACK_PAGES,
               KERNEL_PFLAG_PRESENT | KERNEL_PFLAG_WRITE);
-    if (!kernel.scheduler.current_task->memregion_list)
+    if (!CURRENT_TASK->memregion_list)
         goto endcopy;
     for (struct list *iter =
-             &kernel.scheduler.current_task->memregion_list->list;
-         iter != &kernel.scheduler.current_task->memregion_list->list ||
+             &CURRENT_TASK->memregion_list->list;
+         iter != &CURRENT_TASK->memregion_list->list ||
          is_first;
          iter = iter->next) {
         is_first = false;
         memregion_clone((Memregion *)iter,
-                        kernel.scheduler.current_task->pml4 + kernel.hhdm,
+                        CURRENT_TASK->pml4 + kernel.hhdm,
                         new_task->pml4 + kernel.hhdm);
     }
 endcopy:
@@ -81,10 +81,11 @@ endcopy:
         printf(" -> new task rsp after =  0x%p\n", new_task->rsp);
     }
     map_apic_into_task(new_task->pml4);
-    new_task->flags = kernel.scheduler.current_task
-                          ->flags; /* Flags are set last so that it's only
-                                    * ever run after everything else is set up
-                                    * (because of the TASK_PRESENT flag) */
+     /* Flags are set last so that it's only
+      * ever run after everything else is set up
+      * (because of the TASK_PRESENT flag) */
+    new_task->flags = CURRENT_TASK->flags
+                        & ~TASK_RUNNING;
     printf("it was %p\n", KERNEL_STACK_PTR);
     ENABLE_INTERRUPTS();
     return new_task->pid;

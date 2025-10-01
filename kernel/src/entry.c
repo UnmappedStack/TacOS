@@ -130,7 +130,7 @@ void _start(void) {
     try_exec_init();
     init_lapic_timer();
     lock_lapic_timer();
-//    init_smp();
+    init_smp();
     printf("\nSuccessful boot, init spawned, enabling scheduler to enter "
            "userspace\n");
     kernel.init_complete = true;

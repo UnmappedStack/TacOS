@@ -95,7 +95,7 @@ int vfs_identify(VfsFile *file, char *name, VFSFileType *type, size_t *fsize) {
 VfsFile *vfs_access(char *path, int flags, VfsAccessType type) {
     char path_from_rel[MAX_PATH_LEN];
     if (*path != '/') {
-        char *cwd = kernel.scheduler.current_task->cwd;
+        char *cwd = CURRENT_TASK->cwd;
         size_t cwd_len = strlen(cwd);
         memcpy(path_from_rel, cwd, cwd_len);
         memcpy(path_from_rel + cwd_len, path, strlen(path) + 1);

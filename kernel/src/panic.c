@@ -40,7 +40,7 @@ void exception_handler(IDTEFrame registers) {
         printf("Exception type: General protection fault");
     else
         printf("Exception type: %i", registers.type);
-    printf(" in task of PID=%i\n", (kernel.scheduler.initiated) ? kernel.scheduler.current_task->pid : 0);
+    printf(" in task of PID=%i\n", (kernel.scheduler.initiated) ? CURRENT_TASK->pid : 0);
     size_t cr3;
     __asm__ volatile("movq %%cr3, %0" : "=r"(cr3));
     printf("Error code: 0b%b\n\n", registers.code);
@@ -59,7 +59,7 @@ void exception_handler(IDTEFrame registers) {
     printf("SS w/o ring: %x\n", registers.ss & ~3);
     printf("CS w/o ring: %x\n", registers.cs & ~3);
     stack_trace(registers.rbp, registers.rip);
-    if (kernel.scheduler.current_task->pid > 0) {
+    if (CURRENT_TASK->pid > 0) {
         write_framebuffer_text("\nSegmentation fault\n");
         in_panic = false;
         sys_exit(139);

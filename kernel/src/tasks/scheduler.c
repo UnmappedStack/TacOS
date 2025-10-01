@@ -1,4 +1,5 @@
 #include <cpu.h>
+#include <spinlock.h>
 #include <kernel.h>
 #include <list.h>
 #include <mem/slab.h>
@@ -19,7 +20,7 @@ void init_scheduler(void) {
     krnl_task->memregion_list = 0;
     memset(krnl_task->resources, 0, sizeof(krnl_task->resources));
     memset(krnl_task->children, 0, sizeof(krnl_task->children));
-    kernel.scheduler.current_task = krnl_task;
+    CURRENT_TASK = krnl_task;
     kernel.scheduler.initiated = true;
     // memregion_add_kernel(&krnl_task->memregion_list);
     printf("Initiated scheduler.\n");
@@ -42,18 +43,27 @@ Task *task_add(void) {
 }
 
 Task *task_select(void) {
+    static Spinlock scheduler_lock = {0};
+    spinlock_acquire(&scheduler_lock);
     Task *first_task = CURRENT_TASK;
-    kernel.scheduler.current_task = (Task *)CURRENT_TASK->list.next;
+    first_task->flags &= ~TASK_RUNNING;
+    CURRENT_TASK = (Task *)CURRENT_TASK->list.next;
+    int tasks_just_running = 0;
     while (
-        !(CURRENT_TASK->flags & TASK_PRESENT && !CURRENT_TASK->waiting_for)) {
-        if (first_task == (Task *)kernel.scheduler.current_task) {
+        !(CURRENT_TASK->flags & TASK_PRESENT) || CURRENT_TASK->waiting_for ||
+        CURRENT_TASK->flags & TASK_RUNNING) {
+        if (CURRENT_TASK->flags & TASK_RUNNING)
+            tasks_just_running++;
+        if (first_task == (Task *)CURRENT_TASK && !tasks_just_running) {
             printf("No avaliable task! Was init killed?\n");
             HALT_DEVICE();
         }
-        kernel.scheduler.current_task = (Task *)CURRENT_TASK->list.next;
+        CURRENT_TASK = (Task *)CURRENT_TASK->list.next;
     }
+    CURRENT_TASK->flags |= TASK_RUNNING;
+    spinlock_release(&scheduler_lock);
     return (Task *)CURRENT_TASK;
 }
 
 // for asm context switch
-Task *get_current_task(void) { return kernel.scheduler.current_task; }
+Task *get_current_task(void) { return CURRENT_TASK; }

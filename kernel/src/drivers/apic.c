@@ -1,8 +1,8 @@
 #include <apic.h>
+#include <spinlock.h>
 #include <cpu.h>
 #include <io.h>
 #include <kernel.h>
-#include <locks.h>
 #include <pit.h>
 #include <printf.h>
 
@@ -103,12 +103,8 @@ void init_local_apic(uintptr_t lapic_addr) {
                 0xFF | 0x100);
 }
 
-Spinlock current_cpu_lock;
-
 uint64_t get_current_processor(void) {
-    spinlock_aquire(&current_cpu_lock);
     uint64_t to_return = read_lapic(kernel.lapic_addr, LAPIC_ID_REGISTER) >> 24;
-    spinlock_release(&current_cpu_lock);
     return to_return;
 }
 

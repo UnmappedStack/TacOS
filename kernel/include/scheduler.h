@@ -7,14 +7,12 @@
 #include <stdint.h>
 #include <string.h>
 
-#define CURRENT_TASK kernel.scheduler.current_task
-
 #define MAX_RESOURCES 30
 #define MAX_CHILDREN 20
-#define TASK_PRESENT 0b0001
-#define TASK_RUNNING 0b0010
+#define TASK_PRESENT    0b0001
+#define TASK_RUNNING    0b0010
 #define TASK_FIRST_EXEC 0b0100
-#define TASK_DEAD 0b1000
+#define TASK_DEAD       0b1000
 
 typedef uint64_t pid_t;
 typedef uint8_t task_flags_t;
@@ -57,7 +55,6 @@ struct Task {
 
 typedef struct {
     struct list *list;
-    Task *current_task;
     Cache *cache;
     pid_t pid_upto;
     bool initiated;

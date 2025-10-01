@@ -18,7 +18,7 @@ int socket_read(Socket *file, char *buf, size_t len, size_t offset) {
         printf("Not connected to a server\n");
         return -1;
     }
-    int pid = kernel.scheduler.current_task->pid;
+    int pid = CURRENT_TASK->pid;
     RingBuffer *rb = (pid == server->owner_pid) ? &client->client_to_server_pipe : &client->server_to_client_pipe;
     int ret = ringbuf_read(rb, len, buf);
     spinlock_release(&client->lock);
@@ -34,7 +34,7 @@ int socket_write(Socket *file, char *buf, size_t len, size_t offset) {
         printf("Client given is not connected to a server\n");
         return -1;
     }
-    int pid = kernel.scheduler.current_task->pid;
+    int pid = CURRENT_TASK->pid;
     RingBuffer *rb = (pid == server->owner_pid) ? &client->server_to_client_pipe : &client->client_to_server_pipe;
     int ret = ringbuf_write(rb, len, buf);
     spinlock_release(&client->lock);
@@ -48,7 +48,7 @@ int sys_accept(int sockfd, struct sockaddr *addr,
         (void) addrlen;
         return -1;
     }
-    VfsFile *srvfile = kernel.scheduler.current_task->resources[sockfd].f;
+    VfsFile *srvfile = CURRENT_TASK->resources[sockfd].f;
     Socket *server = srvfile->private;
     if (block)
         while (server->pending_queue.next == &server->pending_queue);
@@ -63,9 +63,9 @@ int sys_accept(int sockfd, struct sockaddr *addr,
     // Open to a resource
     int fd = 0;
     for (size_t i = 0; i < MAX_RESOURCES; i++) {
-        if (kernel.scheduler.current_task->resources[i].f) continue;
-        kernel.scheduler.current_task->resources[i].f = client->file;
-        kernel.scheduler.current_task->resources[i].offset = 0;
+        if (CURRENT_TASK->resources[i].f) continue;
+        CURRENT_TASK->resources[i].f = client->file;
+        CURRENT_TASK->resources[i].offset = 0;
         fd = i;
         break;
     }
@@ -83,8 +83,8 @@ int sys_connect(int sockfd, const struct sockaddr *addr,
     if (f == NULL) return -1;
     Socket *server_socket = ((TempfsInode*) f->private)->private;
     SocketQueueItem *newentry = (SocketQueueItem*) slab_alloc(kernel.ipc_socketqueueitem_cache);
-    newentry->socket = kernel.scheduler.current_task->resources[sockfd].f->private;
-    newentry->file = kernel.scheduler.current_task->resources[sockfd].f;
+    newentry->socket = CURRENT_TASK->resources[sockfd].f->private;
+    newentry->file = CURRENT_TASK->resources[sockfd].f;
 
     list_insert(&server_socket->pending_queue, &newentry->list);
     newentry->socket->connected_to_server = server_socket;
@@ -92,7 +92,7 @@ int sys_connect(int sockfd, const struct sockaddr *addr,
 }
 
 int sys_listen(int sockfd, int backlog) {
-    Socket *socket = kernel.scheduler.current_task->resources[sockfd].f->private;
+    Socket *socket = CURRENT_TASK->resources[sockfd].f->private;
     socket->listening = true;
     socket->backlog_max_len = backlog;
     return 0;
@@ -113,7 +113,7 @@ int sys_socket(int domain, int type, int protocol) {
     }
     Socket *socket = (Socket*) slab_alloc(kernel.ipc_socket_cache);
     socket->connected_to_server = NULL;
-    socket->owner_pid = kernel.scheduler.current_task->pid;
+    socket->owner_pid = CURRENT_TASK->pid;
     ringbuffer_init(&socket->server_to_client_pipe);
     ringbuffer_init(&socket->client_to_server_pipe);
     list_init(&socket->pending_queue);
@@ -125,9 +125,9 @@ int sys_socket(int domain, int type, int protocol) {
     file->ops.write_fn = (int (*)(void *file, char *buf, size_t len, size_t offset)) socket_write;
     int fd = -1;
     for (size_t i = 0; i < MAX_RESOURCES; i++) {
-        if (kernel.scheduler.current_task->resources[i].f) continue;
-        kernel.scheduler.current_task->resources[i].f = file;
-        kernel.scheduler.current_task->resources[i].offset = 0;
+        if (CURRENT_TASK->resources[i].f) continue;
+        CURRENT_TASK->resources[i].f = file;
+        CURRENT_TASK->resources[i].offset = 0;
         fd = i;
         break;
     }
@@ -151,9 +151,9 @@ int sys_bind(int sockfd, const struct sockaddr *addr,
         return -1;
     }
     TempfsInode *private = f->private;
-    private->ops = kernel.scheduler.current_task->resources[sockfd].f->ops;
-    private->private = kernel.scheduler.current_task->resources[sockfd].f->private;
-    memcpy(f, kernel.scheduler.current_task->resources[sockfd].f, sizeof(VfsFile));
+    private->ops = CURRENT_TASK->resources[sockfd].f->ops;
+    private->private = CURRENT_TASK->resources[sockfd].f->private;
+    memcpy(f, CURRENT_TASK->resources[sockfd].f, sizeof(VfsFile));
     return 0;
 }
 
