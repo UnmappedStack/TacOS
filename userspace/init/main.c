@@ -54,7 +54,7 @@ int main(int argc, char **argv, char **envp) {
     pid_t pid = fork();
     if (pid) {
         int status;
-        waitpid(2, &status, 0);
+        waitpid(pid, &status, 0);
         printf("\n[INIT] Child shell has finished executing.\n");
     } else {
         printf("%s\nWelcome to TacOS! This message is from /usr/bin/init. Spawning shell (/usr/bin/shell) now.\n"

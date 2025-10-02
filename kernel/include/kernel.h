@@ -50,6 +50,7 @@ typedef struct {
     Cache *usrptys_cache;
     struct limine_mp_response *smp_response;
     bool init_complete;
+    uint64_t num_cores;
 } Kernel;
 
 extern Kernel kernel;

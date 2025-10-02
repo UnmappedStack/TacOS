@@ -9,6 +9,8 @@ extern printf
 extern increment_global_clock
 extern stack_trace
 extern scheduler_is_initiated
+extern lock_scheduler
+extern unlock_scheduler
 
 %include "include/asm.inc"
 
@@ -25,6 +27,7 @@ extern scheduler_is_initiated
 context_switch:
     cli
     pushall
+    call lock_scheduler
     call increment_global_clock
     call end_of_interrupt
     ;; Save current rsp of *this* task
@@ -79,11 +82,13 @@ context_switch:
     push rbx
     ;; clear all general purpose registers and iretq
     clearall
+    call unlock_scheduler
     pop rdx
     pop rsi
     pop rdi
     iretq
 .previously_executed:
+    call unlock_scheduler
     popall
 ;    ;; copy into regs
 ;    pop rsi

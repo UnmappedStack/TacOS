@@ -1,4 +1,6 @@
 #include <cpu.h>
+#include <stdatomic.h>
+#include <spinlock.h>
 #include <mem/pmm.h>
 #include <cpu/msr.h>
 #include <exec.h>
@@ -11,6 +13,7 @@
 #define LSTAR_MSR 0xC0000082
 #define  EFER_MSR 0xC0000080
 
+Spinlock syscall_lock;
 extern void syscall_handler(void);
 
 // This is just for the `syscall`/`sysret` method of interrupts which isn't actually
@@ -57,7 +60,6 @@ err:
 }
 
 int sys_close(int fd) {
-    printf("close fd = %b\n", fd);
     return close(CURRENT_TASK->resources[fd].f);
 }
 
@@ -94,11 +96,13 @@ void sys_exit(int status) {
 
 int sys_getpid(void) { return CURRENT_TASK->pid; }
 
+extern Spinlock scheduler_lock;
 int sys_execve(char *path, char **argv, char **envp) {
     DISABLE_INTERRUPTS();
     int e;
     if ((e = execve(CURRENT_TASK, path, argv, envp)) < 0)
         return e;
+    spinlock_release(&syscall_lock);
     ENABLE_INTERRUPTS();
     for (;;);
 }
@@ -139,7 +143,10 @@ int sys_waitpid(int pid, int *status, int options) {
     }
     if (!(task_from_pid(pid)->flags & TASK_DEAD))
         CURRENT_TASK->waiting_for = pid;
-    WAIT_FOR_INTERRUPT();
+    spinlock_release(&syscall_lock);
+    ENABLE_INTERRUPTS();
+    while (CURRENT_TASK->waiting_for)
+        WAIT_FOR_INTERRUPT();
     return -1; // pid not found in children
 }
 
@@ -515,3 +522,15 @@ void *syscalls[] = {
 };
 
 uint64_t num_syscalls = sizeof(syscalls) / sizeof(syscalls[0]);
+
+extern bool in_panic;
+void lock_syscalls(void) {
+    if (in_panic) HALT_DEVICE();
+    DISABLE_INTERRUPTS();
+    spinlock_acquire(&syscall_lock);
+}
+
+void unlock_syscalls(void) {
+    spinlock_release(&syscall_lock);
+    ENABLE_INTERRUPTS();
+}

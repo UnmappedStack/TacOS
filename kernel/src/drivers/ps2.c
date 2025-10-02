@@ -274,7 +274,7 @@ __attribute__((interrupt)) void keyboard_isr(void *) {
         current_input_data.current_buffer[current_input_data.input_len] = '\n';
         current_input_data.currently_reading = false;
         // remove the cursor
-        printf(" ");
+        write_framebuffer_char(' ');
         kernel.tty.loc_x -= 8;
         goto ret;
     }
@@ -341,7 +341,6 @@ int stdin_read(void *f, char *buf, size_t len, size_t off) {
     current_input_data.input_len = 0;
     // clear the cursor
     if (len > 1 && buf[0] != 127) {
-        kernel.tty.loc_x += 8;
         write_framebuffer_char(' ');
         kernel.tty.loc_x -= 8;
     }

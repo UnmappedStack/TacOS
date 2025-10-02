@@ -1,4 +1,5 @@
 #include <cpu.h>
+#include <spinlock.h>
 #include <smp.h>
 #include <fork.h>
 #include <kernel.h>
@@ -14,6 +15,7 @@ void push_gprs_in_task(Task *task, uint64_t new_task_rsp, void *callframe) {
     task->rsp -= 8 * 15;
 }
 
+extern Spinlock scheduler_lock;
 pid_t fork(CallFrame *callframe) {
     DISABLE_INTERRUPTS();
     bool found = false;
@@ -86,7 +88,5 @@ endcopy:
       * (because of the TASK_PRESENT flag) */
     new_task->flags = CURRENT_TASK->flags
                         & ~TASK_RUNNING;
-    printf("it was %p\n", KERNEL_STACK_PTR);
-    ENABLE_INTERRUPTS();
     return new_task->pid;
 }

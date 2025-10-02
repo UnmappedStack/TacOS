@@ -135,6 +135,6 @@ void _start(void) {
            "userspace\n");
     kernel.init_complete = true;
     ENABLE_INTERRUPTS();
-    unlock_lapic_timer();
+    //unlock_lapic_timer();
     for (;;);
 }

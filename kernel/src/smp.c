@@ -22,6 +22,7 @@ void ap_entry(struct limine_mp_info *ap_info) {
     lock_lapic_timer();
     printf("Successfully initialised CPU%i!\n", ap_info->lapic_id);
     __atomic_fetch_add(&num_initialised, 1, __ATOMIC_SEQ_CST);
+    CURRENT_TASK = cores[0].current_task;
     spinlock_release(&ap_init_lock);
     while (!kernel.init_complete) __builtin_ia32_pause();
     unlock_lapic_timer();
@@ -39,11 +40,12 @@ void init_smp(void) {
     printf(" - Number of cores | %i\n", num_cores);
     for (size_t cpu = 0; cpu < num_cores; cpu++) {
         struct limine_mp_info *cpu_info = kernel.smp_response->cpus[cpu];
-        if (cpu_info->lapic_id== 0) continue;
+        if (cpu_info->lapic_id == 0) continue;
         uint64_t expected = num_initialised;
         cpu_info->goto_address = ap_entry;
         while (num_initialised <= expected)
             __builtin_ia32_pause();
     }
+    kernel.num_cores = num_cores;
     printf("All APs initialised\n");
 }

@@ -1,4 +1,5 @@
 #include <exec.h>
+#include <spinlock.h>
 #include <fs/vfs.h>
 #include <kernel.h>
 #include <mem/memregion.h>
@@ -67,7 +68,10 @@ void setup_program_args(Task *task, char **argv, uintptr_t usr_stack_paddr,
             (char **)(USER_STACK_PTR - before_vals_off - i * sizeof(char *));
 }
 
+extern Spinlock scheduler_lock;
 int execve(Task *task, char *filename, char **argv, char **envp) {
+    spinlock_acquire(&scheduler_lock);
+    printf("Start execve on %s\n", filename);
     // get argc + copy argument strings to end of new stack
     uintptr_t usr_stack_paddr = kmalloc(USER_STACK_PAGES);
     setup_program_args(task, argv, usr_stack_paddr, /* stack end offset */ 0);
@@ -76,7 +80,7 @@ int execve(Task *task, char *filename, char **argv, char **envp) {
                            (uintptr_t)task->argv);
     task->first_rsp = task->rsp = (uintptr_t)task->envp - 16;
     // parse and load the elf
-    task->flags = 0;
+    task->flags = TASK_RUNNING;
     VfsFile *f = open(filename, 0);
     if (!f) {
         printf("Failed to open file \"%s\", execve failed.\n", filename);
@@ -143,5 +147,6 @@ int execve(Task *task, char *filename, char **argv, char **envp) {
     task->flags = TASK_FIRST_EXEC | TASK_PRESENT;
     printf("\n -> execve(): Task %i has flags 0b%b, task ptr = 0x%p\n\n",
            task->pid, task->flags, &task->flags);
+    spinlock_release(&scheduler_lock);
     return 0;
 }

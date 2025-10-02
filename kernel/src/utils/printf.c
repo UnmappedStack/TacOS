@@ -1,4 +1,6 @@
 #include <printf.h>
+#include <kernel.h>
+#include <apic.h>
 #include <spinlock.h>
 #include <serial.h>
 #include <stdarg.h>
@@ -10,6 +12,7 @@ void write_text(char *text) { write_serial(text); }
 
 void write_character(char ch) { write_serial_char(ch); }
 
+extern int64_t in_panic;
 void printf_template(char *format, va_list args) {
     static volatile Spinlock printf_lock = {0};
     spinlock_acquire(&printf_lock);

@@ -1,6 +1,8 @@
 ;; The design of how I handle syscalls is inspired by Dcraftbg :D
 [BITS 64]
 
+extern lock_syscalls
+extern unlock_syscalls
 extern printf
 extern iretq_msg
 extern lock_pit
@@ -26,7 +28,13 @@ syscall_isr:
     je invalid_syscall
     ; ...but if it's a valid syscall, so continue.
     pushmost
+    pushargs
+    call lock_syscalls
+    popargs
     call [syscalls + rax * 8]
+    push rax
+    call unlock_syscalls
+    pop rax
     popmost
     iretq
 

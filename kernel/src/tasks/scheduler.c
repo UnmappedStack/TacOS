@@ -42,9 +42,20 @@ Task *task_add(void) {
     return new_task;
 }
 
-Task *task_select(void) {
-    static Spinlock scheduler_lock = {0};
+Spinlock scheduler_lock = {0};
+void lock_scheduler(void) {
     spinlock_acquire(&scheduler_lock);
+}
+
+void unlock_scheduler(void) {
+    spinlock_release(&scheduler_lock);
+}
+
+extern bool in_panic;
+Task *task_select(void) {
+    DISABLE_INTERRUPTS();
+    if (in_panic)
+        HALT_DEVICE();
     Task *first_task = CURRENT_TASK;
     first_task->flags &= ~TASK_RUNNING;
     CURRENT_TASK = (Task *)CURRENT_TASK->list.next;
@@ -57,11 +68,16 @@ Task *task_select(void) {
         if (first_task == (Task *)CURRENT_TASK && !tasks_just_running) {
             printf("No avaliable task! Was init killed?\n");
             HALT_DEVICE();
+        } else if (tasks_just_running) {
+            // give other cores a chance because it may take some time
+            unlock_scheduler();
+            for (size_t i = 0; i < 5000; i++)
+                __builtin_ia32_pause();
+            lock_scheduler();
         }
         CURRENT_TASK = (Task *)CURRENT_TASK->list.next;
     }
     CURRENT_TASK->flags |= TASK_RUNNING;
-    spinlock_release(&scheduler_lock);
     return (Task *)CURRENT_TASK;
 }
 

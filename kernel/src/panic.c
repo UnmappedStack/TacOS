@@ -33,14 +33,15 @@ void exception_handler(IDTEFrame registers) {
     printf(BYEL "                         ### KERNEL PANIC! ###\n" BRED
                 "  Something went seriously wrong and the system cannot "
                 "continue.\n\n" BWHT " === Debug information: ===\n" WHT);
-
     if (registers.type == 14)
         printf("Exception type: Page fault");
     else if (registers.type == 13)
         printf("Exception type: General protection fault");
     else
         printf("Exception type: %i", registers.type);
-    printf(" in task of PID=%i\n", (kernel.scheduler.initiated) ? CURRENT_TASK->pid : 0);
+    printf(" in task of PID=%i on CPU%i\n",
+            (kernel.scheduler.initiated) ? CURRENT_TASK->pid : 0,
+            get_current_processor());
     size_t cr3;
     __asm__ volatile("movq %%cr3, %0" : "=r"(cr3));
     printf("Error code: 0b%b\n\n", registers.code);
