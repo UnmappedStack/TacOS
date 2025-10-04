@@ -13,7 +13,7 @@
 #define LSTAR_MSR 0xC0000082
 #define  EFER_MSR 0xC0000080
 
-Spinlock syscall_lock;
+Spinlock syscall_lock = {0};
 extern void syscall_handler(void);
 
 // This is just for the `syscall`/`sysret` method of interrupts which isn't actually

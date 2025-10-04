@@ -53,7 +53,6 @@ void unlock_scheduler(void) {
 
 extern bool in_panic;
 Task *task_select(void) {
-    DISABLE_INTERRUPTS();
     if (in_panic)
         HALT_DEVICE();
     Task *first_task = CURRENT_TASK;
@@ -61,7 +60,7 @@ Task *task_select(void) {
     CURRENT_TASK = (Task *)CURRENT_TASK->list.next;
     int tasks_just_running = 0;
     while (
-        !(CURRENT_TASK->flags & TASK_PRESENT) || CURRENT_TASK->waiting_for ||
+        !(CURRENT_TASK->flags & TASK_PRESENT) || 
         CURRENT_TASK->flags & TASK_RUNNING) {
         if (CURRENT_TASK->flags & TASK_RUNNING)
             tasks_just_running++;

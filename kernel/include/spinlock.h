@@ -1,12 +1,13 @@
 #pragma once
 #include <cpu.h>
 #include <stdatomic.h>
-#define Spinlock atomic_flag
 
-#define spinlock_acquire(lock) \
-    while (atomic_flag_test_and_set(lock)) { \
-        __builtin_ia32_pause(); \
-    }
+typedef struct {
+    atomic_flag flag;
+    int state;
+    int64_t owner;
+    bool initialised;
+} Spinlock;
 
-#define spinlock_release(lock) \
-    atomic_flag_clear(lock);
+void spinlock_acquire(volatile Spinlock *lock);
+void spinlock_release(volatile Spinlock *lock);

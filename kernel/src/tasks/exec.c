@@ -70,7 +70,6 @@ void setup_program_args(Task *task, char **argv, uintptr_t usr_stack_paddr,
 
 extern Spinlock scheduler_lock;
 int execve(Task *task, char *filename, char **argv, char **envp) {
-    spinlock_acquire(&scheduler_lock);
     printf("Start execve on %s\n", filename);
     // get argc + copy argument strings to end of new stack
     uintptr_t usr_stack_paddr = kmalloc(USER_STACK_PAGES);
@@ -147,6 +146,5 @@ int execve(Task *task, char *filename, char **argv, char **envp) {
     task->flags = TASK_FIRST_EXEC | TASK_PRESENT;
     printf("\n -> execve(): Task %i has flags 0b%b, task ptr = 0x%p\n\n",
            task->pid, task->flags, &task->flags);
-    spinlock_release(&scheduler_lock);
     return 0;
 }
