@@ -12,11 +12,3 @@ typedef enum {
     KeyCapsLock, KeyEscape, KeyBackspace, KeyLeftArrow, KeyRightArrow,
     KeyUpArrow, KeyDownArrow, KeyControl, KeyFullStop, KeyUnknown, KeyNoPress,
 } Key;
-
-typedef struct {
-    bool left_click;
-    bool right_click;
-    int xmovement;
-    int ymovement;
-    bool ignoreme;
-} MouseEvent;

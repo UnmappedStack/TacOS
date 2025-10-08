@@ -17,7 +17,7 @@
 #include <fs/ustar.h>
 #include <fs/vfs.h>
 #include <kernel.h>
-#include <ps2.h>
+#include <keyboard.h>
 #include <mem/paging.h>
 #include <mem/pmm.h>
 #include <panic.h>
@@ -124,8 +124,6 @@ void _start(void) {
     init_pci();
     init_framebuffer();
     init_tty();
-    init_ps2();
-    init_mouse();
     init_keyboard();
     try_exec_init();
     init_lapic_timer();
