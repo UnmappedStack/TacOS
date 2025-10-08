@@ -2,6 +2,7 @@
 
 global iretq_msg
 global context_switch
+extern scheduler_lock
 extern get_current_task
 extern task_select
 extern end_of_interrupt
@@ -11,6 +12,7 @@ extern stack_trace
 extern scheduler_is_initiated
 extern lock_scheduler
 extern unlock_scheduler
+extern get_kernel_stack_ptr
 
 %include "include/asm.inc"
 
@@ -26,7 +28,8 @@ extern unlock_scheduler
 
 context_switch:
     cli
-    pushall
+    pushall 
+    ;; prepare to context switch
     call lock_scheduler
     call increment_global_clock
     call end_of_interrupt
@@ -82,14 +85,14 @@ context_switch:
     push rbx
     ;; clear all general purpose registers and iretq
     clearall
-    call unlock_scheduler
     pop rdx
     pop rsi
     pop rdi
+    mov byte [scheduler_lock], 0; release scheduler lock
     iretq
 .previously_executed:
-    call unlock_scheduler
     popall
+    mov byte [scheduler_lock], 0
 ;    ;; copy into regs
 ;    pop rsi
 ;    pop rdx

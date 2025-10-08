@@ -53,7 +53,9 @@ int lwm_open_window(LWMClient *client, LWMWindow *win, uint16_t width, uint16_t 
     uint8_t hl = (uint8_t)height;
     uint8_t hh = (uint8_t)(height >> 8);
     if (write(client->sockfd, (uint8_t[]) {7, WIN_CREATE, client->cid, wl, wh, hl, hh}, 7) < 0) return -1;
+    printf("waiting for response\n");
     uint8_t resp = wait_for_response(client->sockfd, client->cid++);
+    printf("got resp\n");
     win->wid = resp;
     win->client = client;
     char shmfname[15];

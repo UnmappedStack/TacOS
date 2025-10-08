@@ -78,3 +78,4 @@
     out 0x20, al
     xor al, al
 %endmacro
+%define NUM_GENREGS 16

@@ -17,6 +17,10 @@ void __spinlock_acquire(volatile atomic_flag *flag) {
     }
 }
 
+void __spinlock_release(volatile atomic_flag *flag) {
+    atomic_flag_clear(flag);
+}
+
 void spinlock_acquire(volatile Spinlock *lock) {
     if (!kernel.init_complete) {
         __spinlock_acquire(&lock->flag);
@@ -24,7 +28,7 @@ void spinlock_acquire(volatile Spinlock *lock) {
     }
     int state = check_interrupts_enabled();
     int64_t cpu = get_current_processor();
-    if (cpu != lock->owner) spinlock_release(lock);
+    if (cpu != lock->owner && lock->initialised) spinlock_release(lock);
     DISABLE_INTERRUPTS();
     __spinlock_acquire(&lock->flag);
     if (!lock->initialised) {
@@ -38,5 +42,5 @@ void spinlock_acquire(volatile Spinlock *lock) {
 
 void spinlock_release(volatile Spinlock *lock) {
     if (lock->state && kernel.init_complete) ENABLE_INTERRUPTS();
-    atomic_flag_clear(&lock->flag);
+    __spinlock_release(&lock->flag);
 }

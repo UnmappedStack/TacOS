@@ -56,7 +56,7 @@ qemu:
 		-drive file=README.md,if=none,id=nvm \
 		-device nvme,drive=nvm,serial=deadbeef \
 		-trace 'pci_nvme*' \
-		-smp 4
+		-smp 2
 
 run: all qemu
 

@@ -9,5 +9,7 @@ typedef struct {
     bool initialised;
 } Spinlock;
 
+void __spinlock_acquire(volatile atomic_flag *flag);
+void __spinlock_release(volatile atomic_flag *flag);
 void spinlock_acquire(volatile Spinlock *lock);
 void spinlock_release(volatile Spinlock *lock);

@@ -15,7 +15,11 @@ void ap_entry(struct limine_mp_info *ap_info) {
     spinlock_acquire(&ap_init_lock);
     DISABLE_INTERRUPTS();
     switch_page_structures();
-    init_GDT((uintptr_t)cores[ap_info->lapic_id].stack + PAGE_SIZE * KERNEL_STACK_PAGES);
+    init_GDT(
+            (uintptr_t)cores[ap_info->lapic_id].stack +
+            PAGE_SIZE * KERNEL_STACK_PAGES -
+            5 * 8
+    );
     load_IDT();
     init_local_apic(kernel.lapic_addr);
     init_lapic_timer();

@@ -42,7 +42,7 @@ Task *task_add(void) {
     return new_task;
 }
 
-Spinlock scheduler_lock = {0};
+volatile Spinlock scheduler_lock = {0};
 void lock_scheduler(void) {
     spinlock_acquire(&scheduler_lock);
 }
@@ -60,9 +60,10 @@ Task *task_select(void) {
     CURRENT_TASK = (Task *)CURRENT_TASK->list.next;
     int tasks_just_running = 0;
     while (
-        !(CURRENT_TASK->flags & TASK_PRESENT) || 
+        !(CURRENT_TASK->flags & TASK_PRESENT) ||
+        CURRENT_TASK->waiting_for ||
         CURRENT_TASK->flags & TASK_RUNNING) {
-        if (CURRENT_TASK->flags & TASK_RUNNING)
+        if (CURRENT_TASK->flags & TASK_RUNNING || CURRENT_TASK->waiting_for)
             tasks_just_running++;
         if (first_task == (Task *)CURRENT_TASK && !tasks_just_running) {
             printf("No avaliable task! Was init killed?\n");
@@ -82,3 +83,4 @@ Task *task_select(void) {
 
 // for asm context switch
 Task *get_current_task(void) { return CURRENT_TASK; }
+uintptr_t get_kernel_stack_ptr(void) { return KERNEL_STACK_PTR; }

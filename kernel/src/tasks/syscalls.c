@@ -64,12 +64,14 @@ int sys_close(int fd) {
 }
 
 size_t sys_read(int fd, char *buf, size_t count) {
+    __spinlock_release(&syscall_lock.flag);
     size_t resize = vfs_read(CURRENT_TASK->resources[fd].f, buf, count,
                              CURRENT_TASK->resources[fd].offset);
     CURRENT_TASK->resources[fd].offset += resize;
     return resize;
 }
 size_t sys_write(int fd, char *buf, size_t count) {
+    __spinlock_release(&syscall_lock.flag);
     return vfs_write(CURRENT_TASK->resources[fd].f, buf, count,
                      CURRENT_TASK->resources[fd].offset);
 }
@@ -98,11 +100,12 @@ int sys_getpid(void) { return CURRENT_TASK->pid; }
 
 extern Spinlock scheduler_lock;
 int sys_execve(char *path, char **argv, char **envp) {
-    DISABLE_INTERRUPTS();
+    spinlock_acquire(&scheduler_lock);
     int e;
     if ((e = execve(CURRENT_TASK, path, argv, envp)) < 0)
         return e;
-    spinlock_release(&syscall_lock);
+    __spinlock_release(&syscall_lock.flag);
+    spinlock_release(&scheduler_lock);
     ENABLE_INTERRUPTS();
     for (;;);
 }
@@ -141,13 +144,14 @@ int sys_waitpid(int pid, int *status, int options) {
         printf("TODO: waitpid does not yet support <=0 for the pid\n");
         return -1;
     }
-    if (!(task_from_pid(pid)->flags & TASK_DEAD))
-        CURRENT_TASK->waiting_for = pid;
-    spinlock_release(&syscall_lock);
+    spinlock_acquire(&scheduler_lock);
+    if (task_from_pid(pid)->flags & TASK_DEAD) return 0;
+    CURRENT_TASK->waiting_for = pid;
+    __spinlock_release(&syscall_lock.flag);
+    spinlock_release(&scheduler_lock);
     ENABLE_INTERRUPTS();
-    while (CURRENT_TASK->waiting_for)
-        WAIT_FOR_INTERRUPT();
-    return -1; // pid not found in children
+    while (CURRENT_TASK->waiting_for) WAIT_FOR_INTERRUPT();
+    return 0;
 }
 
 uintptr_t __sbrk(intptr_t increment, bool map_to_phys) {
@@ -527,10 +531,10 @@ extern bool in_panic;
 void lock_syscalls(void) {
     if (in_panic) HALT_DEVICE();
     DISABLE_INTERRUPTS();
-    spinlock_acquire(&syscall_lock);
+    __spinlock_acquire(&syscall_lock.flag);
 }
 
 void unlock_syscalls(void) {
-    spinlock_release(&syscall_lock);
+    __spinlock_release(&syscall_lock.flag);
     ENABLE_INTERRUPTS();
 }

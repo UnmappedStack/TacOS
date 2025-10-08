@@ -457,7 +457,6 @@ int main(int argc, char **argv) {
             connected_clients[num_clients-1] = c;
             printf("Established new connection from client\n");
         }
-
         accept_commands(connected_clients, num_clients, &winlist);
         getkey(&winlist, kb_fd);
         getmouse(&cursor, mouse_fd, &winlist, cwidth, cheight);
