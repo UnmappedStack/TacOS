@@ -8,68 +8,16 @@ mod drivers;
 mod mem;
 mod kernel;
 mod heap;
-mod utils;
 mod gdt;
+mod utils;
 mod idt;
 mod panic;
 mod fs;
 use core::{fmt::Write, ptr::null_mut};
 use drivers::{serial, tty};
-use fs::tempfs;
+use fs::vfs;
 use mem::{pmm, paging};
 extern crate alloc;
-
-/* This is INCREDIBLY messy and bad.
- * Don't worry!!! This is a temporary function just for testing out the TempFS
- * while it's being developed. I promise this'll be gone! */
-fn test_tempfs() {
-    let fname = "testfile.txt";
-    let mut fs = tempfs::new();
-    let root = tempfs::openroot(&mut fs);
-    println!("Opened root directory of filesystem");
-    tempfs::mkdir(root, "testdir");
-    println!("Created test directory within root");
-    let mut dirbuf: tempfs::Inode = Default::default();
-    let mut dir = &mut dirbuf;
-    if tempfs::open(&mut dir, root, "testdir") < 0 {
-        panic!("Failed to open testdir");
-    }
-    println!("Opened test directory");
-    if tempfs::mkfile(&mut dir, fname) < 0 {
-        panic!("failed to create file");
-    }
-    tempfs::mkfile(&mut dir, "otherthing.txt");
-    println!("Created file {}", fname);
-    let mut fbuf: tempfs::Inode = Default::default();
-    let mut f = &mut fbuf;
-    tempfs::open(&mut f, &mut dir, fname);
-    let msg = "Hello, world!";
-    println!("Writing to {}: {}", fname, msg);
-    if tempfs::writefile(&mut f, crate::utils::str_as_cstr(msg), 0, msg.len()) < 0 {
-        panic!("write fialed");
-    }
-    tempfs::writefile(&mut f, crate::utils::str_as_cstr("rust! :)"), 7, 9);
-    let mut buf: alloc::vec::Vec<i8> = alloc::vec![0; 17];
-    if tempfs::readfile(&mut f, &mut buf, 0, 17) < 0 {
-        panic!("read fialed");
-    }
-    println!("Read back: {}", crate::utils::cstr_as_string(buf));
-    tempfs::close(&mut f);
-    tempfs::mkdir(&mut dir, "anotherdir");
-    println!("Listing dir:");
-    let mut buf = alloc::vec![Default::default(); 3];
-    tempfs::getdents(&mut dir, &mut buf, 3);
-    for i in 0..3 {
-        let t = match buf[i].contents {
-            tempfs::InodeContents::File(_) => "File",
-            tempfs::InodeContents::Dir(_)  => "Directory",
-            _ => "Invalid",
-        };
-        println!(" - {} found: {}", t, buf[i].fname);
-    }
-    tempfs::close(&mut dir);
-    tempfs::close(root);
-}
 
 fn init_kernel_info() -> kernel::Kernel<'static> {
     assert!(bootloader::BASE_REVISION.is_supported());
@@ -83,6 +31,7 @@ fn init_kernel_info() -> kernel::Kernel<'static> {
         idt:     null_mut(),
         kernel_phys_base: kernel_addr.physical_base(),
         kernel_virt_base: kernel_addr.virtual_base(),
+        mountpoint_list: None,
     }
 }
 
@@ -97,7 +46,7 @@ unsafe extern "C" fn kmain() -> ! {
     panic::init(&mut kernel);
     paging::init(&mut kernel);
     heap::init(&mut kernel);
-    test_tempfs();
+    vfs::init(&mut kernel);
     tty::init(&mut kernel);
     tty::write(kernel.tty,
         "\x1B[1;32mKernel initiation complete \x1B[22;39m\

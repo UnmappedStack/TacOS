@@ -1,6 +1,6 @@
 use limine::response::{MemoryMapResponse, FramebufferResponse};
 use flanterm::sys::flanterm_context;
-use crate::{pmm, idt};
+use crate::{pmm, idt, fs::vfs};
 
 pub struct Kernel<'a> {
     pub hhdm: u64,
@@ -11,4 +11,5 @@ pub struct Kernel<'a> {
     pub idt: *mut idt::IDTEntry,
     pub kernel_phys_base: u64,
     pub kernel_virt_base: u64,
+    pub mountpoint_list: Option<vfs::MountpointList>,
 }
