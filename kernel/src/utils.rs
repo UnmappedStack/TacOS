@@ -8,7 +8,7 @@ pub fn str_as_cstr(s: &str) -> alloc::vec::Vec<i8> {
     ret
 }
 
-pub fn cstr_as_string(s: alloc::vec::Vec<i8>) -> alloc::string::String {
+pub fn cstr_as_str(s: alloc::vec::Vec<i8>) -> alloc::string::String {
     let mut ret = alloc::string::String::new();
     for i in s.iter() {
         ret.push(*i as u8 as char); // lol

@@ -1,6 +1,6 @@
 use alloc::{vec::Vec, string::String, boxed::Box, vec};
 use core::fmt::Write;
-use crate::{println, kernel::Kernel, err::*};
+use crate::{println, kernel::Kernel, err::*, utils};
 use crate::fs::{tempfs};
 use hashbrown::HashMap;
 
@@ -28,8 +28,13 @@ pub trait FsInode {
     /* `&mut self` is the directory to open it in. The created file
      * will not be opened. */
     fn mkfile(&mut self, fname: &str) -> i32;
-    fn getdents(&self, buf: &mut Vec<Box<dyn FsInode>>, max: usize) -> isize;
     fn getfinfo(&self) -> InodeInfo;
+    /* getdents & read are just slightly different to POSIX on the VFS level.
+     * Instead of writing to an existing buffer, they *push* to a vector. The syscall layer
+     * abstracts this away. */
+    fn getdents(&self, buf: &mut Vec<Box<dyn FsInode>>, max: usize) -> isize;
+    fn read(&self, buf: &mut Vec<i8>, offset: usize, bytes: usize) -> isize;
+    fn write(&mut self, buf: Vec<i8>, offset: usize, bytes: usize) -> isize;
 }
 
 pub struct Inode {
@@ -122,18 +127,25 @@ impl Drive {
     }
 }
 
-fn test(kernel: &mut Kernel) {
+fn test(kernel: &mut Kernel) -> Result<(), i32>{
     let mut fs = Drive::new(Box::new(tempfs::new()));
     mount(kernel, fs, "/");
     open(kernel, "/test", AccessFlags::O_CREAT as u32);
-    open(kernel, "/file", AccessFlags::O_CREAT as u32);
+    let mut f = open(kernel, "/file", AccessFlags::O_CREAT as u32)?;
     let mountpoints = kernel.mountpoint_list.as_mut().unwrap();
     let mounted_fs = mountpoints.get_mut(&parse_path("/")).unwrap();
     let mut ents = Vec::new();
     mounted_fs.open_root().inner.getdents(&mut ents, 10);
+    println!("Enumerating `/`...");
     for ent in ents {
         let finfo = ent.getfinfo();
         println!(" -> Entry found in directory: {}", finfo.fname);
     }
-    println!("Enumerated all files");
+    println!("Writing to /test...");
+    f.write(utils::str_as_cstr("Hello, world!"), 0, 14);
+    println!("Reading back...");
+    let mut buf = Vec::new();
+    f.read(&mut buf, 0, 14);
+    println!("Read back \"{}\" successfully!", utils::cstr_as_str(buf));
+    Ok(())
 }

@@ -91,7 +91,7 @@ pub fn readfile(file: &Inode, buf: &mut Vec<i8>,
     let len = contents.len();
     for i in 0..bytes {
         if offset + i >= len { return i as isize }
-        buf[i] = contents[offset + i];
+        buf.push(contents[offset + i]);
     }
     bytes as isize
 }
@@ -157,8 +157,13 @@ impl vfs::FsInode for Inode {
             fname: self.fname.clone(),
         }
     }
+    fn write(&mut self, buf: Vec<i8>, offset: usize, bytes: usize) -> isize {
+        writefile(self, buf, offset, bytes)
+    }
+    fn read(&self, buf: &mut Vec<i8>, offset: usize, bytes: usize) -> isize {
+        readfile(self, buf, offset, bytes)
+    }
 }
-
 impl vfs::FsDrive for TempFS {
     fn open_root(&mut self) -> vfs::Inode {
         vfs::Inode {
