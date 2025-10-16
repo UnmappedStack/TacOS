@@ -2,6 +2,7 @@
 #![no_main]
 
 mod bootloader;
+mod acpi;
 mod err;
 mod cpu;
 mod drivers;
@@ -16,6 +17,7 @@ mod fs;
 use core::{fmt::Write, ptr::null_mut};
 use drivers::{serial, tty};
 use fs::vfs;
+use kernel::KERNEL;
 use mem::{pmm, paging};
 extern crate alloc;
 
@@ -24,31 +26,34 @@ fn init_kernel_info() -> kernel::Kernel<'static> {
     let kernel_addr = bootloader::KERNEL_LOC_REQUEST.get_response().unwrap();
     kernel::Kernel {
         hhdm:    bootloader::HHDM_REQUEST.get_response().unwrap().offset(),
-        memmap:  bootloader::MEMMAP_REQUEST.get_response().unwrap(),
+        memmap:  Some(bootloader::MEMMAP_REQUEST.get_response().unwrap()),
         pmmlist: None,
-        fb:      bootloader::FRAMEBUFFER_REQUEST.get_response().unwrap(),
+        fb:      Some(bootloader::FRAMEBUFFER_REQUEST.get_response().unwrap()),
         tty:     None,
         idt:     null_mut(),
         kernel_phys_base: kernel_addr.physical_base(),
         kernel_virt_base: kernel_addr.virtual_base(),
         mountpoint_list: None,
+        rsdp:   bootloader::KERNEL_RSDP_REQUEST.get_response().unwrap().address() as u64,
+        current_pml4: null_mut(),
     }
 }
 
 #[unsafe(no_mangle)]
 unsafe extern "C" fn kmain() -> ! {
     cpu::disable_interrupts();
-    let mut kernel = init_kernel_info();
+    *KERNEL.lock() = init_kernel_info();
     serial::init();
-    pmm::init(&mut kernel);
-    gdt::init(&mut kernel);
-    idt::init(&mut kernel);
-    panic::init(&mut kernel);
-    paging::init(&mut kernel);
-    heap::init(&mut kernel);
-    vfs::init(&mut kernel);
-    tty::init(&mut kernel);
-    tty::write(kernel.tty,
+    pmm::init();
+    gdt::init();
+    idt::init();
+    panic::init();
+    paging::init();
+    heap::init();
+    vfs::init();
+    acpi::init();
+    tty::init();
+    tty::write(KERNEL.lock().tty,
         "\x1B[1;32mKernel initiation complete \x1B[22;39m\
          (see serial for logs)\n\
          \n\x1B[1;33mWARNING\x1B[22;39m: You are in the Rust rewrite of TacOS, \

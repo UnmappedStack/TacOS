@@ -8,3 +8,5 @@ limine = "0.5.0"
 flanterm = "0.0.2"
 linked_list_allocator = "0.10.5"
 hashbrown = "0.16.0"
+uacpi = { git = "https://github.com/uACPI/uacpi-rs" }
+spin = "0.10.0"

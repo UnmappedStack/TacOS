@@ -1,7 +1,5 @@
-use crate::{println, kernel, pmm};
-use core::arch::asm;
-use core::fmt::Write;
-use core::mem;
+use crate::{println, pmm, kernel::KERNEL};
+use core::{arch::asm, fmt::Write, mem};
 
 unsafe extern "C" { fn reload_gdt(); }
 
@@ -40,8 +38,9 @@ fn load(gdtr: GDTR) {
     }
 }
 
-pub fn init(kernel: &mut kernel::Kernel) {
-    let gdt = pmm::valloc(kernel, 1) as *mut GDTEntry;
+pub fn init() {
+    let mut kernel = KERNEL.lock();
+    let gdt = pmm::valloc(&mut *kernel, 1) as *mut GDTEntry;
     unsafe {
         *gdt.add(0) = create_entry(0, 0, 0, 0);
         *gdt.add(1) = create_entry(0, 0, 0x9A, 0x2);

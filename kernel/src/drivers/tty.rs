@@ -1,5 +1,5 @@
 use flanterm::sys::{flanterm_fb_init, flanterm_write, flanterm_context};
-use crate::{kernel, println, utils};
+use crate::{kernel::KERNEL, println, utils};
 use core::ptr::null_mut;
 use core::fmt::Write;
 
@@ -10,8 +10,9 @@ pub fn write(ctx: Option<*mut flanterm_context>, msg: &str) {
     }
 }
 
-pub fn init(kernel: &mut kernel::Kernel) {
-    let fb = kernel.fb.framebuffers().nth(0).unwrap();
+pub fn init() {
+    let mut kernel = KERNEL.lock();
+    let fb = kernel.fb.unwrap().framebuffers().nth(0).unwrap();
     unsafe {
         let ctx = flanterm_fb_init(
             None, None,

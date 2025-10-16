@@ -1,6 +1,6 @@
-use alloc::{vec::Vec, string::String, boxed::Box, vec};
+use alloc::{vec::Vec, string::String, boxed::Box};
 use core::fmt::Write;
-use crate::{println, kernel::Kernel, err::*, utils};
+use crate::{println, kernel::*, err::*, utils};
 use crate::fs::{tempfs};
 use hashbrown::HashMap;
 
@@ -112,10 +112,11 @@ fn open(kernel: &mut Kernel, path: &str, flags: u32)
     Ok(currently_open)
 }
 
-pub fn init(kernel: &mut Kernel) {
+pub fn init() {
+    let mut kernel = KERNEL.lock();
     kernel.mountpoint_list = Some(HashMap::new());
     println!("VFS initialised.");
-    test(kernel);
+    test(&mut *kernel);
 }
 
 impl Drive {
@@ -127,8 +128,8 @@ impl Drive {
     }
 }
 
-fn test(kernel: &mut Kernel) -> Result<(), i32>{
-    let mut fs = Drive::new(Box::new(tempfs::new()));
+fn test(kernel: &mut Kernel) -> Result<(), i32> {
+    let fs = Drive::new(Box::new(tempfs::new()));
     mount(kernel, fs, "/");
     open(kernel, "/test", AccessFlags::O_CREAT as u32);
     let mut f = open(kernel, "/file", AccessFlags::O_CREAT as u32)?;

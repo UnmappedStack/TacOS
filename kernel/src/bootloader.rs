@@ -3,7 +3,7 @@
 use limine::BaseRevision;
 use limine::request::{FramebufferRequest, RequestsEndMarker, HhdmRequest,
                         RequestsStartMarker, MemoryMapRequest,
-                        ExecutableAddressRequest};
+                        ExecutableAddressRequest, RsdpRequest};
 
 #[used]
 #[unsafe(link_section = ".requests")]
@@ -24,6 +24,10 @@ pub static MEMMAP_REQUEST: MemoryMapRequest = MemoryMapRequest::new();
 #[used]
 #[unsafe(link_section = ".requests")]
 pub static KERNEL_LOC_REQUEST: ExecutableAddressRequest = ExecutableAddressRequest::new();
+
+#[used]
+#[unsafe(link_section = ".requests")]
+pub static KERNEL_RSDP_REQUEST: RsdpRequest= RsdpRequest::new();
 
 #[used]
 #[unsafe(link_section = ".requests_start_marker")]

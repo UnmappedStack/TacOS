@@ -16,7 +16,7 @@ pub struct Inode {
     pub contents: Rc<RefCell<InodeContents>>,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct TempFS {
     rootdir: Inode, 
 }
@@ -127,7 +127,7 @@ pub fn getdents(dir: &Inode, buf: &mut Vec<Box<dyn vfs::FsInode>>, max: usize)
 impl vfs::FsInode for Inode {
     fn open(&mut self, fname: &str, flags: u32) 
                     -> Result<Box<dyn vfs::FsInode>, i32> {
-        let mut ret = open(self, fname);
+        let ret = open(self, fname);
         if flags & (vfs::AccessFlags::O_CREAT as u32) != 0 {
             if matches!(ret, Err(e) if e == -(Errno::ENOENT as i32)) {
                 // end scope to create file

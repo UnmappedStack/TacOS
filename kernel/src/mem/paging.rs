@@ -1,4 +1,4 @@
-use crate::{kernel, println, pmm};
+use crate::{kernel, kernel::KERNEL, println, pmm};
 use core::{fmt::Write};
 use limine::memory_map::EntryType;
 
@@ -100,27 +100,29 @@ fn map_kernel(kernel: &mut kernel::Kernel, pml4: *mut u64) {
     }
 }
 
-pub fn init(kernel: &mut kernel::Kernel) {
-    let pml4 = pmm::valloc(kernel, 1) as *mut u64;
+pub fn init() {
+    let mut kernel = KERNEL.lock();
+    let hhdm = kernel.hhdm;
+    let pml4 = pmm::valloc(&mut *kernel, 1) as *mut u64;
     unsafe {
         pml4.write_bytes(0, 512);
     }
-    let entries = kernel.memmap.entries();
+    let entries = kernel.memmap.unwrap().entries();
     for entry in entries {
         if entry.entry_type == EntryType::RESERVED ||
            entry.entry_type == EntryType::BAD_MEMORY {
             continue;
         }
         unsafe {
-            map_consecutive_pages(kernel, pml4, entry.base,
-                                  entry.base + kernel.hhdm,
+            map_consecutive_pages(&mut *kernel, pml4, entry.base,
+                                  entry.base + hhdm,
                                   (page_align_up(entry.length) / 4096) as usize,
                                   PAGE_WRITE | PAGE_PRESENT);
         }
     }
-    map_kernel(kernel, pml4);
+    map_kernel(&mut *kernel, pml4);
     unsafe {
-        let cr3 = (pml4 as u64) - kernel.hhdm;
+        let cr3 = (pml4 as u64) - hhdm;
         core::arch::asm!("mov cr3, rax",
                 in("rax") cr3);
     }

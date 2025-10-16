@@ -1,5 +1,5 @@
 use core::{fmt::Write, mem, arch::asm, ptr::null_mut};
-use crate::{println, kernel, pmm};
+use crate::{println, kernel::KERNEL, pmm};
 
 #[repr(C, packed)]
 pub struct IDTEntry {
@@ -33,8 +33,8 @@ unsafe fn create_entry(offset: u64, flags: u8) -> IDTEntry {
 }
 
 #[allow(dead_code)]
-pub fn map_isr(kernel: &mut kernel::Kernel,
-                vector: usize, offset: u64, flags: u8) {
+pub fn map_isr(vector: usize, offset: u64, flags: u8) {
+    let kernel = KERNEL.lock();
     assert!(vector < 256, "ISR vector must be <256");
     assert!(kernel.idt != null_mut(), "IDT may have not yet been initialised");
     unsafe {
@@ -42,8 +42,9 @@ pub fn map_isr(kernel: &mut kernel::Kernel,
     }
 }
 
-pub fn init(kernel: &mut kernel::Kernel) {
-    kernel.idt = pmm::valloc(kernel, 8) as *mut IDTEntry;
+pub fn init() {
+    let mut kernel = KERNEL.lock();
+    kernel.idt = pmm::valloc(&mut *kernel, 8) as *mut IDTEntry;
     let idtr = IDTR {
         size: mem::size_of::<IDTEntry>() as u16 * 256 - 1,
         offset: kernel.idt as u64,

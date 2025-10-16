@@ -1,4 +1,4 @@
-use crate::{println, kernel, idt, cpu, serial};
+use crate::{println, idt, cpu, serial};
 use core::{fmt::Write, ptr::null_mut};
 
 /* this doesn't really need to be public but I'm just keeping it public
@@ -67,26 +67,26 @@ pub fn cause_exception() {
     }
 }
 
-pub fn init(kernel: &mut kernel::Kernel) {
-    idt::map_isr(kernel, 0, divide_exception as u64, 0x8e);
-    idt::map_isr(kernel, 1, debug_exception as u64, 0x8e);
-    idt::map_isr(kernel, 3, breakpoint_exception as u64, 0x8e);
-    idt::map_isr(kernel, 4, overflow_exception as u64, 0x8e);
-    idt::map_isr(kernel, 5, bound_range_exceeded_exception as u64, 0x8e);
-    idt::map_isr(kernel, 6, invalid_opcode_exception as u64, 0x8e);
-    idt::map_isr(kernel, 7, device_not_avaliable_exception as u64, 0x8e);
-    idt::map_isr(kernel, 8, double_fault_exception as u64, 0x8e);
-    idt::map_isr(kernel, 9, coprocessor_segment_overrun_exception as u64, 0x8e);
-    idt::map_isr(kernel, 10, invalid_tss_exception as u64, 0x8e);
-    idt::map_isr(kernel, 11, segment_not_present_exception as u64, 0x8e);
-    idt::map_isr(kernel, 12, stack_segment_fault_exception as u64, 0x8e);
-    idt::map_isr(kernel, 13, general_protection_fault_exception as u64, 0x8e);
-    idt::map_isr(kernel, 14, page_fault_exception as u64, 0x8e);
-    idt::map_isr(kernel, 16, floating_point_exception as u64, 0x8e);
-    idt::map_isr(kernel, 17, alignment_check_exception as u64, 0x8e);
-    idt::map_isr(kernel, 18, machine_check_exception as u64, 0x8e);
-    idt::map_isr(kernel, 19, simd_floating_point_exception as u64, 0x8e);
-    idt::map_isr(kernel, 20, virtualisation_exception as u64, 0x8e);
+pub fn init() {
+    idt::map_isr(0, divide_exception as u64, 0x8e);
+    idt::map_isr(1, debug_exception as u64, 0x8e);
+    idt::map_isr(3, breakpoint_exception as u64, 0x8e);
+    idt::map_isr(4, overflow_exception as u64, 0x8e);
+    idt::map_isr(5, bound_range_exceeded_exception as u64, 0x8e);
+    idt::map_isr(6, invalid_opcode_exception as u64, 0x8e);
+    idt::map_isr(7, device_not_avaliable_exception as u64, 0x8e);
+    idt::map_isr(8, double_fault_exception as u64, 0x8e);
+    idt::map_isr(9, coprocessor_segment_overrun_exception as u64, 0x8e);
+    idt::map_isr(10, invalid_tss_exception as u64, 0x8e);
+    idt::map_isr(11, segment_not_present_exception as u64, 0x8e);
+    idt::map_isr(12, stack_segment_fault_exception as u64, 0x8e);
+    idt::map_isr(13, general_protection_fault_exception as u64, 0x8e);
+    idt::map_isr(14, page_fault_exception as u64, 0x8e);
+    idt::map_isr(16, floating_point_exception as u64, 0x8e);
+    idt::map_isr(17, alignment_check_exception as u64, 0x8e);
+    idt::map_isr(18, machine_check_exception as u64, 0x8e);
+    idt::map_isr(19, simd_floating_point_exception as u64, 0x8e);
+    idt::map_isr(20, virtualisation_exception as u64, 0x8e);
     println!("Exceptions initialised.");
 }
 

@@ -1,6 +1,6 @@
 #![allow(dead_code)]
 
-use crate::{println, kernel};
+use crate::{println, kernel::KERNEL, kernel};
 use core::fmt::Write;
 use limine::memory_map::EntryType;
 
@@ -51,9 +51,10 @@ fn pmm_list_remove(kernel: &mut kernel::Kernel, node: *mut PMMNode) {
     }
 }
 
-pub fn init(kernel: &mut kernel::Kernel) {
+pub fn init() {
+    let mut kernel = KERNEL.lock();
     assert!(kernel.pmmlist == None, "Cannot initialise PMM twice!");
-    let entries = kernel.memmap.entries();
+    let entries = kernel.memmap.unwrap().entries();
     let mut first_node: Option<*mut PMMNode> = None;
     for entry in entries {
         println!(" -> Base: {:p}, Length: 0x{:0x}, Type: {}",
