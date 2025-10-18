@@ -120,8 +120,8 @@ impl uacpi::kernel_api::KernelApi for AcpiKernelApi {
                                                 -> Result<(), uacpi::Status> {
         todo!("uacpi: io_write");
     }
-    unsafe fn map(&self, _phys: uacpi::PhysAddr, _len: usize) -> *mut c_void {
-        todo!("uacpi: map");
+    unsafe fn map(&self, phys: uacpi::PhysAddr, _len: usize) -> *mut c_void {
+        (phys.as_u64() + KERNEL.lock().hhdm) as *mut c_void
     }
     unsafe fn unmap(&self, _addr: *mut c_void, _len: usize) {
         todo!("uacpi: unmap");
