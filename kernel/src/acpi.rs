@@ -1,6 +1,6 @@
-use crate::{kernel::KERNEL, cpu};
+use crate::{kernel::KERNEL, cpu, println, mem::paging::*};
 use alloc::{sync::Arc, boxed::Box, vec::Vec};
-use core::{ffi::c_void, cell::RefCell};
+use core::{ffi::c_void, cell::RefCell, fmt::Write};
 use spin::Mutex;
 
 const BYTE0_MASK: u32 = 0b1111;
@@ -120,11 +120,19 @@ impl uacpi::kernel_api::KernelApi for AcpiKernelApi {
                                                 -> Result<(), uacpi::Status> {
         todo!("uacpi: io_write");
     }
-    unsafe fn map(&self, phys: uacpi::PhysAddr, _len: usize) -> *mut c_void {
-        (phys.as_u64() + KERNEL.lock().hhdm) as *mut c_void
+    unsafe fn map(&self, phys: uacpi::PhysAddr, len: usize) -> *mut c_void {
+        let paddr = page_align_down(phys.as_u64()) as u64;
+        let vaddr = { paddr + KERNEL.lock().hhdm };
+        let pml4  = { KERNEL.lock().current_pml4 };
+        let num_pages = page_align_up(len as u64) / PAGE_SIZE;
+        let flags = PAGE_WRITE | PAGE_PRESENT;
+        println!("{:p}->{:p}, {} pages ({} bytes)", paddr as *const u8, vaddr as *const u8, num_pages, len);
+        map_consecutive_pages(&mut *KERNEL.lock(), pml4, paddr, vaddr, num_pages, flags);
+        (vaddr + (phys.as_u64()-paddr)) as *mut c_void
     }
-    unsafe fn unmap(&self, _addr: *mut c_void, _len: usize) {
-        todo!("uacpi: unmap");
+    unsafe fn unmap(&self, addr: *mut c_void, len: usize) {
+        let pml4  = { KERNEL.lock().current_pml4 };
+        unmap_consecutive_pages(&mut *KERNEL.lock(), pml4, page_align_down(addr as u64) as u64, len);
     }
     fn get_ticks(&self) -> u64 {
         todo!("uacpi: get_ticks");
@@ -201,12 +209,14 @@ impl uacpi::kernel_api::KernelApi for AcpiKernelApi {
     }
 }
 
+
+
 pub fn init() {
-    let kernel = KERNEL.lock();
+    let rsdp = { KERNEL.lock().rsdp.clone() };
     uacpi::kernel_api::set_kernel_api(Arc::new(AcpiKernelApi::default()));
-    let _s = uacpi::init(
-        uacpi::PhysAddr::new(kernel.rsdp),
+    uacpi::init(
+        uacpi::PhysAddr::new(rsdp),
         uacpi::LogLevel::WARN,
         false
-    );
+    ).unwrap();
 }

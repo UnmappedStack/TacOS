@@ -2,15 +2,17 @@ use crate::{kernel, kernel::KERNEL, println, pmm};
 use core::{fmt::Write};
 use limine::memory_map::EntryType;
 
-const PAGE_PRESENT: u64 = 0b0001;
-const   PAGE_WRITE: u64 = 0b0010;
-const    PAGE_USER: u64 = 0b0100;
+pub const PAGE_PRESENT: u64 = 0b0001;
+pub const   PAGE_WRITE: u64 = 0b0010;
+pub const    PAGE_USER: u64 = 0b0100;
+
+pub const PAGE_SIZE: usize = 4096;
 
 pub fn page_align_up(addr: u64) -> usize {
     (((addr + 4095) / 4096) * 4096) as usize
 }
 
-fn page_align_down(addr: u64) -> usize {
+pub fn page_align_down(addr: u64) -> usize {
     ((addr / 4096) * 4096) as usize
 }
 
@@ -52,6 +54,10 @@ pub unsafe fn page_map_vmem(kernel: &mut kernel::Kernel, pml4: *mut u64,
     *pml1.add(pml1idx) = paddr | flags;
 }
 
+pub unsafe fn page_unmap_vmem(kernel: &mut kernel::Kernel, pml4: *mut u64, vaddr: u64) {
+    page_map_vmem(kernel, pml4, 0, vaddr, 0);
+}
+
 /* Again I'm aware this isn't very fast, it's for readability not speed */
 pub unsafe fn map_consecutive_pages(kernel: &mut kernel::Kernel,
                                     pml4: *mut u64,
@@ -63,6 +69,17 @@ pub unsafe fn map_consecutive_pages(kernel: &mut kernel::Kernel,
                             paddr_start + ((i * 4096) as u64),
                             vaddr_start + ((i * 4096) as u64),
                             flags);
+        }
+    }
+}
+
+pub unsafe fn unmap_consecutive_pages(kernel: &mut kernel::Kernel,
+                                    pml4: *mut u64, vaddr_start: u64,
+                                    num_pages: usize) {
+    for i in 0..num_pages {
+        unsafe {
+            page_unmap_vmem(kernel, pml4,
+                            vaddr_start + ((i * 4096) as u64));
         }
     }
 }
@@ -126,5 +143,6 @@ pub fn init() {
         core::arch::asm!("mov cr3, rax",
                 in("rax") cr3);
     }
+    kernel.current_pml4 = pml4;
     println!("New page tree initialised.");
 }
