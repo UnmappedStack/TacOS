@@ -3,5 +3,5 @@
 /kernel/kernel
 /kernel/Cargo.lock
 /kernel/target/
-kernel/obj/
 /limine/
+kernel/obj/
