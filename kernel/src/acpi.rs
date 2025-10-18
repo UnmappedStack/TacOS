@@ -1,6 +1,7 @@
 use crate::{kernel::KERNEL, cpu};
-use alloc::{sync::Arc, boxed::Box};
-use core::ffi::c_void;
+use alloc::{sync::Arc, boxed::Box, vec::Vec};
+use core::{ffi::c_void, cell::RefCell};
+use spin::Mutex;
 
 const BYTE0_MASK: u32 = 0b1111;
 const BYTE1_MASK: u32 = BYTE0_MASK << 8;
@@ -9,7 +10,15 @@ const BYTE3_MASK: u32 = BYTE0_MASK << 24;
 
 const BYTE_MASKS: [u32; 4] = [BYTE0_MASK, BYTE1_MASK, BYTE2_MASK, BYTE3_MASK];
 
-struct AcpiKernelApi;
+struct ManualMutex {
+    inner: Mutex<()>,
+    guard: Option<spin::MutexGuard<'static, ()>>,
+}
+
+#[derive(Default)]
+struct AcpiKernelApi {
+    mutexes: RefCell<Vec<Option<ManualMutex>>>,
+}
 
 impl uacpi::kernel_api::KernelApi for AcpiKernelApi {
     unsafe fn raw_memory_read(&self, phys: uacpi::PhysAddr, byte_width: u8)
@@ -127,7 +136,12 @@ impl uacpi::kernel_api::KernelApi for AcpiKernelApi {
         todo!("uacpi: sleep");
     }
     fn create_mutex(&self) -> uacpi::Handle {
-        todo!("uacpi: create_mutex");
+        let lock = Some(ManualMutex { inner: Mutex::new(()), guard: None });
+        let mut mutexes = self.mutexes.borrow_mut();
+        if mutexes.len() == 0 { mutexes.push(None) }
+        let ret = mutexes.len();
+        mutexes.push(lock);
+        uacpi::Handle::new(ret as u64)
     }
     fn destroy_mutex(&self, _mutex: uacpi::Handle) {
         todo!("uacpi: destry_mutex");
@@ -189,7 +203,7 @@ impl uacpi::kernel_api::KernelApi for AcpiKernelApi {
 
 pub fn init() {
     let kernel = KERNEL.lock();
-    uacpi::kernel_api::set_kernel_api(Arc::new(AcpiKernelApi));
+    uacpi::kernel_api::set_kernel_api(Arc::new(AcpiKernelApi::default()));
     let _s = uacpi::init(
         uacpi::PhysAddr::new(kernel.rsdp),
         uacpi::LogLevel::WARN,
