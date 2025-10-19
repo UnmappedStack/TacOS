@@ -159,6 +159,7 @@ impl uacpi::kernel_api::KernelApi for AcpiKernelApi {
     fn destroy_mutex(&self, _mutex: uacpi::Handle) {
         todo!("uacpi: destry_mutex");
     }
+    // TODO: support timeout
     fn acquire_mutex(&self, mutex: uacpi::Handle, _timeout: u16) -> bool {
         let binding = &self.mutexes.borrow_mut()[mutex.as_u64() as usize];
         let mut lock = binding.borrow_mut();
@@ -168,8 +169,10 @@ impl uacpi::kernel_api::KernelApi for AcpiKernelApi {
         lock.guard = Some(guard);
         true
     }
-    fn release_mutex(&self, _mutex: uacpi::Handle) {
-        todo!("uacpi: release_mutex");
+    fn release_mutex(&self, mutex: uacpi::Handle) {
+        let binding = &self.mutexes.borrow_mut()[mutex.as_u64() as usize];
+        let mut lock = binding.borrow_mut();
+        lock.guard.take();
     }
     fn create_spinlock(&self) -> uacpi::Handle {
         todo!("uacpi: create_spinlock");
