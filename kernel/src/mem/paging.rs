@@ -55,7 +55,9 @@ pub unsafe fn page_map_vmem(kernel: &mut kernel::Kernel, pml4: *mut u64,
 }
 
 pub unsafe fn page_unmap_vmem(kernel: &mut kernel::Kernel, pml4: *mut u64, vaddr: u64) {
-    page_map_vmem(kernel, pml4, 0, vaddr, 0);
+    unsafe {
+        page_map_vmem(kernel, pml4, 0, vaddr, 0);
+    }
 }
 
 /* Again I'm aware this isn't very fast, it's for readability not speed */

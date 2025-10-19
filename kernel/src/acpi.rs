@@ -10,6 +10,7 @@ const BYTE3_MASK: u32 = BYTE0_MASK << 24;
 
 const BYTE_MASKS: [u32; 4] = [BYTE0_MASK, BYTE1_MASK, BYTE2_MASK, BYTE3_MASK];
 
+#[derive(Default)]
 struct ManualMutex {
     inner: Mutex<()>,
     guard: Option<spin::MutexGuard<'static, ()>>,
@@ -17,7 +18,7 @@ struct ManualMutex {
 
 #[derive(Default)]
 struct AcpiKernelApi {
-    mutexes: RefCell<Vec<Option<ManualMutex>>>,
+    mutexes: RefCell<Vec<RefCell<ManualMutex>>>,
 }
 
 impl uacpi::kernel_api::KernelApi for AcpiKernelApi {
@@ -127,12 +128,16 @@ impl uacpi::kernel_api::KernelApi for AcpiKernelApi {
         let num_pages = page_align_up(len as u64) / PAGE_SIZE;
         let flags = PAGE_WRITE | PAGE_PRESENT;
         println!("{:p}->{:p}, {} pages ({} bytes)", paddr as *const u8, vaddr as *const u8, num_pages, len);
-        map_consecutive_pages(&mut *KERNEL.lock(), pml4, paddr, vaddr, num_pages, flags);
+        unsafe {
+            map_consecutive_pages(&mut *KERNEL.lock(), pml4, paddr, vaddr, num_pages, flags);
+        }
         (vaddr + (phys.as_u64()-paddr)) as *mut c_void
     }
     unsafe fn unmap(&self, addr: *mut c_void, len: usize) {
         let pml4  = { KERNEL.lock().current_pml4 };
-        unmap_consecutive_pages(&mut *KERNEL.lock(), pml4, page_align_down(addr as u64) as u64, len);
+        unsafe {
+            unmap_consecutive_pages(&mut *KERNEL.lock(), pml4, page_align_down(addr as u64) as u64, len);
+        }
     }
     fn get_ticks(&self) -> u64 {
         todo!("uacpi: get_ticks");
@@ -144,9 +149,9 @@ impl uacpi::kernel_api::KernelApi for AcpiKernelApi {
         todo!("uacpi: sleep");
     }
     fn create_mutex(&self) -> uacpi::Handle {
-        let lock = Some(ManualMutex { inner: Mutex::new(()), guard: None });
+        let lock = RefCell::new(ManualMutex { inner: Mutex::new(()), guard: None });
         let mut mutexes = self.mutexes.borrow_mut();
-        if mutexes.len() == 0 { mutexes.push(None) }
+        if mutexes.len() == 0 { mutexes.push(RefCell::new(ManualMutex::default())) }
         let ret = mutexes.len();
         mutexes.push(lock);
         uacpi::Handle::new(ret as u64)
@@ -154,8 +159,14 @@ impl uacpi::kernel_api::KernelApi for AcpiKernelApi {
     fn destroy_mutex(&self, _mutex: uacpi::Handle) {
         todo!("uacpi: destry_mutex");
     }
-    fn acquire_mutex(&self, _mutex: uacpi::Handle, _timeout: u16) -> bool {
-        todo!("uacpi: acquire_mutex");
+    fn acquire_mutex(&self, mutex: uacpi::Handle, _timeout: u16) -> bool {
+        let binding = &self.mutexes.borrow_mut()[mutex.as_u64() as usize];
+        let mut lock = binding.borrow_mut();
+        let guard = unsafe {
+            core::mem::transmute::<spin::MutexGuard<'_, ()>, spin::MutexGuard<'static, ()>>(lock.inner.lock())
+        };
+        lock.guard = Some(guard);
+        true
     }
     fn release_mutex(&self, _mutex: uacpi::Handle) {
         todo!("uacpi: release_mutex");
