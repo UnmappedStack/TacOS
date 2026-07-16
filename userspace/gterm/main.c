@@ -61,7 +61,7 @@ int main(int argc, char **argv) {
         NULL, NULL,
         NULL, 0, 0, 1,
         0, 0,
-        0
+        0, 0
     );
     if (!ft_ctx) return -1;
     int pid = fork();

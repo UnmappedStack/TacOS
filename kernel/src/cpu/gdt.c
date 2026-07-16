@@ -55,10 +55,10 @@ __attribute__((noinline)) void load_GDT(GDTR *gdtr) {
 void init_GDT(uintptr_t kernel_rsp) {
     uint64_t *GDT = (uint64_t *)(kmalloc(1) + kernel.hhdm);
     GDT[0] = create_gdt_entry(0, 0, 0, 0);      // null
-    GDT[1] = create_gdt_entry(0, 0, 0x9A, 0x2); // kernel code
-    GDT[2] = create_gdt_entry(0, 0, 0x92, 0);   // kernel data
-    GDT[3] = create_gdt_entry(0, 0, 0xFA, 0x2); // user code
-    GDT[4] = create_gdt_entry(0, 0, 0xF2, 0);   // user data
+    GDT[1] = create_gdt_entry(0, 0, 0x92, 0);   // kernel data
+    GDT[2] = create_gdt_entry(0, 0, 0x9A, 0x2); // kernel code
+    GDT[3] = create_gdt_entry(0, 0, 0xF2, 0);   // user data
+    GDT[4] = create_gdt_entry(0, 0, 0xFA, 0x2); // user code
     create_system_segment_descriptor(GDT, 5, (uint64_t)init_TSS(kernel_rsp),
                                      sizeof(TSS) - 1, 0x89, 0);
     GDTR gdtr = (GDTR){.size = (sizeof(uint64_t) * 7) - 1,

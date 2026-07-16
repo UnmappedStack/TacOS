@@ -70,10 +70,10 @@ endcopy:
         HALT_DEVICE();
     }
     if (callframe) {
-        *((uint64_t *)(new_task_rsp - 8)) = 0x20 | 3;
+        *((uint64_t *)(new_task_rsp - 8))  = 0x18 | 3;
         *((uint64_t *)(new_task_rsp - 16)) = callframe->rsp;
         *((uint64_t *)(new_task_rsp - 24)) = callframe->rflags;
-        *((uint64_t *)(new_task_rsp - 32)) = 0x18 | 3;
+        *((uint64_t *)(new_task_rsp - 32)) = 0x20 | 3;
         *((uint64_t *)(new_task_rsp - 40)) = (uint64_t)callframe->rip;
         new_task->rsp -= 5 * 8;
         printf(" -> new task rsp before = 0x%p\n", new_task->rsp);
@@ -87,6 +87,6 @@ endcopy:
     new_task->flags = CURRENT_TASK->flags
                         & ~TASK_RUNNING;
     printf("it was %p\n", KERNEL_STACK_PTR);
-    ENABLE_INTERRUPTS();
+//    ENABLE_INTERRUPTS();
     return new_task->pid;
 }

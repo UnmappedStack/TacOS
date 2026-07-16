@@ -6,12 +6,12 @@ section .text
 
 ;; Reloads the GDT
 reload_gdt:
-    push 0x08
+    push 0x10
     push .reload_CS
     retfq
 
 .reload_CS:
-    mov ax, 0x10
+    mov ax, 0x08
     mov ds, ax
     mov es, ax
     mov ss, ax

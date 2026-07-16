@@ -64,7 +64,7 @@ err:
            header->channels, header->colourspace);
 
     printf("Starting image decode...\n");
-    Pixel pixels[64] = {0};
+    static Pixel pixels[64] = {0};
     uint32_t *retpixels = (uint32_t*) malloc(header->width * header->height * 4);
     uint8_t *at = (uint8_t*) (buf + sizeof(QOIHeader));
     size_t run = 0; // of previous pixel
@@ -118,5 +118,6 @@ add_to_buf:
     fclose(f);
     *width = header->width;
     *height = header->height;
+    printf("Image decode complete for %s\n", path);
     return retpixels;
 }

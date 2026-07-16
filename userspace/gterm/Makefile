@@ -11,7 +11,7 @@ LIBMEDIAINC = $(LIBMEDIA)/include
 PHONY: all
 all:
 	@if [ ! -d "Flanterm" ]; then \
-		git clone https://codeberg.org/Mintsuki/Flanterm; \
+		git clone https://github.com/Mintsuki/Flanterm; \
 	fi
 	mkdir -p $(OUTDIR)
 	mkdir -p $(OBJDIR)

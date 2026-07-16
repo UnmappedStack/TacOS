@@ -43,6 +43,7 @@ Task *task_add(void) {
 }
 
 Task *task_select(void) {
+    printf("doin it\n");
     static Spinlock scheduler_lock = {0};
     spinlock_acquire(&scheduler_lock);
     Task *first_task = CURRENT_TASK;
@@ -62,8 +63,13 @@ Task *task_select(void) {
     }
     CURRENT_TASK->flags |= TASK_RUNNING;
     spinlock_release(&scheduler_lock);
+    printf("selected %i\n", CURRENT_TASK->pid);
     return (Task *)CURRENT_TASK;
 }
 
 // for asm context switch
-Task *get_current_task(void) { return CURRENT_TASK; }
+Task *get_current_task(void) {
+    Task *ret = CURRENT_TASK;
+    printf("return current task %p\n", ret);
+    return ret;
+}

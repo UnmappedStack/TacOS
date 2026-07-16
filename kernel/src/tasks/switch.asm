@@ -54,7 +54,7 @@ context_switch:
     mov [r15 + TASK_FLAGS_OFF], r10
     ;; Push the interrupt stack
     ; ss = 0x20 | 3
-    mov rbx, 0x20
+    mov rbx, 0x18
     or rbx, 3
     push rbx
     ; rsp = 0x70000000000 - args_offset
@@ -64,7 +64,7 @@ context_switch:
     mov rbx, 0x200
     push rbx
     ; cs = 0x18 | 3
-    mov rbx, 0x18
+    mov rbx, 0x20
     or rbx, 3
     push rbx
     ; rip = entry point in elf

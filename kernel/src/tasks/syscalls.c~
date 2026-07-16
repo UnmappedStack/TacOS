@@ -8,7 +8,6 @@
 #include <scheduler.h>
 #include <stdint.h>
 
-#define  STAR_MSR 0xC0000081
 #define LSTAR_MSR 0xC0000082
 #define  EFER_MSR 0xC0000080
 
@@ -17,8 +16,6 @@ extern void syscall_handler(void);
 // This is just for the `syscall`/`sysret` method of interrupts which isn't actually
 // used, I was just playing around with it. Interrupts for syscalls rein supreme!!
 void init_syscalls(void) {
-    // set cs/ss offsets
-//    write_msr(STAR_MSR, ((uint64_t)(16|0b11)<<31) | ((uint64_t)(8|0b0)<<47));
     // enable syscall/sysret
     uint64_t EFER;
     read_msr(EFER_MSR, &EFER);

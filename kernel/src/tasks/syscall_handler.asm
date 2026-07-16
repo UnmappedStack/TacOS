@@ -32,9 +32,11 @@ syscall_isr:
 
 ;; `syscall` instruction handler
 syscall_handler:
+    cli
     mov [user_rsp], rsp
     mov [user_rflags], r11
-    mov rsp, 0xFFFFFFFFFFFFF000
+    mov rsp, 0xFFFFFFFFFFFFF000 ;; <-- it faults here but idk why cos the GODDAMN EXCEPTION HANDLER ISNT SHOWING
+    jmp $ ;; <-- temporary for debugging
     push rcx ; return address
     pushall
     mov rdi, in_syscall_msg

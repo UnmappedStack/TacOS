@@ -11,7 +11,8 @@ _start:
     mov rbp, rsp
     push rbp
     push rcx
-    ;syscall ; test
+    syscall ; test
+    jmp $
     pop rcx
     ; save argc+argv+envp
     push rdi

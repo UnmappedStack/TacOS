@@ -22,5 +22,5 @@ void read_msr(uint32_t msr, uint64_t *val) {
 }
 
 void write_msr(uint32_t msr, uint64_t val) {
-    __asm__ volatile("wrmsr" : : "a"(val & 0xFFFFFFFF), "d"(val >> 32), "c"(msr));
+    __asm__ volatile("wrmsr" : : "a"((uint32_t)val), "d"(val >> 32), "c"(msr) : "memory");
 }
