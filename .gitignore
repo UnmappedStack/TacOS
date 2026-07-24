@@ -1,5 +1,5 @@
-/bin
+/kernel/bin
 /image.iso
 /iso_root
 /limine-binary
-/obj
+/kernel/obj

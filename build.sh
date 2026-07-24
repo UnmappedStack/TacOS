@@ -8,10 +8,13 @@ fi
 echo "[BOOTLOADER] Building bootloader"
 make -C limine-binary >/dev/null
 
+echo "[KERNEL] Building kernel"
+make -C kernel
+
 echo "[IMAGE] Setting up sysroot"
 mkdir -p iso_root
 mkdir -p iso_root/boot
-cp bin/tacos iso_root/boot/
+cp kernel/bin/tacos iso_root/boot/
 mkdir -p iso_root/boot/limine
 cp limine.conf limine-binary/limine-bios.sys limine-binary/limine-bios-cd.bin \
     limine-binary/limine-uefi-cd.bin iso_root/boot/limine/
