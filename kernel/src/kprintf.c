@@ -1,69 +1,14 @@
 #include <kprintf.h>
+#include <string.h>
 #include <serial.h>
-#include <stddef.h>
 #include <stdarg.h>
 
-int get_num_length(uint64_t num) {
-    int length = 0;
-    do {
-        length++;
-        num /= 10;
-    } while (num > 0);
-    return length;
-}
-
-void uint64_to_string(uint64_t num, char *str) {
-    int length = get_num_length(num);
-    str[length+1] = '\0';
-    int index = length - 1;
-    do {
-        str[index--] = '0' + (num % 10);
-        num /= 10;
-    } while (num > 0);
-}
-
-void *memcpy(void *dest, const void *src, size_t n) {
-    __asm__ volatile("rep movsb"
-                     : "=D"(dest), "=S"(src), "=c"(n)
-                     : "D"(dest), "S"(src), "c"(n)
-                     : "memory");
-    return dest;
-}
-
-void reverse(char str[], int length) {
-    int start = 0;
-    int end = length - 1;
-    while (start < end) {
-        char temp = str[start];
-        str[start] = str[end];
-        str[end] = temp;
-        start++;
-        end--;
-    }
-}
-
-void uint64_to_hex_string(uint64_t num, char *str) {
-    char buffer[17];
-    int index = 0;
-    if (num == 0) {
-        buffer[index++] = '0';
-    } else {
-        while (num > 0) {
-            uint8_t digit = num & 0xF;
-            if (digit < 10) {
-                buffer[index++] = '0' + digit;
-            } else {
-                buffer[index++] = 'A' + (digit - 10);
-            }
-            num >>= 4;
-        }
-    }
-    while (index < 16) buffer[index++] = '0';
-    buffer[index] = '\0';
-    reverse(buffer, index);
-    memcpy(str, buffer, 17);
-}
-
+// this is a pretty simple kprintf implementation. it's similar to printf except not posix, so it
+// doesn't have support for many things that posix printf supports such as floats. Why? Well, you just don't
+// really need that stuff in the kernel, it's more useful in userspace.
+//
+// It supports %c, %s, %x pretty much the same as on posix, except %u is a bit different, as it formats 64 bit unsigned integers instead
+// of unsigned smaller data sizes. It then just writes it to serial output.
 void kprintf(const char *fmt, ...) {
     va_list args;
     va_start(args, fmt);

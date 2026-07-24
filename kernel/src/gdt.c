@@ -1,6 +1,11 @@
 #include <gdt.h>
 #include <kprintf.h>
 
+// if one thing mattered least to learn about osdev, it'd be the gdt. the gdt is basically just defining "segments"
+// which give privilege levels for different types of code and data, plus the tss which technically does matter but its insignificant.
+// It's overall a very legacy x86 thing which doesn't really do much anymore but the cpu still expects it
+// to be there, otherwise a general protection fault will occur.
+
 GDTDescriptor gdt_descriptor(uint32_t limit, uint32_t base, uint8_t access, uint8_t flags) {
     GDTDescriptor ret = {0};
     ret.limit1 = limit & 0xffff;
