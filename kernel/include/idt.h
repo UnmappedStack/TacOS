@@ -17,3 +17,4 @@ typedef struct {
 }__attribute__((packed)) IDTR;
 
 void idt_init(void);
+void exceptions_init(void);

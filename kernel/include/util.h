@@ -1,8 +1,8 @@
 #pragma once
 
-#define WAIT_FOR_INTERRUPT() asm volatile("hlt")
-#define DISABLE_INTERRUPTS() asm volatile("cli")
-#define  ENABLE_INTERRUPTS() asm volatile("sti")
+#define WAIT_FOR_INTERRUPT() __asm__ volatile("hlt")
+#define DISABLE_INTERRUPTS() __asm__ volatile("cli")
+#define  ENABLE_INTERRUPTS() __asm__ volatile("sti")
 
 // freezes the device by turning off interrupts then waiting (forever) for an interrupt to occur.
 // we need to loop over WAIT_FOR_INTERRUPT() instead of doing it once because some interrupts can't be disabled

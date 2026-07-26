@@ -18,29 +18,20 @@ GDTDescriptor gdt_descriptor(uint32_t limit, uint32_t base, uint8_t access, uint
 }
 
 //TODO: tss
+extern void reload_gdt(void);
 static GDTDescriptor gdt[5] = {0};
 static GDTR gdtr;
 __attribute__((noinline)) void gdt_init(void) {
     gdt[0] = gdt_descriptor(0,0,0,0);
-    gdt[1] = gdt_descriptor(0, 0, 0x9a, 2);
-    gdt[2] = gdt_descriptor(0, 0, 0x92, 0);
-    gdt[3] = gdt_descriptor(0, 0, 0xfa, 2);
-    gdt[4] = gdt_descriptor(0, 0, 0xf2, 0);
+    gdt[1] = gdt_descriptor(0, 0, 0x9a, 2); // kernel code
+    gdt[2] = gdt_descriptor(0, 0, 0x92, 0); // kernel data
+    gdt[3] = gdt_descriptor(0, 0, 0xfa, 2); // user code
+    gdt[4] = gdt_descriptor(0, 0, 0xf2, 0); // user data
 
     gdtr.size = sizeof(GDTDescriptor)*5-1;
     gdtr.offset = (uint64_t)gdt;
 
-    asm("lgdt (%0)" : : "r" (&gdtr));
-    asm volatile("push $0x08; \
-              lea .reload_CS(%%rip), %%rax; \
-              push %%rax; \
-              retfq; \
-              .reload_CS: \
-              mov $0x10, %%ax; \
-              mov %%ax, %%ds; \
-              mov %%ax, %%es; \
-              mov %%ax, %%fs; \
-              mov %%ax, %%gs; \
-              mov %%ax, %%ss" : : : "eax", "rax");
+    __asm__ volatile("lgdt (%0)" : : "r" (&gdtr));
+    reload_gdt();
     kprintf("GDT init OK\n");
 }

@@ -1,138 +1,105 @@
-# Nuke built-in rules.
+# Nuke built-in rules and variables.
+MAKEFLAGS += -rR
 .SUFFIXES:
 
 # This is the name that our final executable will have.
 # Change as needed.
 override OUTPUT := tacos
 
-# User controllable toolchain and toolchain prefix.
-TOOLCHAIN :=
-TOOLCHAIN_PREFIX :=
-ifneq ($(TOOLCHAIN),)
-    ifeq ($(TOOLCHAIN_PREFIX),)
-        TOOLCHAIN_PREFIX := $(TOOLCHAIN)-
-    endif
-endif
+# Convenience macro to reliably declare user overridable variables.
+override USER_VARIABLE = $(if $(filter $(origin $(1)),default undefined),$(eval override $(1) := $(2)))
 
 # User controllable C compiler command.
-ifneq ($(TOOLCHAIN_PREFIX),)
-    CC := $(TOOLCHAIN_PREFIX)gcc
-else
-    CC := cc
-endif
+$(call USER_VARIABLE,KCC,clang)
 
 # User controllable linker command.
-LD := $(TOOLCHAIN_PREFIX)ld
-
-# Defaults overrides for variables if using "llvm" as toolchain.
-ifeq ($(TOOLCHAIN),llvm)
-    CC := clang
-    LD := ld.lld
-endif
+$(call USER_VARIABLE,KLD,ld)
 
 # User controllable C flags.
-CFLAGS := -g -O2 -pipe
+$(call USER_VARIABLE,KCFLAGS,-g -pipe)
 
 # User controllable C preprocessor flags. We set none by default.
-CPPFLAGS :=
+$(call USER_VARIABLE,KCPPFLAGS,)
 
 # User controllable nasm flags.
-NASMFLAGS := -g
+$(call USER_VARIABLE,KNASMFLAGS,-F dwarf -g)
 
 # User controllable linker flags. We set none by default.
-LDFLAGS :=
+$(call USER_VARIABLE,KLDFLAGS,)
 
-# Check if CC is Clang.
-override CC_IS_CLANG := $(shell ! $(CC) --version 2>/dev/null | grep -q '^Target: '; echo $$?)
-
-# If the C compiler is Clang, set the target as needed.
-ifeq ($(CC_IS_CLANG),1)
-    override CC += \
-        -target x86_64-unknown-none-elf
-endif
 
 # Internal C flags that should not be changed by the user.
-override CFLAGS += \
+override KCFLAGS += \
+	-pedantic \
     -Wall \
     -Wextra \
-    -std=gnu11 \
-    -ffreestanding \
+	-Werror \
+	-std=c23 \
+	-ffreestanding \
     -fno-stack-protector \
     -fno-stack-check \
-    -fno-lto \
-    -fno-PIC \
-    -ffunction-sections \
-    -fdata-sections \
+    -fPIE \
     -m64 \
     -march=x86-64 \
-    -mabi=sysv \
     -mno-80387 \
     -mno-mmx \
+	-g \
     -mno-sse \
     -mno-sse2 \
+	-fno-omit-frame-pointer \
     -mno-red-zone \
-    -mcmodel=kernel \
-	-Iinclude
+	-O0 \
+	-mcmodel=kernel
 
 # Internal C preprocessor flags that should not be changed by the user.
-override CPPFLAGS := \
-    -I src \
-    $(CPPFLAGS) \
+override KCPPFLAGS := \
+    -I include \
+    $(KCPPFLAGS) \
     -MMD \
     -MP
 
 # Internal nasm flags that should not be changed by the user.
-override NASMFLAGS := \
-    -f elf64 \
-    $(patsubst -g,-g -F dwarf,$(NASMFLAGS)) \
-    -Wall
+override KNASMFLAGS += \
+    -Wall \
+    -f elf64
 
 # Internal linker flags that should not be changed by the user.
-override LDFLAGS += \
+override KLDFLAGS += \
     -m elf_x86_64 \
     -nostdlib \
     -static \
     -z max-page-size=0x1000 \
-    --gc-sections \
     -T linker.ld
 
 # Use "find" to glob all *.c, *.S, and *.asm files in the tree and obtain the
 # object and header dependency file names.
-override SRCFILES := $(shell find -L src -type f 2>/dev/null | LC_ALL=C sort)
-override CFILES := $(filter %.c,$(SRCFILES))
-override ASFILES := $(filter %.S,$(SRCFILES))
-override NASMFILES := $(filter %.asm,$(SRCFILES))
-override OBJ := $(addprefix obj/,$(CFILES:.c=.c.o) $(ASFILES:.S=.S.o) $(NASMFILES:.asm=.asm.o))
+override CFILES      := $(shell cd src && find -L * -type f -name '*.c' | LC_ALL=C sort)
+override ASFILES     := $(shell cd src && find -L * -type f -name '*.S' | LC_ALL=C sort)
+override NASMFILES   := $(shell cd src && find -L * -type f -name '*.asm' | LC_ALL=C sort)
+override OBJ 		 := $(addprefix obj/,$(CFILES:.c=.c.o) $(ASFILES:.S=.S.o) $(NASMFILES:.asm=.asm.o))
 override HEADER_DEPS := $(addprefix obj/,$(CFILES:.c=.c.d) $(ASFILES:.S=.S.d))
 
-# Default target. This must come first, before header dependencies.
-.PHONY: all
-all: bin/$(OUTPUT)
+# Default target.
+.PHONY: kernel
+kernel: bin/$(OUTPUT)
+
+# Link rules for the final executable.
+bin/$(OUTPUT): linker.ld $(OBJ)
+	mkdir -p "$$(dirname $@)"
+	$(KLD) $(OBJ) $(KLDFLAGS) -o $@
 
 # Include header dependencies.
 -include $(HEADER_DEPS)
 
-# Link rules for the final executable.
-bin/$(OUTPUT): Makefile linker.ld $(OBJ)
-	mkdir -p "$(dir $@)"
-	$(LD) $(LDFLAGS) $(OBJ) -o $@
-
 # Compilation rules for *.c files.
-obj/%.c.o: %.c Makefile
-	mkdir -p "$(dir $@)"
-	$(CC) $(CFLAGS) $(CPPFLAGS) -c $< -o $@
-
-# Compilation rules for *.S files.
-obj/%.S.o: %.S Makefile
-	mkdir -p "$(dir $@)"
-	$(CC) $(CFLAGS) $(CPPFLAGS) -c $< -o $@
+obj/%.c.o: src/%.c
+	mkdir -p "$$(dirname $@)"
+	$(KCC) $(KCFLAGS) $(KCPPFLAGS) -c $< -o $@
 
 # Compilation rules for *.asm (nasm) files.
-obj/%.asm.o: %.asm Makefile
-	mkdir -p "$(dir $@)"
-	nasm $(NASMFLAGS) $< -o $@
+obj/%.asm.o: src/%.asm
+	mkdir -p "$$(dirname $@)"
+	nasm $(KNASMFLAGS) $< -o $@
 
-# Remove object files and the final executable.
-.PHONY: clean
 clean:
-	rm -rf bin obj
+	rm -rf obj bin
