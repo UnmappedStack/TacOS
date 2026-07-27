@@ -1,6 +1,12 @@
 #pragma once
 #include <stdint.h>
 
+// We store up to 3 framebuffers (the first 3 that limine provides) and ignore the rest,
+// as at this point in the boot sequence, there's no dynamic allocation yet.
+// If you're wondering why I picked three, I pulled it outta my ass at complete random lol. I just
+// need enough for both my laptop and monitor to show it so I needed more than 1.
+#define MAX_FRAMEBUFFERS 3
+
 typedef struct {
     void *addr;
     uint64_t width, height;

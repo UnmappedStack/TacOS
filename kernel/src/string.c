@@ -1,9 +1,15 @@
 #include <string.h>
+#include <mm.h>
 
-// using rep movsb is much faster than looping over bytes when copying large amounts of
-// data on x86. However, this should be looping over data when it's a smaller amount of data
-// as it is more efficient for smaller pools of memory to loop. (TODO)
 void *memcpy(void *dest, const void *src, size_t n) {
+    // it is actually faster to manually loop if its a relatively small memory buffer...
+    if (n < PAGE_BYTES * 2) {
+        for (size_t i = 0; i < n; i++) {
+            ((uint8_t*)dest)[i] = ((uint8_t*)src)[i];
+        }
+        return dest;
+    }
+    // ...but rep movsb is faster for large buffers.
     __asm__ volatile("rep movsb"
                      : "=D"(dest), "=S"(src), "=c"(n)
                      : "D"(dest), "S"(src), "c"(n)

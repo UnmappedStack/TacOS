@@ -1,10 +1,8 @@
 #pragma once
 #include <stddef.h>
+#include <mm.h>
 #include <stdint.h>
 #include <list.h>
-
-// this should be moved to a unified vmem+pmem file once there is one
-#define PAGE_BYTES 4096
 
 typedef struct {
     struct list list; // points to next+prev PMMNode

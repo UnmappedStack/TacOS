@@ -5,6 +5,9 @@
 #include <idt.h>
 #include <pma.h>
 #include <kprintf.h>
+#include <kernel.h>
+
+KernelInfo kernel_info = {0};
 
 void _start(void) {
     serial_init();

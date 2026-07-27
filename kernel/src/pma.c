@@ -3,13 +3,14 @@
 // continuous pages are not needed because it can be threaded together into continuous
 // pages within virtual memory.
 
+#include <kernel.h>
 #include <util.h>
 #include <pma.h>
 #include <kprintf.h>
 #include <limine.h>
 
 // the limine bootloader will detect this and fill it with the necessary info about 
-// the memory map and the hhdm
+// the memory map and the kernel_info.hhdm
 static volatile struct limine_memmap_request memmap_request = {
     .id = LIMINE_MEMMAP_REQUEST, .revision = 4};
 static volatile struct limine_hhdm_request hhdm_request = {
@@ -26,17 +27,14 @@ const char *types_stringified[] = {
     [LIMINE_MEMMAP_FRAMEBUFFER]            = "Framebuffer",
 };
 
-// TODO: This should go in a single `kernel` struct. It is not SMP-safe like this.
-static struct list pmm_nodes;
-static uintptr_t hhdm;
 void pma_init(void) {
     struct limine_memmap_entry **entries = memmap_request.response->entries;
     size_t num_entries = memmap_request.response->entry_count;
 
-    hhdm = hhdm_request.response->offset;
+    kernel_info.hhdm = hhdm_request.response->offset;
 
     kprintf("Memory map dump:\n");
-    list_init(&pmm_nodes);
+    list_init(&kernel_info.pmm_nodes);
     for (size_t i = 0; i < num_entries; i++) {
         uint64_t base   = entries[i]->base;
         uint64_t length = entries[i]->length;
@@ -44,38 +42,38 @@ void pma_init(void) {
         size_t size_pages = length / PAGE_BYTES;
         kprintf(" -> %x (%u pages): %s\n", base, size_pages, types_stringified[type]);
         if (type != LIMINE_MEMMAP_USABLE) continue;
-        PMMNode *node = (PMMNode*) (base + hhdm);
+        PMMNode *node = (PMMNode*) (base + kernel_info.hhdm);
         node->size_pages = size_pages;
-        list_insert(&pmm_nodes, &node->list);
+        list_insert(&kernel_info.pmm_nodes, &node->list);
     }
     kprintf("PMA init OK\n");
 }
 
 // allocate one physical page
 uintptr_t pma_palloc(void) {
-    if (pmm_nodes.prev == NULL) {
+    if (kernel_info.pmm_nodes.prev == NULL) {
         // todo: once there's a generic error handler which isn't
         // just for exceptions, use it instead.
         kprintf("OOM\n");
         FREEZE_DEVICE();
     }
 
-    PMMNode *node = (PMMNode*) pmm_nodes.prev;
+    PMMNode *node = (PMMNode*) kernel_info.pmm_nodes.prev;
     list_remove(&node->list);
 
     PMMNode *new_node = (PMMNode*) ((uintptr_t)node + PAGE_BYTES);
     new_node->size_pages = node->size_pages - 1;
     if (new_node->size_pages)
-        list_insert(&pmm_nodes, &new_node->list);
+        list_insert(&kernel_info.pmm_nodes, &new_node->list);
     
-    return (uintptr_t)node - hhdm;
+    return (uintptr_t)node - kernel_info.hhdm;
 }
 
 // free one physical page.
 // this assumes that it is a valid memory block so
 // it is the caller's responsibility if something is wrong.
 void pma_pfree(uintptr_t ptr) {
-    PMMNode *node = (PMMNode*) (ptr + hhdm);
+    PMMNode *node = (PMMNode*) (ptr + kernel_info.hhdm);
     node->size_pages = 1;
-    list_insert(&pmm_nodes, &node->list);
+    list_insert(&kernel_info.pmm_nodes, &node->list);
 }
