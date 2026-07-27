@@ -33,6 +33,7 @@ struct stack_frame {
     uint64_t rip;
 };
 
+// TODO: move this into a separate file
 // Just from an ansi converter with some edits to remove the background
 static char *ascii_art[] = {
     "[0m [0m [0m [0m [0m [0m [0m [0m [0m [0m [0m [0m [0m [0m [0m [0m [0m [0m [0m [0m [0m [38;5;166;48;5;208m [38;5;166;48;5;208m [38;5;208;48;5;215m [38;5;166;48;5;208m [38;5;166;48;5;208m [38;5;202;48;5;202m [38;5;216;48;5;202m░[38;5;202;48;5;202m [0m [0m [0m [0m [0m [0m [0m [0m [0m [0m [0m [0m [0m [0m [0m [0m [0m [0m [0m [0m [0m [0m [0m [0m [0m [0m [0m [0m [38;5;166;48;5;208m [38;5;130;48;5;215m [38;5;166;48;5;208m [0m [0m [0m [0m [0m [0m [0m [0m [0m [0m [0m",
@@ -100,6 +101,7 @@ static char *exceptions[] = {
     [30] = "Security Exception",
 };
 
+// todo: this should also support calling manually rather than as called by an interrupt
 void panic_handler(IDTEFrame frame) {
     DISABLE_INTERRUPTS();
     uint64_t cr3;

@@ -3,10 +3,10 @@
 #include <stddef.h>
 #include <limine.h>
 
-// the limine bootloader will detect this and fill it with the necesarry info about 
+// the limine bootloader will detect this and fill it with the necessary info about 
 // the avaliable framebuffers
 static volatile struct limine_framebuffer_request fb_request = {
-    .id = LIMINE_FRAMEBUFFER_REQUEST, .revision = 6};
+    .id = LIMINE_FRAMEBUFFER_REQUEST, .revision = 0};
 
 // This should probably be in a global Kernel struct rather than by itself here (TODO)
 // We store up to 3 framebuffers here (the first 3 that limine provides) and ignore the rest,
