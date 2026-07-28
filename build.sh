@@ -1,3 +1,5 @@
+# TODO: This should probably be a makefile
+
 set -e
 
 echo "[BOOTLOADER] Checking if bootloader exists"
