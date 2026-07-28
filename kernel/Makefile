@@ -30,6 +30,7 @@ $(call USER_VARIABLE,KLDFLAGS,)
 
 # Internal C flags that should not be changed by the user.
 override KCFLAGS += \
+	-fno-builtin \
 	-pedantic \
     -Wall \
     -Wextra \
@@ -48,7 +49,7 @@ override KCFLAGS += \
     -mno-sse2 \
 	-fno-omit-frame-pointer \
     -mno-red-zone \
-	-O0 \
+	-O3 \
 	-mcmodel=kernel
 
 # Internal C preprocessor flags that should not be changed by the user.
@@ -66,8 +67,6 @@ override KNASMFLAGS += \
 # Internal linker flags that should not be changed by the user.
 override KLDFLAGS += \
     -m elf_x86_64 \
-    -nostdlib \
-    -static \
     -z max-page-size=0x1000 \
     -T linker.ld
 

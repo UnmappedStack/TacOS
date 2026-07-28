@@ -2,6 +2,7 @@
 #include <util.h>
 #include <stdint.h>
 #include <assets.h>
+#include <stddef.h>
 
 typedef struct {
     uint64_t cr2;
@@ -21,7 +22,6 @@ typedef struct {
     uint64_t rbx;
     uint64_t rax;
     uint64_t type;
-    uint64_t code;
     uint64_t rip;
     uint64_t cs;
     uint64_t flags;
@@ -61,8 +61,9 @@ static char *exceptions[] = {
     [30] = "Security Exception",
 };
 
-// todo: this should also support calling manually rather than as called by an interrupt
-void panic_handler(IDTEFrame frame) {
+// if msg is null then it'll use whatever it finds from frame->type (mostly for exceptions),
+// but if its set then it'll use it as the error message (for manual calls)
+void panic_handler(const char *msg, IDTEFrame frame) {
     DISABLE_INTERRUPTS();
     uint64_t cr3;
     __asm__ volatile("movq %%cr3, %0" : "=r"(cr3));
@@ -74,7 +75,9 @@ void panic_handler(IDTEFrame frame) {
         print_string("\n"); \
     } while (0)
     const char *error_type;
-    if (frame.type <= 30 && !(frame.type < 28 && frame.type > 21) && frame.type != 15)
+    if (msg != NULL)
+        error_type = msg;
+    else if (frame.type <= 30 && !(frame.type < 28 && frame.type > 21) && frame.type != 15)
         error_type = exceptions[frame.type];
     else error_type = "Triple fault or unknown exception";
     ASCII_ART_NEWLINE();
@@ -92,6 +95,9 @@ void panic_handler(IDTEFrame frame) {
     ASCII_ART_LINE(); kprintf("   R8: %x,  R9: %x\n",  frame.r8, frame.r9);
     ASCII_ART_LINE(); kprintf("  RBP: %x, RSP: %x\n", frame.rbp, frame.rsp);
     ASCII_ART_LINE(); kprintf("  CR2: %x, CR3: %x\n", frame.cr2, cr3);
+    if (msg != NULL) {
+        ASCII_ART_LINE(); kprintf(" (Manually induced panic so registers may be null)\n");
+    }
     ASCII_ART_NEWLINE();
     ASCII_ART_LINE(); kprintf(" Stack Trace (Most recent call last): \n");
     ASCII_ART_LINE(); kprintf("  -> %x\n", frame.rip);
@@ -106,4 +112,17 @@ void panic_handler(IDTEFrame frame) {
     }
     while(i < (int)(sizeof(ascii_art)/sizeof(ascii_art[0]))) ASCII_ART_NEWLINE();
     FREEZE_DEVICE();
+}
+
+// this is pretty much a wrapper around panic_handler except it supports on-demand panics that
+// don't stem from an exception.
+void kpanic(const char *msg) {
+    // we don't care about any of the frame data since this is a panic, not an exception...
+    // *except* rbp+rip (for a stack trace) and cs+ss
+    IDTEFrame frame = {0};
+    __asm__ volatile("movq %%rbp, %0" : "=r"(frame.rbp));
+    __asm__ volatile("movq %%rbp, %0" : "=r"(frame.rip));
+    __asm__ volatile("movq %%cs, %0" : "=r"(frame.cs));
+    __asm__ volatile("movq %%ss, %0" : "=r"(frame.ss));
+    panic_handler(msg, frame);
 }

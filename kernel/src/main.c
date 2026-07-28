@@ -1,4 +1,5 @@
 #include <serial.h>
+#include <panic.h>
 #include <framebuffer.h>
 #include <util.h>
 #include <gdt.h>
@@ -16,5 +17,6 @@ void _start(void) {
     idt_init();
     exceptions_init();
     pma_init();
+    pma_palloc();
     FREEZE_DEVICE();
 }

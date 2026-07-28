@@ -3,6 +3,7 @@
 // continuous pages are not needed because it can be threaded together into continuous
 // pages within virtual memory.
 
+#include <panic.h>
 #include <kernel.h>
 #include <util.h>
 #include <pma.h>
@@ -51,12 +52,8 @@ void pma_init(void) {
 
 // allocate one physical page
 uintptr_t pma_palloc(void) {
-    if (kernel_info.pmm_nodes.prev == NULL) {
-        // todo: once there's a generic error handler which isn't
-        // just for exceptions, use it instead.
-        kprintf("OOM\n");
-        FREEZE_DEVICE();
-    }
+    if (kernel_info.pmm_nodes.prev == NULL)
+        kpanic("Out of Memory");
 
     PMMNode *node = (PMMNode*) kernel_info.pmm_nodes.prev;
     list_remove(&node->list);

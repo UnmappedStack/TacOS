@@ -17,6 +17,15 @@ void *memcpy(void *dest, const void *src, size_t n) {
     return dest;
 }
 
+void *memset(void *dest, int ch, size_t n) {
+    if (n < PAGE_BYTES * 2) {
+        for (size_t i = 0; i < n; i++)
+            ((uint8_t*)dest)[i] = ch;
+    }
+    __asm__ volatile("rep stosb" : "+D"(dest), "+c"(n) : "a"(ch) : "memory");
+    return dest;
+}
+
 // Gets the number of digits of a base 10 number
 int get_num_length(uint64_t num) {
     int length = 0;
