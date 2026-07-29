@@ -1,4 +1,7 @@
 #include <mm.h>
+#include <kprintf.h>
+#include <paging.h>
+#include <limine.h>
 #include <string.h>
 #include <pma.h>
 #include <stddef.h>
@@ -7,19 +10,30 @@
 // x86_64-specific virtual memory mapping and related functionality which
 // the vmm can be built upon
 
+// the limine bootloader will detect this and fill it with the necessary info about 
+// the location of the kernel in physical and virtual memory
+static volatile struct limine_kernel_address_request kernel_addr_request = {
+    .id = LIMINE_KERNEL_ADDRESS_REQUEST, .revision = 0};
+
+// references to the linker script labels which mark sections
+extern uint64_t readonly_start[];
+extern uint64_t readonly_end[];
+extern uint64_t writable_start[];
+extern uint64_t writable_end[];
+
 /* page flags */
 #define PAGE_PRESENT (1 << 0)
 #define PAGE_WRITE   (1 << 1)
 #define PAGE_USER    (1 << 2)
 
 /* macro utility ops */
-#define PAGE_ALIGN_DOWN(addr) ((addr / 4096) * 4096)
-#define PAGE_ALIGN_UP(x) ((((x) + 4095) / 4096) * 4096)
+#define PAGE_ALIGN_DOWN(addr) ((addr / PAGE_BYTES) * PAGE_BYTES)
+#define PAGE_ALIGN_UP(x) ((((x) + (PAGE_BYTES-1)) / PAGE_BYTES) * PAGE_BYTES)
 
 /* vaddr is the virtual address we're trying to map to,
  * tlevel is the pml table level we're getting the index of,
  * and it should return a specific index of the set of that pml level */
-#define TABLE_FROM_VADDR(vaddr, tlevel) ((vaddr >> (12+9*(tlevel-1))) & 511)
+#define TABLE_FROM_VADDR(vaddr, tlevel) (((vaddr) >> (12+9*(tlevel-1))) & 511)
 
 uint64_t *get_or_create_next_layer(uint64_t *parent_layer, uint64_t idx) {
     /* if the index of a page tree level needed does not already exist,
@@ -31,7 +45,7 @@ uint64_t *get_or_create_next_layer(uint64_t *parent_layer, uint64_t idx) {
         memset((void*)(child_paddr + kernel_info.hhdm), 0, 512);
     }
     // once we know it exists, we can return it
-    return (uint64_t*) PAGE_ALIGN_DOWN(parent_layer[idx] + kernel_info.hhdm);
+    return (uint64_t*) (PAGE_ALIGN_DOWN((uintptr_t)parent_layer[idx]) + kernel_info.hhdm);
 }
 
 void map_page(uint64_t *pml4vaddr, uintptr_t vaddr, uintptr_t paddr, uint64_t flags) {
@@ -55,4 +69,37 @@ void map_consecutive_pages(uint64_t *pml4, uintptr_t vmem_start, uintptr_t paddr
                            size_t num_pages, uint64_t flags) {
     for (size_t i = 0; i < num_pages; i++)
         map_page(pml4, vmem_start + i * PAGE_BYTES, paddr_start + i * PAGE_BYTES, flags);
+}
+
+// Maps one section of the kernel binary into the virtual memory space
+void map_kernel_section(uint64_t *pml4, uint64_t start, uint64_t end, uint64_t flags) {
+    uintptr_t kernel_paddr = kernel_addr_request.response->physical_base;
+    uintptr_t kernel_vaddr = kernel_addr_request.response->virtual_base;
+
+    uint64_t length = end - start;
+    uint64_t paddr  = kernel_paddr + (start - kernel_vaddr);
+
+    map_consecutive_pages(pml4, start, paddr, length / PAGE_BYTES, flags);
+}
+
+// Maps the kernel binary into a virtual memory space
+void map_kernel_into_vspace(uint64_t *pml4) {
+    uint64_t kernel_readonly_start = (uint64_t) readonly_start;
+    uint64_t kernel_readonly_end   = (uint64_t) readonly_end;
+    uint64_t kernel_writable_start = (uint64_t) writable_start;
+    uint64_t kernel_writable_end   = (uint64_t) writable_end;
+
+    map_kernel_section(pml4, kernel_readonly_start, kernel_readonly_end, PAGE_PRESENT);
+    map_kernel_section(pml4, kernel_writable_start, kernel_writable_end, PAGE_PRESENT | PAGE_WRITE);
+}
+
+// Creates a new address space and maps essential memory into it
+uintptr_t create_address_space(void) {
+    uintptr_t pml4_paddr = pma_palloc();
+    uint64_t *pml4 = (uint64_t*) (pml4_paddr + kernel_info.hhdm);
+
+    map_kernel_into_vspace(pml4);
+    
+    kprintf("Created address space at pml4=%x\n", pml4_paddr);
+    return pml4_paddr;
 }

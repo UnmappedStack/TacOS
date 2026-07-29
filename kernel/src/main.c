@@ -1,4 +1,5 @@
 #include <serial.h>
+#include <paging.h>
 #include <panic.h>
 #include <framebuffer.h>
 #include <util.h>
@@ -18,5 +19,6 @@ void _start(void) {
     exceptions_init();
     pma_init();
     pma_palloc();
+    SWITCH_PAGE_TREE(create_address_space());
     FREEZE_DEVICE();
 }

@@ -33,6 +33,9 @@ SECTIONS
     /* Move to the next memory page for .text */
     . = ALIGN(CONSTANT(MAXPAGESIZE));
 
+    /* TODO: later on this should also separate .text as being executable.
+     * currently though blocking pages from being executable isn't supported. */
+    readonly_start = .;
     .text : {
         *(.text .text.*)
     } :text
@@ -43,6 +46,7 @@ SECTIONS
     .rodata : {
         *(.rodata .rodata.*)
     } :rodata
+    readonly_end = .;
 
     /* Add a .note.gnu.build-id output section in case a build ID flag is added to the */
     /* linker command. */
@@ -53,6 +57,7 @@ SECTIONS
     /* Move to the next memory page for .data */
     . = ALIGN(CONSTANT(MAXPAGESIZE));
 
+    writable_start = .;
     .data : {
         *(.data .data.*)
     } :data
@@ -65,6 +70,7 @@ SECTIONS
         *(.bss .bss.*)
         *(COMMON)
     } :data
+    writable_end = .;
 
     /* Discard .note.* and .eh_frame* since they may cause issues on some hosts. */
     /DISCARD/ : {
