@@ -29,6 +29,7 @@ const char *types_stringified[] = {
 };
 
 void pma_init(void) {
+    kernel_info.memmap = memmap_request.response;
     struct limine_memmap_entry **entries = memmap_request.response->entries;
     size_t num_entries = memmap_request.response->entry_count;
 

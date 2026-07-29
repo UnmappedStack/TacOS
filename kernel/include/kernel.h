@@ -9,6 +9,7 @@ typedef struct {
     Framebuffer framebuffers[MAX_FRAMEBUFFERS];
     struct list pmm_nodes;
     uintptr_t hhdm;
+    struct limine_memmap_response *memmap;
 } KernelInfo;
 
 extern KernelInfo kernel_info;

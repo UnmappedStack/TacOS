@@ -20,5 +20,6 @@ void _start(void) {
     pma_init();
     pma_palloc();
     SWITCH_PAGE_TREE(create_address_space());
+    kprintf("Page tree switched successfully\n");
     FREEZE_DEVICE();
 }

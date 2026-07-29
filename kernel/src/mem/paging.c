@@ -93,11 +93,27 @@ void map_kernel_into_vspace(uint64_t *pml4) {
     map_kernel_section(pml4, kernel_writable_start, kernel_writable_end, PAGE_PRESENT | PAGE_WRITE);
 }
 
+// maps all memory that could be used into a virtual memory space
+void map_all_memory_into_vspace(uint64_t *pml4) {
+    (void) pml4;
+    struct limine_memmap_entry **entries = kernel_info.memmap->entries;
+    size_t num_entries = kernel_info.memmap->entry_count;
+    for (size_t i = 0; i < num_entries; i++) {
+        uintptr_t paddr = entries[i]->base;
+        uintptr_t vaddr = entries[i]->base + kernel_info.hhdm;
+        uint64_t  type  = entries[i]->type;
+        if (type == LIMINE_MEMMAP_BAD_MEMORY ||
+            type == LIMINE_MEMMAP_RESERVED) continue;
+        map_consecutive_pages(pml4, vaddr, paddr, entries[i]->length/PAGE_BYTES, PAGE_PRESENT | PAGE_WRITE);
+    }
+}
+
 // Creates a new address space and maps essential memory into it
 uintptr_t create_address_space(void) {
     uintptr_t pml4_paddr = pma_palloc();
     uint64_t *pml4 = (uint64_t*) (pml4_paddr + kernel_info.hhdm);
 
+    map_all_memory_into_vspace(pml4);
     map_kernel_into_vspace(pml4);
     
     kprintf("Created address space at pml4=%x\n", pml4_paddr);
