@@ -24,5 +24,12 @@ void _start(void) {
     SWITCH_PAGE_TREE(create_address_space());
     kprintf("Page tree switched successfully\n");
 
+    Cache *cache = cache_create(32);
+    void *obj = slab_alloc(cache);
+    kprintf("object: %x\n", obj);
+    slab_free(cache, obj);
+    obj = slab_alloc(cache);
+    kprintf("object: %x\n", obj);
+
     FREEZE_DEVICE();
 }

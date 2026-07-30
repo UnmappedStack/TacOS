@@ -17,9 +17,12 @@ typedef struct {
 typedef struct {
     struct list list; // other slabs on this slab group in the cache
     struct list objects; // all *free* objects on the slab (freelist)
+    uint64_t num_objects_free;
     Cache *cache; // cache which owns this slab
-    // objects follow in memory
+
+    /* objects follow in memory */
 } Slab;
 
 Cache *cache_create(uint64_t object_size);
 void *slab_alloc(Cache *cache);
+void slab_free(Cache *cache, void *object);
