@@ -75,3 +75,12 @@ void pma_pfree(uintptr_t ptr) {
     node->size_pages = 1;
     list_insert(&kernel_info.pmm_nodes, &node->list);
 }
+
+// allocate one physical page, returning a virtual address
+uintptr_t pma_valloc(void) {
+    return pma_palloc() + kernel_info.hhdm;
+}
+
+void pma_vfree(uintptr_t ptr) {
+    pma_pfree(ptr - kernel_info.hhdm);
+}

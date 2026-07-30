@@ -63,8 +63,14 @@ static char *exceptions[] = {
 
 // if msg is null then it'll use whatever it finds from frame->type (mostly for exceptions),
 // but if its set then it'll use it as the error message (for manual calls)
+static bool in_panic = false;
 void panic_handler(const char *msg, IDTEFrame frame) {
     DISABLE_INTERRUPTS();
+    if (in_panic) {
+        kprintf("(nested panic attempted)\n");
+        FREEZE_DEVICE();
+    }
+    in_panic = true;
     uint64_t cr3;
     __asm__ volatile("movq %%cr3, %0" : "=r"(cr3));
     int i = 0;

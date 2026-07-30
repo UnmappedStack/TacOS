@@ -13,5 +13,9 @@ typedef struct {
 } PMMNode;
 
 void pma_init(void);
+
 uintptr_t pma_palloc(void);
 void pma_pfree(uintptr_t ptr);
+
+uintptr_t pma_valloc(void);
+void pma_vfree(uintptr_t ptr);

@@ -37,4 +37,4 @@ echo "[IMAGE] Installing legacy limine BIOS onto image"
 ./limine-binary/limine bios-install image.iso &>/dev/null
 
 echo "[QEMU] Running image in qemu"
-qemu-system-x86_64 image.iso -serial stdio
+qemu-system-x86_64 image.iso -serial stdio --no-reboot --no-shutdown -monitor telnet:127.0.0.1:8000,server,nowait

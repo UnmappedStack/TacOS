@@ -26,10 +26,6 @@ extern uint64_t writable_end[];
 #define PAGE_WRITE   (1 << 1)
 #define PAGE_USER    (1 << 2)
 
-/* macro utility ops */
-#define PAGE_ALIGN_DOWN(addr) ((addr / PAGE_BYTES) * PAGE_BYTES)
-#define PAGE_ALIGN_UP(x) ((((x) + (PAGE_BYTES-1)) / PAGE_BYTES) * PAGE_BYTES)
-
 /* vaddr is the virtual address we're trying to map to,
  * tlevel is the pml table level we're getting the index of,
  * and it should return a specific index of the set of that pml level */
@@ -76,7 +72,7 @@ void map_kernel_section(uint64_t *pml4, uint64_t start, uint64_t end, uint64_t f
     uintptr_t kernel_paddr = kernel_addr_request.response->physical_base;
     uintptr_t kernel_vaddr = kernel_addr_request.response->virtual_base;
 
-    uint64_t length = end - start;
+    uint64_t length = PAGE_ALIGN_UP(end) - start;
     uint64_t paddr  = kernel_paddr + (start - kernel_vaddr);
 
     map_consecutive_pages(pml4, start, paddr, length / PAGE_BYTES, flags);
@@ -95,7 +91,6 @@ void map_kernel_into_vspace(uint64_t *pml4) {
 
 // maps all memory that could be used into a virtual memory space
 void map_all_memory_into_vspace(uint64_t *pml4) {
-    (void) pml4;
     struct limine_memmap_entry **entries = kernel_info.memmap->entries;
     size_t num_entries = kernel_info.memmap->entry_count;
     for (size_t i = 0; i < num_entries; i++) {
