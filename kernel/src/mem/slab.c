@@ -108,3 +108,9 @@ void slab_free(Cache *cache, void *object) {
         list_insert(&cache->free, &slab->list);
     }
 }
+
+void cache_free(Cache *cache) {
+    // there really shouldn't be much we need to destroy a cache for anyways
+    (void) cache;
+    kpanic("TODO (cache_free)");
+}
