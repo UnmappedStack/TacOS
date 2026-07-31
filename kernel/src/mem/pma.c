@@ -53,7 +53,7 @@ void pma_init(void) {
 
 // allocate one physical page
 uintptr_t pma_palloc(void) {
-    if (kernel_info.pmm_nodes.prev == NULL)
+    if (list_empty(&kernel_info.pmm_nodes))
         kpanic("Out of Memory");
 
     PMMNode *node = (PMMNode*) kernel_info.pmm_nodes.prev;
