@@ -94,6 +94,7 @@ void panic_handler(const char *msg, IDTEFrame frame) {
     ASCII_ART_NEWLINE();
     ASCII_ART_LINE(); kprintf(" Exception type: %s in ring %u\n", error_type, frame.ss & 0b11);
     ASCII_ART_LINE(); kprintf(" SS: %u, CS: %u\n", frame.ss, frame.cs);
+    ASCII_ART_LINE(); kprintf(" Error code: %x\n", frame.code);
     ASCII_ART_NEWLINE();
     ASCII_ART_LINE(); kprintf(" Register dump:\n");
     ASCII_ART_LINE(); kprintf("  RAX: %x, RBX: %x\n", frame.rax, frame.rbx);

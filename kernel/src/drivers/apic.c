@@ -1,5 +1,6 @@
 #include <apic.h>
 #include <util.h>
+#include <pit.h>
 #include <panic.h>
 #include <paging.h>
 #include <io.h>
@@ -46,7 +47,6 @@ void map_ioapic(uint8_t vec, uint32_t irq, uint32_t lapic_id, bool polarity,
         read_ioapic((void *)ioapic_addr, reg_nums[1])};
     kprintf("Original redirection entries: 0x%x and 0x%x\n",
            redirection_entries[0], redirection_entries[1]);
-    kprintf("Trying to set entry one...\n");
     redirection_entries[0] =
         (redirection_entries[0] & ~0xFF) | vec; // set vector number
     redirection_entries[0] &= ~0x700;           // set delivery mode to normal
@@ -62,11 +62,7 @@ void map_ioapic(uint8_t vec, uint32_t irq, uint32_t lapic_id, bool polarity,
     else
         redirection_entries[0] &= ~0x8000; // set trigger to edge
     redirection_entries[0] &= ~0x10000;    // makes sure that it's unmasked
-    kprintf("Done! New value: 0x%x\n", redirection_entries[0]);
-    kprintf("Trying to set entry two...\n");
     redirection_entries[1] = (lapic_id & 0xF) << 28;
-    kprintf("Done, new value: 0x%x\n", redirection_entries[1]);
-    kprintf("Trying to set new entries...\n");
     write_ioapic((void *)ioapic_addr, reg_nums[0], redirection_entries[0]);
     write_ioapic((void *)ioapic_addr, reg_nums[1], redirection_entries[1]);
     kprintf("Done, this IOAPIC IRQ has been mapped and unmasked.\n");
@@ -115,8 +111,7 @@ void init_lapic_timer(void) {
         write_lapic(lapic_addr, LAPIC_TIMER_INITIAL_COUNT_REGISTER, 0);
         write_lapic(lapic_addr, LAPIC_TIMER_DIVIDER_REGISTER, 3);
         write_lapic(lapic_addr, LAPIC_TIMER_INITIAL_COUNT_REGISTER, 0xFFFFFFFF);
-        kpanic("TODO: pit_wait()");
-        //pit_wait(10); // wait & calibrate to 10 ms
+        pit_wait(10); // wait & calibrate to 10 ms
         count = read_lapic(lapic_addr, LAPIC_TIMER_CURRENT_COUNT_REGISTER);
     }
     write_lapic(lapic_addr, LAPIC_TIMER_INITIAL_COUNT_REGISTER, 0);
@@ -148,19 +143,7 @@ bool verify_apic(void) {
     return edx & (1 << 9);
 }
 
-// sorry for the bulky name
-void map_apic_into_task(uint64_t task_cr3_phys) {
-    map_page((uint64_t *)(task_cr3_phys + kernel_info.hhdm),
-              (uint64_t)kernel_info.ioapic_addr + kernel_info.hhdm,
-              (uint64_t)kernel_info.ioapic_addr,
-              PAGE_PRESENT | PAGE_WRITE);
-    map_page((uint64_t *)(task_cr3_phys + kernel_info.hhdm),
-              (uint64_t)kernel_info.lapic_addr,
-              (uint64_t)kernel_info.lapic_addr - kernel_info.hhdm,
-              PAGE_PRESENT | PAGE_WRITE);
-}
-
-void init_apic(void) {
+void apic_init(void) {
     kprintf("Initiating APIC...\n");
     kprintf("Checking that APIC is avaliable...\n");
     if (verify_apic()) {
@@ -193,9 +176,9 @@ void init_apic(void) {
         if (entry->entry_type == IOAPIC) {
             IOApic *this_ioapic = (IOApic *)entry;
             kprintf("I/O APIC device found. Information:\n");
-            kprintf(" - I/O APIC ID: %u\n", this_ioapic->ioapic_id);
-            kprintf(" - I/O APIC address: 0x%x\n", this_ioapic->ioapic_addr);
-            kprintf(" - Global system interrupt base: %u\n",
+            kprintf("  -> I/O APIC ID: %u\n", this_ioapic->ioapic_id);
+            kprintf("  -> I/O APIC address: 0x%x\n", this_ioapic->ioapic_addr);
+            kprintf("  -> Global system interrupt base: %u\n",
                    this_ioapic->global_system_interrupt_base);
             map_page((uint64_t *)(kernel_info.cr3 + kernel_info.hhdm),
                       (uint64_t)this_ioapic->ioapic_addr + kernel_info.hhdm,
@@ -206,13 +189,12 @@ void init_apic(void) {
         } else if (entry->entry_type == LOCAL_APIC) {
             ProcessorLocalAPIC *this_local_apic = (ProcessorLocalAPIC *)entry;
             kprintf("Processor local APIC device found. Information:\n");
-            kprintf(" - Processor ID: %u\n", this_local_apic->processor_id);
-            kprintf(" - APIC ID: %u\n", this_local_apic->apic_id);
+            kprintf("  -> Processor ID: %u\n", this_local_apic->processor_id);
+            kprintf("  -> APIC ID: %u\n", this_local_apic->apic_id);
         }
         entry = (MADTEntryHeader *)(((uint64_t)entry) + entry->record_length);
         incremented += entry->record_length;
-        kprintf("Increment by %u, entry is %x\n", entry->record_length, entry);
     }
     init_local_apic(lapic_registers_virt);
-    kprintf("APIC set up successfully.\n");
+    kprintf("APIC init OK\n");
 }

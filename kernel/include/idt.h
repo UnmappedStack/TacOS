@@ -18,3 +18,4 @@ typedef struct {
 
 void idt_init(void);
 void exceptions_init(void);
+IDTGate idt_descriptor(uint64_t offset, uint16_t segment, uint8_t flags);

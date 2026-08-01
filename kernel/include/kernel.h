@@ -1,5 +1,6 @@
 #pragma once
 #include <apic.h>
+#include <idt.h>
 #include <acpi.h>
 #include <list.h>
 #include <framebuffer.h>
@@ -23,6 +24,10 @@ typedef struct {
     uintptr_t lapic_addr;
     IOApic ioapic_device;
     uintptr_t ioapic_addr;
+    uint64_t pit_counter; // for lapic timer calibration
+
+    // this will later need to be stored per-cpu
+    IDTGate idt[256];
 } KernelInfo;
 
 extern KernelInfo kernel_info;

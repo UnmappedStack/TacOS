@@ -26,5 +26,5 @@ typedef struct {
     uint32_t entries[0];
 } __attribute__((packed)) RSDT;
 
-void init_acpi(void);
+void acpi_init(void);
 void *find_MADT(RSDT *root_rsdt);

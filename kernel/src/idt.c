@@ -1,4 +1,6 @@
 #include <idt.h>
+#include <apic.h>
+#include <kernel.h>
 #include <kprintf.h>
 
 // interrupts are basically signals that the cpu sends the kernel every time an event happens
@@ -20,22 +22,18 @@ IDTGate idt_descriptor(uint64_t offset, uint16_t segment, uint8_t flags) {
 
 __attribute__((interrupt))
 void test_isr(void*) {
-    kprintf("got interrupt call!\n");
+    kprintf("got lapic timer interrupt (not ending interrupt so that I don't spam you)\n");
 }
 
-// once there's smp, these will need to be stored per-cpu
-static IDTGate idt[256] = {0};
+// once there's smp, this will need to be stored per-cpu
 static IDTR idtr;
 void idt_init(void) {
-    // idt[isr] will set interrupt vector <isr> to the handler described by idt_descriptor().
-    // this is dynamic so we can add to this even after loading the idt.
-    idt[0x80] = idt_descriptor((uint64_t)test_isr, 0x08, 0x8F);
-
-    // the idtr is just a small table with the size and location of the idt
-    // which is loaded into a register for it using the lidt instruction.
-    idtr.offset = (uint64_t)idt;
+    idtr.offset = (uint64_t)kernel_info.idt;
     idtr.size = sizeof(IDTGate)*256-1;
     __asm__ volatile("lidt %0" : : "m"(idtr));
+
+    // lapic timer interrupt
+    kernel_info.idt[40] = idt_descriptor((uint64_t) test_isr, 8, 0x8E);
 
     kprintf("IDT init OK\n");
 }
@@ -61,23 +59,23 @@ extern void simd_floating_point_exception(void);
 extern void virtualisation_exception(void);
 
 void exceptions_init(void) {
-    idt[0 ] = idt_descriptor((uint64_t)&divide_exception                     , 0x8, 0x8F);
-    idt[1 ] = idt_descriptor((uint64_t)&debug_exception                      , 0x8, 0x8F);
-    idt[3 ] = idt_descriptor((uint64_t)&breakpoint_exception                 , 0x8, 0x8F);
-    idt[4 ] = idt_descriptor((uint64_t)&overflow_exception                   , 0x8, 0x8F);
-    idt[5 ] = idt_descriptor((uint64_t)&bound_range_exceeded_exception       , 0x8, 0x8F);
-    idt[6 ] = idt_descriptor((uint64_t)&invalid_opcode_exception             , 0x8, 0x8F);
-    idt[7 ] = idt_descriptor((uint64_t)&device_not_avaliable_exception       , 0x8, 0x8F);
-    idt[8 ] = idt_descriptor((uint64_t)&double_fault_exception               , 0x8, 0x8F);
-    idt[9 ] = idt_descriptor((uint64_t)&coprocessor_segment_overrun_exception, 0x8, 0x8F);
-    idt[10] = idt_descriptor((uint64_t)&invalid_TSS_exception                , 0x8, 0x8F);
-    idt[11] = idt_descriptor((uint64_t)&segment_not_present_exception        , 0x8, 0x8F);
-    idt[12] = idt_descriptor((uint64_t)&stack_segment_fault_exception        , 0x8, 0x8F);
-    idt[13] = idt_descriptor((uint64_t)&general_protection_fault_exception   , 0x8, 0x8F);
-    idt[14] = idt_descriptor((uint64_t)&page_fault_exception                 , 0x8, 0x8F);
-    idt[16] = idt_descriptor((uint64_t)&floating_point_exception             , 0x8, 0x8F);
-    idt[17] = idt_descriptor((uint64_t)&alignment_check_exception            , 0x8, 0x8F);
-    idt[18] = idt_descriptor((uint64_t)&machine_check_exception              , 0x8, 0x8F);
-    idt[19] = idt_descriptor((uint64_t)&simd_floating_point_exception        , 0x8, 0x8F);
-    idt[20] = idt_descriptor((uint64_t)&virtualisation_exception             , 0x8, 0x8F);
+    kernel_info.idt[0 ] = idt_descriptor((uint64_t)&divide_exception                     , 0x8, 0x8F);
+    kernel_info.idt[1 ] = idt_descriptor((uint64_t)&debug_exception                      , 0x8, 0x8F);
+    kernel_info.idt[3 ] = idt_descriptor((uint64_t)&breakpoint_exception                 , 0x8, 0x8F);
+    kernel_info.idt[4 ] = idt_descriptor((uint64_t)&overflow_exception                   , 0x8, 0x8F);
+    kernel_info.idt[5 ] = idt_descriptor((uint64_t)&bound_range_exceeded_exception       , 0x8, 0x8F);
+    kernel_info.idt[6 ] = idt_descriptor((uint64_t)&invalid_opcode_exception             , 0x8, 0x8F);
+    kernel_info.idt[7 ] = idt_descriptor((uint64_t)&device_not_avaliable_exception       , 0x8, 0x8F);
+    kernel_info.idt[8 ] = idt_descriptor((uint64_t)&double_fault_exception               , 0x8, 0x8F);
+    kernel_info.idt[9 ] = idt_descriptor((uint64_t)&coprocessor_segment_overrun_exception, 0x8, 0x8F);
+    kernel_info.idt[10] = idt_descriptor((uint64_t)&invalid_TSS_exception                , 0x8, 0x8F);
+    kernel_info.idt[11] = idt_descriptor((uint64_t)&segment_not_present_exception        , 0x8, 0x8F);
+    kernel_info.idt[12] = idt_descriptor((uint64_t)&stack_segment_fault_exception        , 0x8, 0x8F);
+    kernel_info.idt[13] = idt_descriptor((uint64_t)&general_protection_fault_exception   , 0x8, 0x8F);
+    kernel_info.idt[14] = idt_descriptor((uint64_t)&page_fault_exception                 , 0x8, 0x8F);
+    kernel_info.idt[16] = idt_descriptor((uint64_t)&floating_point_exception             , 0x8, 0x8F);
+    kernel_info.idt[17] = idt_descriptor((uint64_t)&alignment_check_exception            , 0x8, 0x8F);
+    kernel_info.idt[18] = idt_descriptor((uint64_t)&machine_check_exception              , 0x8, 0x8F);
+    kernel_info.idt[19] = idt_descriptor((uint64_t)&simd_floating_point_exception        , 0x8, 0x8F);
+    kernel_info.idt[20] = idt_descriptor((uint64_t)&virtualisation_exception             , 0x8, 0x8F);
 }

@@ -1,4 +1,5 @@
 #pragma once
+#include <io.h>
 
 #define WAIT_FOR_INTERRUPT() __asm__ volatile("hlt")
 #define DISABLE_INTERRUPTS() __asm__ volatile("cli")
@@ -13,5 +14,7 @@
         for (;;) WAIT_FOR_INTERRUPT(); \
     } while (0)
 
-#define CPUID(code, a, d)                                                      \
+#define CPUID(code, a, d) \
     __asm__ volatile("cpuid" : "=a"(*a), "=d"(*d) : "0"(code) : "ebx", "ecx")
+
+#define IO_WAIT() outb(0x80, 0)

@@ -12,7 +12,7 @@
 static volatile struct limine_rsdp_request rsdp_request = {
     .id = LIMINE_RSDP_REQUEST, .revision = 0};
 
-void init_acpi(void) {
+void acpi_init(void) {
     kernel_info.rsdp_table = (RSDP*) rsdp_request.response->address;
     map_page(
         (uint64_t *)(kernel_info.cr3 + kernel_info.hhdm), (uint64_t)kernel_info.rsdp_table,
