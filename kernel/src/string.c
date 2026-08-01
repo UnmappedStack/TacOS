@@ -26,6 +26,18 @@ void *memset(void *dest, int ch, size_t n) {
     return dest;
 }
 
+int memcmp(const void *s1, const void *s2, size_t n) {
+    const unsigned char *p1 = s1;
+    const unsigned char *p2 = s2;
+    while (n--) {
+        if (*p1 != *p2)
+            return (int)(*p1 - *p2);
+        p1++;
+        p2++;
+    }
+    return 0;
+}
+
 // Gets the number of digits of a base 10 number
 int get_num_length(uint64_t num) {
     int length = 0;

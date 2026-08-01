@@ -22,6 +22,7 @@ typedef struct {
     uint64_t rbx;
     uint64_t rax;
     uint64_t type;
+    uint64_t code;
     uint64_t rip;
     uint64_t cs;
     uint64_t flags;

@@ -12,3 +12,6 @@
         DISABLE_INTERRUPTS(); \
         for (;;) WAIT_FOR_INTERRUPT(); \
     } while (0)
+
+#define CPUID(code, a, d)                                                      \
+    __asm__ volatile("cpuid" : "=a"(*a), "=d"(*d) : "0"(code) : "ebx", "ecx")

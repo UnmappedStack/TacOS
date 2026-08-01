@@ -27,35 +27,42 @@ global virtualisation_exception
 align 0x08, db 0x00
 divide_exception:
     push 0
+    push 0
     jmp base_handler
 
 align 0x08, db 0x00
 debug_exception:
+    push 0
     push 1
     jmp base_handler
 
 align 0x08, db 0x00
 breakpoint_exception:
+    push 0
     push 3
     jmp base_handler
 
 align 0x08, db 0x00
 overflow_exception:
+    push 0
     push 4
     jmp base_handler
 
 align 0x08, db 0x00
 bound_range_exceeded_exception:
+    push 0
     push 5
     jmp base_handler
 
 align 0x08, db 0x00
 invalid_opcode_exception:
+    push 0
     push 6
     jmp base_handler
 
 align 0x08, db 0x00
 device_not_avaliable_exception:
+    push 0
     push 7
     jmp base_handler
 
@@ -66,6 +73,7 @@ double_fault_exception:
 
 align 0x08, db 0x00
 coprocessor_segment_overrun_exception:
+    push 0
     push 9
     jmp base_handler
 
@@ -96,6 +104,7 @@ page_fault_exception:
 
 align 0x08, db 0x00
 floating_point_exception:
+    push 0
     push 16
     jmp base_handler
 
@@ -106,20 +115,22 @@ alignment_check_exception:
 
 align 0x08, db 0x00
 machine_check_exception:
+    push 0
     push 18
     jmp base_handler
 
 align 0x08, db 0x00
 simd_floating_point_exception:
+    push 0
     push 19
     jmp base_handler
 
 align 0x08, db 0x00
 virtualisation_exception:
+    push 0
     push 20
     jmp base_handler
 
-extern kprintf
 align 0x08, db 0x00
 base_handler:
     push rax
@@ -161,4 +172,3 @@ base_handler:
     pop rax
     add rsp, 0x10
     iretq
-msg: db "rsp: %x", 10, 0

@@ -1,0 +1,218 @@
+#include <apic.h>
+#include <util.h>
+#include <panic.h>
+#include <paging.h>
+#include <io.h>
+#include <kernel.h>
+#include <kprintf.h>
+
+uint32_t read_lapic(uintptr_t lapic_addr, uint64_t reg_offset) {
+    uint32_t volatile *lapic_register_addr =
+        (uint32_t volatile *)(((uint64_t)lapic_addr) + reg_offset);
+    return (uint32_t)*lapic_register_addr;
+}
+
+void write_lapic(uintptr_t lapic_addr, uint64_t reg_offset, uint32_t val) {
+    uint32_t volatile *lapic_register_addr =
+        (uint32_t volatile *)(((uint64_t)lapic_addr) + reg_offset);
+    *lapic_register_addr = val;
+}
+
+uint32_t read_ioapic(void *ioapic_addr, uint32_t reg) {
+    uint32_t volatile *ioapic = (uint32_t volatile *)ioapic_addr;
+    ioapic[0] = (reg & 0xff);
+    return ioapic[4];
+}
+
+void write_ioapic(void *ioapic_addr, uint32_t reg, uint32_t value) {
+    uint32_t volatile *ioapic = (uint32_t volatile *)ioapic_addr;
+    ioapic[0] = (reg & 0xff);
+    ioapic[4] = value;
+}
+
+void map_ioapic(uint8_t vec, uint32_t irq, uint32_t lapic_id, bool polarity,
+                bool trigger) {
+    kprintf("Global system interrupt base: %u\n",
+           kernel_info.ioapic_device.global_system_interrupt_base);
+    uintptr_t ioapic_addr =
+        (uintptr_t)(((uint64_t)kernel_info.ioapic_device.ioapic_addr) + kernel_info.hhdm);
+    uint32_t gsi_base = kernel_info.ioapic_device.global_system_interrupt_base;
+    uint32_t entry_num = gsi_base + (irq * 2);
+    kprintf("Entry number: %u\n", entry_num);
+    uint32_t reg_nums[2] = {0x10 + entry_num, 0x11 + entry_num};
+    kprintf("Register numbers: %u and %u\n", reg_nums[0], reg_nums[1]);
+    uint32_t redirection_entries[2] = {
+        read_ioapic((void *)ioapic_addr, reg_nums[0]),
+        read_ioapic((void *)ioapic_addr, reg_nums[1])};
+    kprintf("Original redirection entries: 0x%x and 0x%x\n",
+           redirection_entries[0], redirection_entries[1]);
+    kprintf("Trying to set entry one...\n");
+    redirection_entries[0] =
+        (redirection_entries[0] & ~0xFF) | vec; // set vector number
+    redirection_entries[0] &= ~0x700;           // set delivery mode to normal
+    redirection_entries[0] &=
+        ~0x800; // set destination mode to physical. Probably worse but for now
+                // it's just easier.
+    if (polarity)
+        redirection_entries[0] |= 0x2000; // set polarity to low
+    else
+        redirection_entries[0] &= ~0x2000; // set polarity to high
+    if (trigger)
+        redirection_entries[0] |= 0x8000; // set trigger to level
+    else
+        redirection_entries[0] &= ~0x8000; // set trigger to edge
+    redirection_entries[0] &= ~0x10000;    // makes sure that it's unmasked
+    kprintf("Done! New value: 0x%x\n", redirection_entries[0]);
+    kprintf("Trying to set entry two...\n");
+    redirection_entries[1] = (lapic_id & 0xF) << 28;
+    kprintf("Done, new value: 0x%x\n", redirection_entries[1]);
+    kprintf("Trying to set new entries...\n");
+    write_ioapic((void *)ioapic_addr, reg_nums[0], redirection_entries[0]);
+    write_ioapic((void *)ioapic_addr, reg_nums[1], redirection_entries[1]);
+    kprintf("Done, this IOAPIC IRQ has been mapped and unmasked.\n");
+}
+
+void mask_ioapic(uint8_t irq, uint32_t lapic_id) {
+    (void)lapic_id;
+    uintptr_t ioapic_addr =
+        (uintptr_t)(((uint64_t)kernel_info.ioapic_device.ioapic_addr) + kernel_info.hhdm);
+    uint32_t gsi_base = kernel_info.ioapic_device.global_system_interrupt_base;
+    uint32_t entry_num = gsi_base + (irq * 2);
+    uint32_t reg_num = 0x10 + entry_num;
+    uint32_t redirection_entry = read_ioapic((void *)ioapic_addr, reg_num);
+    redirection_entry |= 0x10000;
+    write_ioapic((void *)ioapic_addr, reg_num, redirection_entry);
+}
+
+void unmask_ioapic(uint8_t irq, uint32_t lapic_id) {
+    (void)lapic_id;
+    uintptr_t ioapic_addr =
+        (uintptr_t)(((uint64_t)kernel_info.ioapic_device.ioapic_addr) + kernel_info.hhdm);
+    uint32_t gsi_base = kernel_info.ioapic_device.global_system_interrupt_base;
+    uint32_t entry_num = gsi_base + (irq * 2);
+    uint32_t reg_num = 0x10 + entry_num;
+    uint32_t redirection_entry = read_ioapic((void *)ioapic_addr, reg_num);
+    redirection_entry &= ~0x10000;
+    write_ioapic((void *)ioapic_addr, reg_num, redirection_entry);
+}
+
+void init_local_apic(uintptr_t lapic_addr) {
+    write_lapic(lapic_addr, LAPIC_TASK_PRIORITY_REGISTER, 0);
+    write_lapic(lapic_addr, LAPIC_DESTINATION_FORMAT_REGISTER, 0xF0000000);
+    write_lapic(lapic_addr, LAPIC_SPURIOUS_INTERRUPT_VECTOR_REGISTER,
+                0xFF | 0x100);
+}
+
+uint64_t get_current_processor(void) {
+    uint64_t to_return = read_lapic(kernel_info.lapic_addr, LAPIC_ID_REGISTER) >> 24;
+    return to_return;
+}
+
+void init_lapic_timer(void) {
+    static uint32_t count;
+    uintptr_t lapic_addr = kernel_info.lapic_addr;
+    if (!get_current_processor()) {
+        write_lapic(lapic_addr, LAPIC_TIMER_INITIAL_COUNT_REGISTER, 0);
+        write_lapic(lapic_addr, LAPIC_TIMER_DIVIDER_REGISTER, 3);
+        write_lapic(lapic_addr, LAPIC_TIMER_INITIAL_COUNT_REGISTER, 0xFFFFFFFF);
+        kpanic("TODO: pit_wait()");
+        //pit_wait(10); // wait & calibrate to 10 ms
+        count = read_lapic(lapic_addr, LAPIC_TIMER_CURRENT_COUNT_REGISTER);
+    }
+    write_lapic(lapic_addr, LAPIC_TIMER_INITIAL_COUNT_REGISTER, 0);
+    uint32_t num_ticks = 0xFFFFFFFF - count;
+    write_lapic(lapic_addr, LAPIC_TIMER_LVT_REGISTER, 40 | 0x20000);
+    write_lapic(lapic_addr, LAPIC_TIMER_DIVIDER_REGISTER, 3);
+    write_lapic(lapic_addr, LAPIC_TIMER_INITIAL_COUNT_REGISTER, num_ticks);
+}
+
+void lock_lapic_timer(void) {
+    write_lapic(kernel_info.lapic_addr, LAPIC_TIMER_LVT_REGISTER,
+                read_lapic(kernel_info.lapic_addr, LAPIC_TIMER_LVT_REGISTER) &
+                    ~0x20000);
+}
+
+void unlock_lapic_timer(void) {
+    write_lapic(kernel_info.lapic_addr, LAPIC_TIMER_LVT_REGISTER,
+                read_lapic(kernel_info.lapic_addr, LAPIC_TIMER_LVT_REGISTER) |
+                    0x20000);
+}
+
+void end_of_interrupt(void) {
+    write_lapic(kernel_info.lapic_addr, LAPIC_END_OF_INTERRUPT_REGISTER, 0);
+}
+
+bool verify_apic(void) {
+    uint32_t eax, edx;
+    CPUID(1, &eax, &edx);
+    return edx & (1 << 9);
+}
+
+// sorry for the bulky name
+void map_apic_into_task(uint64_t task_cr3_phys) {
+    map_page((uint64_t *)(task_cr3_phys + kernel_info.hhdm),
+              (uint64_t)kernel_info.ioapic_addr + kernel_info.hhdm,
+              (uint64_t)kernel_info.ioapic_addr,
+              PAGE_PRESENT | PAGE_WRITE);
+    map_page((uint64_t *)(task_cr3_phys + kernel_info.hhdm),
+              (uint64_t)kernel_info.lapic_addr,
+              (uint64_t)kernel_info.lapic_addr - kernel_info.hhdm,
+              PAGE_PRESENT | PAGE_WRITE);
+}
+
+void init_apic(void) {
+    kprintf("Initiating APIC...\n");
+    kprintf("Checking that APIC is avaliable...\n");
+    if (verify_apic()) {
+        kprintf("Success, APIC is avaliable, setting it up now.\n");
+    } else {
+        kpanic("APIC not supported");
+    }
+    // disable pic
+    outb(0x21, 0xff);
+    outb(0xA1, 0xff);
+    MADT *madt = (MADT *)find_MADT(kernel_info.rsdt);
+    if (!madt) {
+        kpanic("MADT not found");
+    }
+    kprintf("MADT at %x\n", madt);
+    kprintf("Local APIC paddr: 0x%x\n", madt->local_apic_addr);
+    // map the lapic addr
+    map_page((uint64_t *)(kernel_info.cr3 + kernel_info.hhdm),
+              (uint64_t)madt->local_apic_addr + kernel_info.hhdm,
+              (uint64_t)madt->local_apic_addr,
+              PAGE_PRESENT | PAGE_WRITE);
+    uint64_t lapic_registers_virt =
+        (uint64_t)madt->local_apic_addr + kernel_info.hhdm;
+    kernel_info.lapic_addr = lapic_registers_virt;
+    MADTEntryHeader *entry =
+        (MADTEntryHeader *)(((uint64_t)madt) + sizeof(MADT));
+    uint64_t incremented = sizeof(MADT);
+    kprintf("Enumerating %u bytes of MADT entries...\n", madt->header.length);
+    while (incremented < madt->header.length) {
+        if (entry->entry_type == IOAPIC) {
+            IOApic *this_ioapic = (IOApic *)entry;
+            kprintf("I/O APIC device found. Information:\n");
+            kprintf(" - I/O APIC ID: %u\n", this_ioapic->ioapic_id);
+            kprintf(" - I/O APIC address: 0x%x\n", this_ioapic->ioapic_addr);
+            kprintf(" - Global system interrupt base: %u\n",
+                   this_ioapic->global_system_interrupt_base);
+            map_page((uint64_t *)(kernel_info.cr3 + kernel_info.hhdm),
+                      (uint64_t)this_ioapic->ioapic_addr + kernel_info.hhdm,
+                      (uint64_t)this_ioapic->ioapic_addr,
+                      PAGE_PRESENT | PAGE_WRITE);
+            kernel_info.ioapic_device = *this_ioapic;
+            kernel_info.ioapic_addr = this_ioapic->ioapic_addr;
+        } else if (entry->entry_type == LOCAL_APIC) {
+            ProcessorLocalAPIC *this_local_apic = (ProcessorLocalAPIC *)entry;
+            kprintf("Processor local APIC device found. Information:\n");
+            kprintf(" - Processor ID: %u\n", this_local_apic->processor_id);
+            kprintf(" - APIC ID: %u\n", this_local_apic->apic_id);
+        }
+        entry = (MADTEntryHeader *)(((uint64_t)entry) + entry->record_length);
+        incremented += entry->record_length;
+        kprintf("Increment by %u, entry is %x\n", entry->record_length, entry);
+    }
+    init_local_apic(lapic_registers_virt);
+    kprintf("APIC set up successfully.\n");
+}

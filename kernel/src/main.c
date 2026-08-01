@@ -21,15 +21,12 @@ void _start(void) {
     pma_init();
     pma_palloc();
 
-    SWITCH_PAGE_TREE(create_address_space());
+    kernel_info.cr3 = create_address_space();
+    SWITCH_PAGE_TREE(kernel_info.cr3);
     kprintf("Page tree switched successfully\n");
 
-    Cache *cache = cache_create(32);
-    void *obj = slab_alloc(cache);
-    kprintf("object: %x\n", obj);
-    slab_free(cache, obj);
-    obj = slab_alloc(cache);
-    kprintf("object: %x\n", obj);
+    init_acpi();
+    init_apic();
 
     FREEZE_DEVICE();
 }

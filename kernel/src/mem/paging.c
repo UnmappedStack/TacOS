@@ -1,5 +1,6 @@
 #include <mm.h>
 #include <kprintf.h>
+#include <panic.h>
 #include <paging.h>
 #include <limine.h>
 #include <string.h>
@@ -20,11 +21,6 @@ extern uint64_t readonly_start[];
 extern uint64_t readonly_end[];
 extern uint64_t writable_start[];
 extern uint64_t writable_end[];
-
-/* page flags */
-#define PAGE_PRESENT (1 << 0)
-#define PAGE_WRITE   (1 << 1)
-#define PAGE_USER    (1 << 2)
 
 /* vaddr is the virtual address we're trying to map to,
  * tlevel is the pml table level we're getting the index of,
