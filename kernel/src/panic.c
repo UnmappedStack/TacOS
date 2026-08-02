@@ -68,7 +68,7 @@ static bool in_panic = false;
 void panic_handler(const char *msg, IDTEFrame frame) {
     DISABLE_INTERRUPTS();
     if (in_panic) {
-        kprintf("(nested panic attempted)\n");
+        print_string("[0m\n(nested panic attempted)\n");
         FREEZE_DEVICE();
     }
     in_panic = true;
@@ -87,8 +87,7 @@ void panic_handler(const char *msg, IDTEFrame frame) {
     else if (frame.type <= 30 && !(frame.type < 28 && frame.type > 21) && frame.type != 15)
         error_type = exceptions[frame.type];
     else error_type = "Triple fault or unknown exception";
-    ASCII_ART_NEWLINE();
-    ASCII_ART_NEWLINE();
+    for (int n = 0; n < 7; n++) ASCII_ART_NEWLINE();
     ASCII_ART_LINE(); kprintf(" WOAH! You messed this all up!\n");
     ASCII_ART_LINE(); kprintf(" This is ALL your fault. I take ZERO responsibility!\n");
     ASCII_ART_NEWLINE();
@@ -112,7 +111,7 @@ void panic_handler(const char *msg, IDTEFrame frame) {
     struct stack_frame *stack = (struct stack_frame*)frame.rbp;
     while (stack && stack->rip) {
         ASCII_ART_LINE(); kprintf("  -> %x\n", stack->rip);
-        if (stack->rbp->rip == stack->rip) {
+        if (stack->rbp && stack->rbp->rip == stack->rip) {
             ASCII_ART_LINE(); kprintf(" ...recursive call\n");
             break;
         }

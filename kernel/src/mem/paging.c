@@ -63,6 +63,14 @@ void map_consecutive_pages(uint64_t *pml4, uintptr_t vmem_start, uintptr_t paddr
         map_page(pml4, vmem_start + i * PAGE_BYTES, paddr_start + i * PAGE_BYTES, flags);
 }
 
+// allocates a bunch of non-consecutive physical pages and strings them together in vmem
+void alloc_consecutive_phys_pages(uint64_t *pml4, uintptr_t vmem_start, size_t num_pages, uint64_t flags) {
+    for (size_t i = 0; i < num_pages; i++) {
+        uintptr_t phys_page = pma_palloc();
+        map_page(pml4, vmem_start + i * PAGE_BYTES, phys_page, flags);
+    }
+}
+
 // Maps one section of the kernel binary into the virtual memory space
 void map_kernel_section(uint64_t *pml4, uint64_t start, uint64_t end, uint64_t flags) {
     uintptr_t kernel_paddr = kernel_addr_request.response->physical_base;
@@ -99,6 +107,11 @@ void map_all_memory_into_vspace(uint64_t *pml4) {
     }
 }
 
+// allocates in vmem a new stack and maps it into the virtual address space
+void create_stack_for_vspace(uint64_t *pml4) {
+    alloc_consecutive_phys_pages(pml4, KERNEL_STACK_BOTTOM, KERNEL_STACK_PAGES, PAGE_PRESENT | PAGE_WRITE);
+}
+
 // Creates a new address space and maps essential memory into it
 uintptr_t create_address_space(void) {
     uintptr_t pml4_paddr = pma_palloc();
@@ -106,6 +119,7 @@ uintptr_t create_address_space(void) {
 
     map_all_memory_into_vspace(pml4);
     map_kernel_into_vspace(pml4);
+    create_stack_for_vspace(pml4);
     
     kprintf("Created address space at pml4=%x\n", pml4_paddr);
     return pml4_paddr;

@@ -18,13 +18,12 @@ void print_string(const char *s) {
 void kprintf(const char *fmt, ...) {
     va_list args;
     va_start(args, fmt);
-
     for (; *fmt; fmt++) {
         if (*fmt != '%') {
             write_serial_char(*fmt);
             continue;
         }
-        char buf[32] = {0};
+        char buf[64] = {0};
         switch (*(++fmt)) {
             case '%':
                 write_serial_char('%');

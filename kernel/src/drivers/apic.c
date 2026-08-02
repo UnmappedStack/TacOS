@@ -119,6 +119,7 @@ void init_lapic_timer(void) {
     write_lapic(lapic_addr, LAPIC_TIMER_LVT_REGISTER, 40 | 0x20000);
     write_lapic(lapic_addr, LAPIC_TIMER_DIVIDER_REGISTER, 3);
     write_lapic(lapic_addr, LAPIC_TIMER_INITIAL_COUNT_REGISTER, num_ticks);
+    kprintf("LAPIC timer init OK\n");
 }
 
 void lock_lapic_timer(void) {

@@ -8,10 +8,12 @@
 Cache *cache_create(uint64_t object_size) {
     if (object_size > PAGE_BYTES)
         kpanic("Object size too large (must be under 1 page)");
+    else if (object_size < sizeof(struct list))
+        kpanic("Object size too small (must be over sizeof(struct list))");
 
     Cache *cache = (Cache*) (pma_valloc());
     cache->object_size = object_size;
-    cache->objects_per_slab = PAGE_ALIGN_UP(object_size + sizeof(Slab)) / object_size - sizeof(Slab);
+    cache->objects_per_slab = (PAGE_BYTES - sizeof(Slab)) / object_size;
 
     list_init(&cache->free);
     list_init(&cache->partial);
@@ -42,11 +44,14 @@ void *slab_alloc(Cache *cache) {
     /* first, find a slab to use (or create one if
      * there's none with free objects) */
     Slab *slab;
-    if (!list_empty(&cache->partial)) slab = (Slab*) &cache->partial;
-    else if (!list_empty(&cache->free))  slab = (Slab*) &cache->free;
+    if (!list_empty(&cache->partial)) slab = (Slab*) cache->partial.next;
+    else if (!list_empty(&cache->free)) slab = (Slab*) cache->free.next;
     else slab = cache_grow(cache);
 
     // get the object to return the memory of & remove it from the freelist
+    if (list_empty(&slab->objects)) {
+        kpanic("Got empty list in slab_alloc");
+    }
     struct list *object = slab->objects.next;
     list_remove(object);
     slab->num_objects_free--;
@@ -60,7 +65,7 @@ void *slab_alloc(Cache *cache) {
     } else if (slab->num_objects_free == 0) {
         // it's full
         list_insert(&cache->filled, &slab->list);
-    }
+    } else kpanic("unreachable");
     return object;
 }
 

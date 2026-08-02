@@ -37,7 +37,6 @@ override KCFLAGS += \
 	-std=c23 \
 	-ffreestanding \
     -fno-stack-protector \
-    -fno-stack-check \
     -fPIE \
     -m64 \
     -march=x86-64 \
