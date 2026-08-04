@@ -111,8 +111,6 @@ Thread *add_thread_to_current_processor(Thread *thread) {
     if (thread->nice < queue->least_nice_thread)
         queue->least_nice_thread = thread->nice;
 
-    recalculate_queue_priorities(queue);
-
     switch (thread->s_class) {
         case SCHED_REALTIME:
             list_insert(&queue->realtime_threads, &thread->class_list);
@@ -131,6 +129,9 @@ Thread *add_thread_to_current_processor(Thread *thread) {
             break;
         default: kpanic("unreachable (sched)");
     }
+    
+    recalculate_queue_priorities(queue);
+
     return thread;
 }
 
@@ -180,14 +181,13 @@ Thread *thread_select(void) {
         list_remove(thread_list);
         if (list_empty(&bucket->threads)) {
             current_queue->bucket_bitmap &= ~(1ULL << next_available);
+            current_queue->current_bucket++;
         }
-
-        current_queue->current_bucket++;
+        
         if (current_queue->current_bucket > NUM_BUCKETS-1)
             current_queue->current_bucket = 0;
         Thread *thread = CONTAINER_OF(thread_list, Thread, bucket_list);
         calendar_queue_reinsert_thread(current_queue, thread);
-
         return thread;
     }
 
