@@ -1,4 +1,5 @@
 #include <scheduler.h>
+#include <util.h>
 #include <string.h>
 #include <panic.h>
 #include <kernel.h>
@@ -43,6 +44,14 @@
 /* This scheduler is highly inspired from mainly the original ULE scheduler, but with the calendar queue
  * design from modern ULE. */
 
+/* (temporary comment) TODO for a complete scheduler:
+ *  [X] Thread creation;
+ *  [X] Thread selection;
+ *  [ ] SMP support (hopefully easy from how previous steps were designed);
+ *  [ ] Load balancing;
+ *  [ ] Interactiveness determination;
+ */
+
 // GSBase is used to store a pointer to the ProcessorQueue for the current processor
 #define GSBASE 0xC0000101
 
@@ -54,19 +63,20 @@ ProcessorQueue *current_processor_queue(void) {
     return ret;
 }
 
+static const int range_map[][3] = {
+    [SCHED_REALTIME] = {0, 63},
+    [SCHED_INTERACTIVE_TIMESHARE] = {64, 127},
+    [SCHED_TIMESHARE] = {128, 192},
+};
+
 // pick a bucket of the calendar queue to insert it into, based on priority and class
 void calendar_queue_reinsert_thread(ProcessorQueue *queue, Thread *thread) {
-    const size_t max_priority = 224;
-    size_t bucket_idx = (queue->current_bucket + 1 + max_priority - thread->priority) % NUM_BUCKETS;
+    size_t bucket_idx = (queue->current_bucket + 1 + thread->priority) % NUM_BUCKETS;
     list_insert(&queue->calendar_queue[bucket_idx].threads, &thread->bucket_list);
+    queue->bucket_bitmap |= 1ULL << bucket_idx;
 }
 
 int calculate_thread_priority(ProcessorQueue *queue, Thread *thread) {
-    const int range_map[][3] = {
-        [SCHED_REALTIME] = {0, 63},
-        [SCHED_INTERACTIVE_TIMESHARE] = {64, 127},
-        [SCHED_TIMESHARE] = {128, 192},
-    };
     int nice_diff = thread->nice - queue->least_nice_thread;
     int min = range_map[thread->s_class][0];
     int max = range_map[thread->s_class][1];
@@ -74,6 +84,16 @@ int calculate_thread_priority(ProcessorQueue *queue, Thread *thread) {
     if (ret > max)
         ret = max;
     return ret;
+}
+
+// recalculates the priorities of all threads on a scheduler's queue
+// (only timeshare threads)
+void recalculate_queue_priorities(ProcessorQueue *queue) {
+    for (struct list *list = queue->timeshare_threads.next;
+             list != &queue->timeshare_threads; list = list->next) {
+        Thread *thread = CONTAINER_OF(list, Thread, class_list);
+        thread->priority = calculate_thread_priority(queue, thread);
+    }
 }
 
 /* we just add it to the current queue instead of looking for the least
@@ -88,7 +108,10 @@ Thread *add_thread_to_current_processor(Thread *thread) {
     if (thread->nice > queue->nicest_thread)
         queue->nicest_thread = thread->nice;
 
-    thread->priority = calculate_thread_priority(queue, thread);
+    if (thread->nice < queue->least_nice_thread)
+        queue->least_nice_thread = thread->nice;
+
+    recalculate_queue_priorities(queue);
 
     switch (thread->s_class) {
         case SCHED_REALTIME:
@@ -117,8 +140,71 @@ Thread *create_thread(SchedClass sched_class, int nice, uint8_t flags) {
     thread->flags = flags;
     thread->nice = nice;
     thread->s_class = sched_class;
+    thread->tid = kernel_info.schedulers.tid_upto++;
 
     return thread;
+}
+
+/* Selects a thread to run for the current processor by:
+ *  (1) check calendar queue to see if there's something to run:
+ *          - if there is, reinsert it later in the queue and run it.
+ *  (2) if there's nothing in the calendar queue, look for something in
+ *      the idle queue to run
+ *  (3) if there's nothing to run, do a PULL load balance operation (TODO,
+ *      right now we just complain that the cpu is being used inefficiently)
+ */
+Thread *thread_select(void) {
+    ProcessorQueue *current_queue = current_processor_queue();
+
+    // find the first bucket which is not empty (or at least try)
+    if (current_queue->bucket_bitmap) {
+        /* we know there's *some* bucket avaliable.
+         * note that we only want to get set bits after the current bucket, OR
+         * in the next "year" of the calendar */
+
+        // first check remaining ones for this year
+        int next_available;
+        if (current_queue->bucket_bitmap >> current_queue->current_bucket) {
+            // see https://gcc.gnu.org/onlinedocs/gcc/Bit-Operation-Builtins.html for __builtin_clzll()
+            // (it basically just does the bsf instruction)
+            next_available = __builtin_ctzll(current_queue->bucket_bitmap >> current_queue->current_bucket)
+                                        + current_queue->current_bucket;
+        } else {
+            // we need to check for the next 'year'
+            next_available = __builtin_ctzll(current_queue->bucket_bitmap);
+        }
+
+        CalendarBucket *bucket = &current_queue->calendar_queue[next_available];
+        struct list *thread_list = bucket->threads.next;
+
+        list_remove(thread_list);
+        if (list_empty(&bucket->threads)) {
+            current_queue->bucket_bitmap &= ~(1ULL << next_available);
+        }
+
+        current_queue->current_bucket++;
+        if (current_queue->current_bucket > NUM_BUCKETS-1)
+            current_queue->current_bucket = 0;
+        Thread *thread = CONTAINER_OF(thread_list, Thread, bucket_list);
+        calendar_queue_reinsert_thread(current_queue, thread);
+
+        return thread;
+    }
+
+    // nothing in calendar queue, try get something from the idle queue
+    if (!list_empty(&current_queue->idle_threads)) {
+        struct list *thread_list = current_queue->idle_threads.next;
+        list_remove(thread_list);
+        list_insert(&current_queue->idle_threads, thread_list);
+        Thread *thread = CONTAINER_OF(thread_list, Thread, class_list);
+        return thread;
+    }
+
+    /* this should do a PULL load balance operation but for now we just complain
+     * because having a cpu without threads is a waste of a cpu and is inefficient:
+     * resources are there to be used! */
+    kprintf("nothing to run :(\n");
+    return NULL;
 }
 
 /* Initialises the scheduler on the current processor */
@@ -136,14 +222,14 @@ void processor_scheduler_init(void) {
     for (int i = 0; i < NUM_BUCKETS; i++) {
         list_init(&new_queue->calendar_queue[i].threads);
     }
+    new_queue->bucket_bitmap = 0;
 
     list_insert(&kernel_info.schedulers.processor_queues, &new_queue->list);
     wrmsr(GSBASE, (uint64_t)new_queue);
 
-    kprintf("thread priority: %u\n", add_thread_to_current_processor(create_thread(SCHED_TIMESHARE,  10, 0))->priority);
-    kprintf("thread priority: %u\n", add_thread_to_current_processor(create_thread(SCHED_TIMESHARE, 100, 0))->priority);
-    kprintf("thread priority: %u\n", add_thread_to_current_processor(create_thread(SCHED_TIMESHARE,  50, 0))->priority);
-    kprintf("thread priority: %u\n", add_thread_to_current_processor(create_thread(SCHED_TIMESHARE,  50, 0))->priority);
+    kprintf("Thread created: %u\n", add_thread_to_current_processor(create_thread(SCHED_TIMESHARE, 10, 0))->priority);
+    kprintf("Thread created: %u\n", add_thread_to_current_processor(create_thread(SCHED_TIMESHARE, 20, 0))->priority);
+    kprintf("Thread created: %u\n", add_thread_to_current_processor(create_thread(SCHED_TIMESHARE, 30, 0))->priority);
 
     kprintf("Processor scheduler init OK\n");
 }
@@ -152,6 +238,7 @@ void processor_scheduler_init(void) {
 void global_scheduler_init(void) {
     kernel_info.schedulers.processor_queue_cache = cache_create(sizeof(ProcessorQueue));
     kernel_info.schedulers.thread_cache = cache_create(sizeof(Thread));
+    kernel_info.schedulers.tid_upto = 0;
 
     list_init(&kernel_info.schedulers.processor_queues);
 

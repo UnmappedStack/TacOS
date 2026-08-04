@@ -1,6 +1,9 @@
 #pragma once
 #include <io.h>
 
+// gets pointer of struct of type `type` given struct element pointer `ptr` of element name `member`
+#define CONTAINER_OF(ptr, type, member) ((type*)((void*)ptr - offsetof(type, member)))
+
 #define WAIT_FOR_INTERRUPT() __asm__ volatile("hlt")
 #define DISABLE_INTERRUPTS() __asm__ volatile("cli")
 #define  ENABLE_INTERRUPTS() __asm__ volatile("sti")

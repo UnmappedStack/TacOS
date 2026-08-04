@@ -22,7 +22,9 @@ IDTGate idt_descriptor(uint64_t offset, uint16_t segment, uint8_t flags) {
 
 __attribute__((interrupt))
 void test_isr(void*) {
-    kprintf("got lapic timer interrupt (not ending interrupt so that I don't spam you)\n");
+    Thread *thread = thread_select();
+    kprintf("%u,", thread->tid);
+    end_of_interrupt();
 }
 
 // once there's smp, this will need to be stored per-cpu

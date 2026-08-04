@@ -47,16 +47,20 @@ typedef struct {
 
     CalendarBucket calendar_queue[NUM_BUCKETS];
     uint64_t current_bucket;
+    uint64_t bucket_bitmap;
 
     int least_nice_thread;
     int nicest_thread;
 } ProcessorQueue;
+static_assert(NUM_BUCKETS <= 64, "bitmap too small for number of threads");
 
 typedef struct {
     Cache *processor_queue_cache;
     Cache *thread_cache;
     struct list processor_queues;
+    int tid_upto;
 } GlobalSchedulerInfo;
 
 void processor_scheduler_init(void);
 void global_scheduler_init(void);
+Thread *thread_select(void);

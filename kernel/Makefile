@@ -34,7 +34,6 @@ override KCFLAGS += \
     -Wall \
     -Wextra \
 	-Werror \
-	-std=c23 \
 	-ffreestanding \
     -fno-stack-protector \
     -fPIE \
@@ -48,7 +47,8 @@ override KCFLAGS += \
 	-fno-omit-frame-pointer \
     -mno-red-zone \
 	-O0 \
-	-mcmodel=kernel
+	-mcmodel=kernel \
+	-std=c23
 
 # Internal C preprocessor flags that should not be changed by the user.
 override KCPPFLAGS := \
