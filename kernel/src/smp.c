@@ -1,3 +1,7 @@
+/* TODO: allocate an indexable array of CPU structs for easy accessability
+ * from the other processors, necessary for stuff like load balancing. Might need
+ * a non-slab heap for this, pooling or something. */
+
 #include <smp.h>
 #include <panic.h>
 #include <kernel.h>
