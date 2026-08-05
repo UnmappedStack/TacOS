@@ -56,13 +56,15 @@ uintptr_t pma_palloc(void) {
     if (list_empty(&kernel_info.pmm_nodes))
         kpanic("Out of Memory");
 
-    PMMNode *node = (PMMNode*) kernel_info.pmm_nodes.prev;
+    PMMNode *node = CONTAINER_OF(kernel_info.pmm_nodes.prev, PMMNode, list);
     list_remove(&node->list);
 
-    PMMNode *new_node = (PMMNode*) ((uintptr_t)node + PAGE_BYTES);
-    new_node->size_pages = node->size_pages - 1;
-    if (new_node->size_pages)
-        list_insert(&kernel_info.pmm_nodes, &new_node->list);
+    if (node->size_pages > PAGE_BYTES) {
+        PMMNode *new_node = (PMMNode*) ((uintptr_t)node + PAGE_BYTES);
+        new_node->size_pages = node->size_pages - 1;
+        if (new_node->size_pages)
+            list_insert(&kernel_info.pmm_nodes, &new_node->list);
+    }
     
     return (uintptr_t)node - kernel_info.hhdm;
 }

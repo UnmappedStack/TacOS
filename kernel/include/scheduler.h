@@ -64,3 +64,4 @@ typedef struct {
 void processor_scheduler_init(void);
 void global_scheduler_init(void);
 Thread *thread_select(void);
+void smp_init(void);

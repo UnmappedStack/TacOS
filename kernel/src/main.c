@@ -1,5 +1,6 @@
 #include <serial.h>
 #include <scheduler.h>
+#include <scheduler.h>
 #include <slab.h>
 #include <pit.h>
 #include <paging.h>
@@ -43,6 +44,8 @@ void _start(void) {
     pit_init();
     init_local_apic(kernel_info.lapic_addr);
     init_lapic_timer();
+
+    smp_init();
 
     global_scheduler_init();
     processor_scheduler_init();

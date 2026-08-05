@@ -1,4 +1,5 @@
 #include <scheduler.h>
+#include <limine.h>
 #include <util.h>
 #include <string.h>
 #include <panic.h>
@@ -54,6 +55,10 @@
 
 // GSBase is used to store a pointer to the ProcessorQueue for the current processor
 #define GSBASE 0xC0000101
+
+// TODO: make this more generic to not be limine-specific
+static volatile struct limine_mp_request smp_request = {
+    .id = LIMINE_MP_REQUEST, .revision = 1};
 
 ProcessorQueue *current_processor_queue(void) {
     ProcessorQueue *ret = (ProcessorQueue*) rdmsr(GSBASE);
@@ -228,8 +233,8 @@ void processor_scheduler_init(void) {
     wrmsr(GSBASE, (uint64_t)new_queue);
 
     kprintf("Thread created: %u\n", add_thread_to_current_processor(create_thread(SCHED_TIMESHARE, 10, 0))->priority);
+    kprintf("Thread created: %u\n", add_thread_to_current_processor(create_thread(SCHED_TIMESHARE, 15, 0))->priority);
     kprintf("Thread created: %u\n", add_thread_to_current_processor(create_thread(SCHED_TIMESHARE, 20, 0))->priority);
-    kprintf("Thread created: %u\n", add_thread_to_current_processor(create_thread(SCHED_TIMESHARE, 30, 0))->priority);
 
     kprintf("Processor scheduler init OK\n");
 }
@@ -243,4 +248,13 @@ void global_scheduler_init(void) {
     list_init(&kernel_info.schedulers.processor_queues);
 
     kprintf("Global scheduler init OK\n");
+}
+
+/* starts application processors */
+void smp_init(void) {
+    (void) smp_request;
+//    size_t num_cores = smp_request.response->cpu_count;
+//    for (size_t i = 0; i < num_cores; i++) {
+//        kprintf("Init processor %u\n", i);
+//    }
 }
