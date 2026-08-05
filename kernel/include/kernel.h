@@ -1,4 +1,5 @@
 #pragma once
+#include <slab.h>
 #include <scheduler.h>
 #include <apic.h>
 #include <idt.h>
@@ -31,6 +32,7 @@ typedef struct {
     IDTGate idt[256];
 
     GlobalSchedulerInfo schedulers;
+    Cache *cpu_cache; // for per-cpu information structure allocation
 } KernelInfo;
 
 extern KernelInfo kernel_info;

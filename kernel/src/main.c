@@ -1,4 +1,5 @@
 #include <serial.h>
+#include <smp.h>
 #include <scheduler.h>
 #include <scheduler.h>
 #include <slab.h>

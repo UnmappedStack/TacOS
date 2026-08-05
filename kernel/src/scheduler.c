@@ -1,4 +1,5 @@
 #include <scheduler.h>
+#include <smp.h>
 #include <limine.h>
 #include <util.h>
 #include <string.h>
@@ -53,18 +54,8 @@
  *  [ ] Interactiveness determination;
  */
 
-// GSBase is used to store a pointer to the ProcessorQueue for the current processor
-#define GSBASE 0xC0000101
-
-// TODO: make this more generic to not be limine-specific
-static volatile struct limine_mp_request smp_request = {
-    .id = LIMINE_MP_REQUEST, .revision = 1};
-
 ProcessorQueue *current_processor_queue(void) {
-    ProcessorQueue *ret = (ProcessorQueue*) rdmsr(GSBASE);
-    if (ret == NULL) {
-        kpanic("GSBase not set yet");
-    }
+    ProcessorQueue *ret = current_processor()->scheduler;
     return ret;
 }
 
@@ -214,6 +205,7 @@ Thread *thread_select(void) {
 
 /* Initialises the scheduler on the current processor */
 void processor_scheduler_init(void) {
+    CPU *processor = current_processor();
     ProcessorQueue *new_queue = slab_alloc(kernel_info.schedulers.processor_queue_cache);
     memset(new_queue->calendar_queue, 0, sizeof(CalendarBucket) * NUM_BUCKETS);
     new_queue->current_bucket = 0;
@@ -230,7 +222,8 @@ void processor_scheduler_init(void) {
     new_queue->bucket_bitmap = 0;
 
     list_insert(&kernel_info.schedulers.processor_queues, &new_queue->list);
-    wrmsr(GSBASE, (uint64_t)new_queue);
+
+    processor->scheduler = new_queue;
 
     kprintf("Thread created: %u\n", add_thread_to_current_processor(create_thread(SCHED_TIMESHARE, 10, 0))->priority);
     kprintf("Thread created: %u\n", add_thread_to_current_processor(create_thread(SCHED_TIMESHARE, 15, 0))->priority);
@@ -248,13 +241,4 @@ void global_scheduler_init(void) {
     list_init(&kernel_info.schedulers.processor_queues);
 
     kprintf("Global scheduler init OK\n");
-}
-
-/* starts application processors */
-void smp_init(void) {
-    (void) smp_request;
-//    size_t num_cores = smp_request.response->cpu_count;
-//    for (size_t i = 0; i < num_cores; i++) {
-//        kprintf("Init processor %u\n", i);
-//    }
 }
