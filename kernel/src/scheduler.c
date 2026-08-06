@@ -199,7 +199,6 @@ Thread *thread_select(void) {
     /* this should do a PULL load balance operation but for now we just complain
      * because having a cpu without threads is a waste of a cpu and is inefficient:
      * resources are there to be used! */
-    kprintf("nothing to run :(\n");
     return NULL;
 }
 
@@ -225,9 +224,9 @@ void processor_scheduler_init(void) {
 
     processor->scheduler = new_queue;
 
-    kprintf("Thread created: %u\n", add_thread_to_current_processor(create_thread(SCHED_TIMESHARE, 10, 0))->priority);
-    kprintf("Thread created: %u\n", add_thread_to_current_processor(create_thread(SCHED_TIMESHARE, 15, 0))->priority);
-    kprintf("Thread created: %u\n", add_thread_to_current_processor(create_thread(SCHED_TIMESHARE, 20, 0))->priority);
+    add_thread_to_current_processor(create_thread(SCHED_TIMESHARE, 10, 0));
+    add_thread_to_current_processor(create_thread(SCHED_TIMESHARE, 15, 0));
+    add_thread_to_current_processor(create_thread(SCHED_TIMESHARE, 20, 0));
 
     kprintf("Processor scheduler init OK\n");
 }
@@ -239,6 +238,6 @@ void global_scheduler_init(void) {
     kernel_info.schedulers.tid_upto = 0;
 
     list_init(&kernel_info.schedulers.processor_queues);
-
+    kernel_info.schedulers.ready = true;
     kprintf("Global scheduler init OK\n");
 }

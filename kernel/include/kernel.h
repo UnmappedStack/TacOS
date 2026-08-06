@@ -28,9 +28,7 @@ typedef struct {
     uintptr_t ioapic_addr;
     uint64_t pit_counter; // for lapic timer calibration
 
-    // this will later need to be stored per-cpu
     IDTGate idt[256];
-
     GlobalSchedulerInfo schedulers;
     Cache *cpu_cache; // for per-cpu information structure allocation
 } KernelInfo;

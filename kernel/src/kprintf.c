@@ -1,4 +1,5 @@
 #include <kprintf.h>
+#include <lock.h>
 #include <string.h>
 #include <serial.h>
 #include <stdarg.h>
@@ -16,6 +17,8 @@ void print_string(const char *s) {
 // It supports %c, %s, %x pretty much the same as on posix, except %u is a bit different, as it formats 64 bit unsigned integers instead
 // of unsigned smaller data sizes. It then just writes it to serial output.
 void kprintf(const char *fmt, ...) {
+    static Spinlock lock = {0};
+    spinlock_acquire(&lock);
     va_list args;
     va_start(args, fmt);
     for (; *fmt; fmt++) {
@@ -46,5 +49,6 @@ void kprintf(const char *fmt, ...) {
             default: break;
         }
     }
+    spinlock_release(&lock);
     va_end(args);
 }

@@ -2,6 +2,7 @@
 #include <apic.h>
 #include <kernel.h>
 #include <kprintf.h>
+#include <smp.h>
 
 // interrupts are basically signals that the cpu sends the kernel every time an event happens
 // so that you can stop what you are doing and handle it. The IDT is a table of all the interrupts
@@ -23,13 +24,23 @@ IDTGate idt_descriptor(uint64_t offset, uint16_t segment, uint8_t flags) {
 __attribute__((interrupt))
 void test_isr(void*) {
     Thread *thread = thread_select();
-    kprintf("%u,", thread->tid);
+    CPU *cpu = current_processor();
+    const char *colours[] = {
+        "\e[0;31m", // R
+        "\e[0;32m", // G
+        "\e[0;33m", // Y
+        "\e[0;34m", // B
+        "\e[0;35m", // P
+    };
+    if (thread == NULL)
+        kprintf("!!,"); // nothing to run :(
+    else
+        kprintf("%s%u\e[0m,", colours[cpu->lapic_id], thread->tid);
     end_of_interrupt();
 }
 
-// once there's smp, this will need to be stored per-cpu
-static IDTR idtr;
 void idt_init(void) {
+    IDTR idtr;
     idtr.offset = (uint64_t)kernel_info.idt;
     idtr.size = sizeof(IDTGate)*256-1;
     __asm__ volatile("lidt %0" : : "m"(idtr));

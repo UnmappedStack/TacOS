@@ -8,6 +8,7 @@
 typedef struct {
     uint64_t lapic_id;
     ProcessorQueue *scheduler;
+    uint64_t cr3;
 } CPU;
 
 void smp_init(void);

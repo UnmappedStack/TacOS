@@ -59,6 +59,7 @@ typedef struct {
     Cache *thread_cache;
     struct list processor_queues;
     int tid_upto;
+    bool ready;
 } GlobalSchedulerInfo;
 
 void processor_scheduler_init(void);
