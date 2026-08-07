@@ -2,7 +2,9 @@
  * from the other processors, necessary for stuff like load balancing. Might need
  * a non-slab heap for this, pooling or something. */
 
+#include <pma.h>
 #include <gdt.h>
+#include <mm.h>
 #include <paging.h>
 #include <smp.h>
 #include <panic.h>
@@ -20,8 +22,8 @@ static volatile struct limine_mp_request smp_request = {
 
 /* create a CPU* struct for a local processor and store it in gsbase
  * !! Must be under a lock by caller !! */
-CPU *cpu_info_init(void) {
-    CPU *cpu_info = slab_alloc(kernel_info.cpu_cache);
+CPU *cpu_info_init(uint64_t lapic_id) {
+    CPU *cpu_info = &kernel_info.processors[lapic_id];
     wrmsr(GSBASE, (uint64_t)cpu_info);
     return cpu_info;
 }
@@ -54,7 +56,7 @@ void ap_entry(struct limine_mp_info *this_cpu) {
     DISABLE_INTERRUPTS();
     spinlock_acquire(&init_lock);
     gdt_init();
-    CPU *cpu = cpu_info_init();
+    CPU *cpu = cpu_info_init(this_cpu->lapic_id);
     cpu->lapic_id = this_cpu->lapic_id;
     idt_init();
     cpu->cr3 = create_address_space();
@@ -66,9 +68,12 @@ void ap_entry(struct limine_mp_info *this_cpu) {
 /* starts application processors */
 void smp_init(void) {
     kprintf("Initialising APs...\n");
-    kernel_info.cpu_cache = cache_create(sizeof(CPU));
-    cpu_info_init()->lapic_id = 0; // it needs to also set up the cpu local struct for the bp here
     int num_cores = smp_request.response->cpu_count;
+    /* TODO: this gives one page max, only allowing for PAGE_BYTES/sizeof(CPU) processors max.
+     * Make it expandable once there's a VMA. */
+    if ((size_t)num_cores >= PAGE_BYTES/sizeof(CPU)) kpanic("too many processors (fixme)");
+    kernel_info.processors = (CPU*)pma_valloc();
+    cpu_info_init(0)->lapic_id = 0; // it needs to also set up the cpu local struct for the bp here
     for (int i = 0; i < num_cores; i++) {
         struct limine_mp_info *cpu = smp_request.response->cpus[i];
         if (cpu->lapic_id == 0) continue;

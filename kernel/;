@@ -50,7 +50,7 @@
  *  [X] Thread creation;
  *  [X] Thread selection;
  *  [X] SMP support (hopefully easy from how previous steps were designed);
- *  [X] Load balancing (pull complete, push todo);
+ *  [ ] Load balancing;
  *  [ ] Interactiveness determination;
  */
 
@@ -174,27 +174,27 @@ CalendarBucket *select_bucket_from_calendar(ProcessorQueue *current_queue, int *
  * processor's scheduler queue.
  * The goal of this is to not lock the other scheduler at all.
  * Returns the thread which was pulled, or NULL if none were available. */
-Thread *migrate_pull(ProcessorQueue *current_queue) {
+Thread *migrate_pull(void) {
     ProcessorQueue *steal_from = kernel_info.schedulers.most_loaded_processor;
-    if (steal_from == NULL || steal_from->num_threads == 1 || steal_from == current_queue) return NULL;
-    if (!steal_from->bucket_bitmap) return NULL;
     spinlock_acquire(&steal_from->lock);
+    if (steal_from == NULL) return NULL;
 
     int next_available;
+    if (!steal_from->bucket_bitmap) return NULL;
+    kprintf("PULL, steal from %x\n", steal_from);
 
     CalendarBucket *bucket = select_bucket_from_calendar(steal_from, &next_available);
     struct list *thread_list = bucket->threads.next;
-
     list_remove(thread_list);
     if (list_empty(&bucket->threads)) {
         steal_from->bucket_bitmap &= ~(1ULL << next_available);
         steal_from->current_bucket++;
     }
-    steal_from->num_threads--;
-
     Thread *thread = CONTAINER_OF(thread_list, Thread, bucket_list);
-    spinlock_release(&steal_from->lock);
-    return add_thread_to_current_processor(thread);
+    spinlock_acquire(&steal_from->lock);
+    add_thread_to_current_processor(thread);
+    
+    return NULL;
 }
 
 /* Selects a thread to run for the current processor by:
@@ -244,7 +244,7 @@ Thread *thread_select(void) {
     }
 
     spinlock_release(&current_queue->lock);
-    return migrate_pull(current_queue);
+    return migrate_pull();
 }
 
 /* Initialises the scheduler on the current processor */

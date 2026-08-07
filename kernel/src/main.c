@@ -51,6 +51,10 @@ void _start(void) {
     global_scheduler_init();
     processor_scheduler_init();
 
+    add_thread_to_current_processor(create_thread(SCHED_TIMESHARE, 10, 0));
+    add_thread_to_current_processor(create_thread(SCHED_TIMESHARE, 15, 0));
+    add_thread_to_current_processor(create_thread(SCHED_TIMESHARE, 20, 0));
+
     unlock_lapic_timer();
     ENABLE_INTERRUPTS();
     for (;;);

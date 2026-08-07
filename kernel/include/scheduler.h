@@ -1,4 +1,5 @@
 #pragma once
+#include <lock.h>
 #include <slab.h>
 #include <list.h>
 #include <stdint.h>
@@ -51,6 +52,9 @@ typedef struct {
 
     int least_nice_thread;
     int nicest_thread;
+    int num_threads;
+    
+    Spinlock lock; // should only be locked for load balancing, *not* thread selection
 } ProcessorQueue;
 static_assert(NUM_BUCKETS <= 64, "bitmap too small for number of threads");
 
@@ -60,9 +64,14 @@ typedef struct {
     struct list processor_queues;
     int tid_upto;
     bool ready;
+    ProcessorQueue *most_loaded_processor; /* TODO: This is currently based on which
+                                            * has the most threads. It should change to whichever has
+                                            * the most ticks in a sliding window at some point (TM). */
 } GlobalSchedulerInfo;
 
 void processor_scheduler_init(void);
 void global_scheduler_init(void);
 Thread *thread_select(void);
 void smp_init(void);
+Thread *add_thread_to_current_processor(Thread *thread);
+Thread *create_thread(SchedClass sched_class, int nice, uint8_t flags);
