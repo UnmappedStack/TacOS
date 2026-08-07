@@ -31,6 +31,11 @@ void write_ioapic(void *ioapic_addr, uint32_t reg, uint32_t value) {
     ioapic[4] = value;
 }
 
+void send_ipi(uintptr_t lapic_addr, uint8_t vector, uint32_t flags) {
+    write_lapic(lapic_addr, LAPIC_INTERRUPT_COMMAND_REGISTER + 0x8, current_processor()->lapic_id << 24);
+    write_lapic(lapic_addr, LAPIC_INTERRUPT_COMMAND_REGISTER, vector | flags);
+}
+
 void map_ioapic(uint8_t vec, uint32_t irq, uint32_t lapic_id, bool polarity,
                 bool trigger) {
     kprintf("Global system interrupt base: %u\n",
@@ -196,6 +201,7 @@ void apic_init(void) {
         entry = (MADTEntryHeader *)(((uint64_t)entry) + entry->record_length);
         incremented += entry->record_length;
     }
+
     init_local_apic(lapic_registers_virt);
     kprintf("APIC init OK\n");
 }

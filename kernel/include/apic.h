@@ -12,6 +12,7 @@
 #define LAPIC_TASK_PRIORITY_REGISTER 0x080
 #define LAPIC_END_OF_INTERRUPT_REGISTER 0x0b0
 #define LAPIC_TIMER_DIVIDER_REGISTER 0x3e0
+#define LAPIC_INTERRUPT_COMMAND_REGISTER 0x300
 #define LAPIC_TIMER_INITIAL_COUNT_REGISTER 0x380
 #define LAPIC_TIMER_CURRENT_COUNT_REGISTER 0x390
 #define LAPIC_TIMER_LVT_REGISTER 0x320
@@ -21,6 +22,24 @@
 #define POLARITY_LOW 1
 #define TRIGGER_LEVEL 1
 #define TRIGGER_EDGE 0
+
+
+#define IPI_DELIVERY_FIXED                  0b000 << 8
+#define IPI_DELIVERY_LOWEST                 0b001 << 8
+#define IPI_DELIVERY_SMI                    0b010 << 8
+#define IPI_DELIVERY_NMI                    0b100 << 8
+#define IPI_DELIVERY_INIT                   0b101 << 8
+#define IPI_DELIVERY_STARTUP                0b110 << 8
+#define IPI_DESTINATION_PHYSICAL            0b0   << 11
+#define IPI_DESTINATION_LOGICAL             0b1   << 11
+#define IPI_LEVEL_DEASSERT                  0b0   << 14
+#define IPI_LEVEL_ASSERT                    0b1   << 14
+#define IPI_TRIGGER_EDGE                    0b0   << 15
+#define IPI_TRIGGER_LEVEL                   0b1   << 15
+#define IPI_DEST_SHORTHAND_NONE             0b00  << 18
+#define IPI_DEST_SHORTHAND_SELF             0b01  << 18
+#define IPI_DEST_SHORTHAND_ALL_EXCEPT_SELF  0b10  << 18
+#define IPI_DEST_SHORTHAND_ALL_INCLUDE_SELF 0b11  << 18
 
 // define MADT table entry types
 typedef struct {
@@ -99,3 +118,4 @@ void lock_lapic_timer(void);
 void unlock_lapic_timer(void);
 uint64_t get_current_processor(void);
 void write_lapic(uintptr_t lapic_addr, uint64_t reg_offset, uint32_t val);
+void send_ipi(uintptr_t lapic_addr, uint8_t vector, uint32_t flags);

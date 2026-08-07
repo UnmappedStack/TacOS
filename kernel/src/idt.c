@@ -1,4 +1,5 @@
 #include <idt.h>
+#include <util.h>
 #include <apic.h>
 #include <kernel.h>
 #include <kprintf.h>
@@ -32,11 +33,15 @@ void test_isr(void*) {
         "\e[0;34m", // B
         "\e[0;35m", // P
     };
-    if (thread == NULL)
-        kprintf("!!,"); // nothing to run :(
-    else
+    if (thread != NULL)
         kprintf("%s%u\e[0m,", colours[cpu->lapic_id], thread->tid);
     end_of_interrupt();
+}
+
+__attribute__((interrupt))
+void halt_isr(void*) {
+    kprintf("Halt CPU%u\n", current_processor()->lapic_id);
+    FREEZE_DEVICE();
 }
 
 void idt_init(void) {
@@ -47,6 +52,9 @@ void idt_init(void) {
 
     // lapic timer interrupt
     kernel_info.idt[40] = idt_descriptor((uint64_t) test_isr, 8, 0x8E);
+    
+    // halt interrupt
+    kernel_info.idt[41] = idt_descriptor((uint64_t) halt_isr, 8, 0x8E);
 
     kprintf("IDT init OK\n");
 }

@@ -1,4 +1,8 @@
 #include <kprintf.h>
+#include <apic.h>
+#include <kernel.h>
+#include <smp.h>
+#include <lock.h>
 #include <util.h>
 #include <stdint.h>
 #include <assets.h>
@@ -64,22 +68,25 @@ static char *exceptions[] = {
 
 // if msg is null then it'll use whatever it finds from frame->type (mostly for exceptions),
 // but if its set then it'll use it as the error message (for manual calls)
-static bool in_panic = false;
+Spinlock panic_lock = {0};
 void panic_handler(const char *msg, IDTEFrame frame) {
     DISABLE_INTERRUPTS();
-    if (in_panic) {
-        print_string("[0m\n(nested panic attempted)\n");
-        FREEZE_DEVICE();
-    }
-    in_panic = true;
+    spinlock_acquire(&panic_lock); // never released
+
+    // stop all other processors
+    send_ipi(kernel_info.lapic_addr, 41, IPI_DELIVERY_FIXED |
+                                         IPI_DESTINATION_PHYSICAL |
+                                         IPI_LEVEL_DEASSERT |
+                                         IPI_TRIGGER_EDGE |
+                                         IPI_DEST_SHORTHAND_ALL_EXCEPT_SELF);
     uint64_t cr3;
     __asm__ volatile("movq %%cr3, %0" : "=r"(cr3));
     int i = 0;
-#define ASCII_ART_LINE() print_string(ascii_art[i++]);
+#define ASCII_ART_LINE() kprintf(ascii_art[i++]);
 #define ASCII_ART_NEWLINE() \
     do { \
         ASCII_ART_LINE(); \
-        print_string("\n"); \
+        kprintf("\n"); \
     } while (0)
     const char *error_type;
     if (msg != NULL)
@@ -92,7 +99,7 @@ void panic_handler(const char *msg, IDTEFrame frame) {
     ASCII_ART_LINE(); kprintf(" This is ALL your fault. I take ZERO responsibility!\n");
     ASCII_ART_NEWLINE();
     ASCII_ART_LINE(); kprintf(" Exception type: %s in ring %u\n", error_type, frame.ss & 0b11);
-    ASCII_ART_LINE(); kprintf(" SS: %u, CS: %u\n", frame.ss, frame.cs);
+    ASCII_ART_LINE(); kprintf(" SS: %u, CS: %u, CPU%u\n", frame.ss, frame.cs, current_processor()->lapic_id);
     ASCII_ART_LINE(); kprintf(" Error code: %x\n", frame.code);
     ASCII_ART_NEWLINE();
     ASCII_ART_LINE(); kprintf(" Register dump:\n");

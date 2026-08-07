@@ -47,7 +47,6 @@ void _start(void) {
     init_lapic_timer();
 
     smp_init();
-
     global_scheduler_init();
     processor_scheduler_init();
 
