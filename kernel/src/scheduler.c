@@ -184,6 +184,15 @@ Thread *migrate_pull(ProcessorQueue *current_queue) {
 
     CalendarBucket *bucket = select_bucket_from_calendar(steal_from, &next_available);
     struct list *thread_list = bucket->threads.next;
+    Thread *thread = CONTAINER_OF(thread_list, Thread, bucket_list);
+    if (thread->flags & THREAD_FLAG_AFFINITIVE) {
+        /* We need to respect processor affinity. The reason I decided to
+         * return NULL if the first thread found instead of looking for the first
+         * non-affinitive one is to reduce lock time and be quick, we'll just check again
+         * on the next migration. */
+        spinlock_release(&steal_from->lock);
+        return NULL;
+    }
 
     list_remove(thread_list);
     if (list_empty(&bucket->threads)) {
@@ -192,7 +201,6 @@ Thread *migrate_pull(ProcessorQueue *current_queue) {
     }
     steal_from->num_threads--;
 
-    Thread *thread = CONTAINER_OF(thread_list, Thread, bucket_list);
     spinlock_release(&steal_from->lock);
     return add_thread_to_current_processor(thread);
 }
