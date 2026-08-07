@@ -50,7 +50,7 @@
  *  [X] Thread creation;
  *  [X] Thread selection;
  *  [X] SMP support (hopefully easy from how previous steps were designed);
- *  [X] Load balancing (pull complete, push todo);
+ *  [X] Load balancing;
  *  [ ] Interactiveness determination;
  */
 

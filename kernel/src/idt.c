@@ -22,7 +22,6 @@ IDTGate idt_descriptor(uint64_t offset, uint16_t segment, uint8_t flags) {
     return ret;
 }
 
-// TODO: every 50 ticks (twice a second) do a push migration
 __attribute__((interrupt))
 void test_isr(void*) {
     CPU *cpu = current_processor();
