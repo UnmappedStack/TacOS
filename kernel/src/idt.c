@@ -22,10 +22,18 @@ IDTGate idt_descriptor(uint64_t offset, uint16_t segment, uint8_t flags) {
     return ret;
 }
 
+// TODO: every 50 ticks (twice a second) do a push migration
 __attribute__((interrupt))
 void test_isr(void*) {
-    Thread *thread = thread_select();
     CPU *cpu = current_processor();
+    if (kernel_info.schedulers.least_loaded_processor == NULL ||
+            cpu->scheduler->num_threads < kernel_info.schedulers.least_loaded_processor->num_threads)
+        kernel_info.schedulers.least_loaded_processor = cpu->scheduler;
+    cpu->scheduler->total_ticks++;
+    Thread *thread;
+    if (cpu->scheduler->total_ticks % 50 == 0)
+        thread = migrate_push();
+    else thread = thread_select();
     const char *colours[] = {
         "\e[0;31m", // R
         "\e[0;32m", // G

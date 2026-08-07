@@ -92,13 +92,8 @@ void recalculate_queue_priorities(ProcessorQueue *queue) {
     }
 }
 
-/* we just add it to the current queue instead of looking for the least
- * loaded queue or whatever. TODO: add it to the least loaded queue instead.
- *
- * !! This requires the thread to already be set up with nice etc, but it calculates initial priority itself !! */
-Thread *add_thread_to_current_processor(Thread *thread) {
-    ProcessorQueue *queue = current_processor_queue();
-   
+/* !! This requires the thread to already be set up with nice etc, but it calculates initial priority itself !! */
+Thread *add_thread_to_processor(Thread *thread, ProcessorQueue *queue) {
     spinlock_acquire(&queue->lock);
     if (thread->nice < queue->least_nice_thread || queue->least_nice_thread < 0)
         queue->least_nice_thread = thread->nice;
@@ -132,12 +127,13 @@ Thread *add_thread_to_current_processor(Thread *thread) {
     if (kernel_info.schedulers.most_loaded_processor == NULL ||
             queue->num_threads > kernel_info.schedulers.most_loaded_processor->num_threads)
         kernel_info.schedulers.most_loaded_processor = queue;
-    if (kernel_info.schedulers.least_loaded_processor == NULL ||
-            queue->num_threads < kernel_info.schedulers.least_loaded_processor->num_threads)
-        kernel_info.schedulers.least_loaded_processor = queue;
 
     spinlock_release(&queue->lock);
     return thread;
+}
+
+Thread *add_thread_to_current_processor(Thread *thread) {
+    return add_thread_to_processor(thread, current_processor_queue());
 }
 
 Thread *create_thread(SchedClass sched_class, int nice, uint8_t flags) {
@@ -172,14 +168,10 @@ CalendarBucket *select_bucket_from_calendar(ProcessorQueue *current_queue, int *
     return bucket;
 }
 
-/* PULL migration of the load balancer, run when the current processor's
- * scheduler queue has no threads. Steals one thread from the most loaded
- * processor's scheduler queue.
- * The goal of this is to not lock the other scheduler at all.
- * Returns the thread which was pulled, or NULL if none were available. */
-Thread *migrate_pull(ProcessorQueue *current_queue) {
-    ProcessorQueue *steal_from = kernel_info.schedulers.most_loaded_processor;
-    if (steal_from == NULL || steal_from->num_threads == 1 || steal_from == current_queue) return NULL;
+/* Tries to move a thread from one queue to another.
+ * If it doesn't, it'll return null, otherwise it'll return the thread moved. */
+Thread *move_thread_between_queues(ProcessorQueue *steal_from, ProcessorQueue *give_to) {
+    if (steal_from->num_threads == 1 || steal_from->num_threads == give_to->num_threads) return NULL;
     if (!steal_from->bucket_bitmap) return NULL;
     spinlock_acquire(&steal_from->lock);
 
@@ -205,7 +197,28 @@ Thread *migrate_pull(ProcessorQueue *current_queue) {
     steal_from->num_threads--;
 
     spinlock_release(&steal_from->lock);
-    return add_thread_to_current_processor(thread);
+    return add_thread_to_processor(thread, give_to);
+}
+
+/* PULL migration of the load balancer, run when the current processor's
+ * scheduler queue has no threads. Steals one thread from the most loaded
+ * processor's scheduler queue.
+ * The goal of this is to not lock the other scheduler at all.
+ * Returns the thread which was pulled, or NULL if none were available. */
+Thread *migrate_pull(ProcessorQueue *current_queue) {
+    ProcessorQueue *steal_from = kernel_info.schedulers.most_loaded_processor;
+    if (steal_from == NULL) return NULL;
+    return move_thread_between_queues(steal_from, current_queue);
+}
+
+/* PUSH migration of the load balancer, run at a regular interval. Steals one thread
+ * from the most loaded processor and gives it to the least loaded processor */
+Thread *migrate_push(void) {
+    ProcessorQueue *steal_from = kernel_info.schedulers.most_loaded_processor;
+    ProcessorQueue *give_to    = kernel_info.schedulers.least_loaded_processor;
+    if (steal_from == NULL || give_to == NULL) return NULL;
+    Thread *ret = move_thread_between_queues(steal_from, give_to);
+    return ret;
 }
 
 /* Selects a thread to run for the current processor by:
@@ -213,9 +226,7 @@ Thread *migrate_pull(ProcessorQueue *current_queue) {
  *          - if there is, reinsert it later in the queue and run it.
  *  (2) if there's nothing in the calendar queue, look for something in
  *      the idle queue to run
- *  (3) if there's nothing to run, do a PULL load balance operation (TODO,
- *      right now we just complain that the cpu is being used inefficiently)
- */
+ *  (3) if there's nothing to run, do a PULL load balance operation */
 Thread *thread_select(void) {
     ProcessorQueue *current_queue = current_processor_queue();
     spinlock_acquire(&current_queue->lock);
@@ -267,6 +278,7 @@ void processor_scheduler_init(void) {
     new_queue->least_nice_thread = -1;
     new_queue->nicest_thread = -1;
     new_queue->num_threads = 0;
+    new_queue->total_ticks = 0;
 
     list_init(&new_queue->realtime_threads);
     list_init(&new_queue->interactive_timeshare_threads);

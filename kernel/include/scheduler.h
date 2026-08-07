@@ -53,7 +53,8 @@ typedef struct {
     int least_nice_thread;
     int nicest_thread;
     int num_threads;
-    
+
+    uint64_t total_ticks;
     Spinlock lock; // should only be locked for load balancing, *not* thread selection
 } ProcessorQueue;
 static_assert(NUM_BUCKETS <= 64, "bitmap too small for number of threads");
@@ -76,3 +77,5 @@ Thread *thread_select(void);
 void smp_init(void);
 Thread *add_thread_to_current_processor(Thread *thread);
 Thread *create_thread(SchedClass sched_class, int nice, uint8_t flags);
+Thread *migrate_push(void); // only push must be exposed in the header, as pull is called
+                            // within the scheduler only
