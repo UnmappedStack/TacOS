@@ -132,6 +132,9 @@ Thread *add_thread_to_current_processor(Thread *thread) {
     if (kernel_info.schedulers.most_loaded_processor == NULL ||
             queue->num_threads > kernel_info.schedulers.most_loaded_processor->num_threads)
         kernel_info.schedulers.most_loaded_processor = queue;
+    if (kernel_info.schedulers.least_loaded_processor == NULL ||
+            queue->num_threads < kernel_info.schedulers.least_loaded_processor->num_threads)
+        kernel_info.schedulers.least_loaded_processor = queue;
 
     spinlock_release(&queue->lock);
     return thread;

@@ -64,9 +64,10 @@ typedef struct {
     struct list processor_queues;
     int tid_upto;
     bool ready;
-    ProcessorQueue *most_loaded_processor; /* TODO: This is currently based on which
-                                            * has the most threads. It should change to whichever has
-                                            * the most ticks in a sliding window at some point (TM). */
+    ProcessorQueue *least_loaded_processor;
+    ProcessorQueue  *most_loaded_processor; /* TODO: This is currently based on which
+                                             * has the most threads. It should change to whichever has
+                                             * the most ticks in a sliding window at some point (TM). */
 } GlobalSchedulerInfo;
 
 void processor_scheduler_init(void);
