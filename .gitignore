@@ -3,3 +3,4 @@
 /iso_root
 /limine-binary
 /kernel/obj
+*;*
