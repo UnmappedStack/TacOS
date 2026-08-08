@@ -8,8 +8,7 @@
 #include <panic.h>
 #include <framebuffer.h>
 #include <util.h>
-#include <gdt.h>
-#include <idt.h>
+#include <isa/cpu.h>
 #include <msr.h>
 #include <pma.h>
 #include <kprintf.h>

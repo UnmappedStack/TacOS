@@ -3,7 +3,7 @@
  * a non-slab heap for this, pooling or something. */
 
 #include <pma.h>
-#include <gdt.h>
+#include <isa/cpu.h>
 #include <mm.h>
 #include <paging.h>
 #include <smp.h>

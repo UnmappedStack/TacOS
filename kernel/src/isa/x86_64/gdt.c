@@ -1,4 +1,4 @@
-#include <gdt.h>
+#include <isa/x86_64/gdt.h>
 #include <kprintf.h>
 
 // if one thing mattered least to learn about osdev, it'd be the gdt. the gdt is basically just defining "segments"

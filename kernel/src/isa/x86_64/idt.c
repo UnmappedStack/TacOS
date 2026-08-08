@@ -1,4 +1,4 @@
-#include <idt.h>
+#include <isa/x86_64/idt.h>
 #include <util.h>
 #include <apic.h>
 #include <kernel.h>

@@ -3,10 +3,10 @@
 #include <slab.h>
 #include <scheduler.h>
 #include <apic.h>
-#include <idt.h>
 #include <acpi.h>
 #include <list.h>
 #include <framebuffer.h>
+#include <isa/cpu.h>
 
 // shared kernel struct for everything global.
 // this will probably also contain locking information later when there's smp etc
