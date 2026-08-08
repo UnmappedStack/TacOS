@@ -9,7 +9,6 @@
 #include <framebuffer.h>
 #include <util.h>
 #include <isa/cpu.h>
-#include <msr.h>
 #include <pma.h>
 #include <kprintf.h>
 #include <kernel.h>

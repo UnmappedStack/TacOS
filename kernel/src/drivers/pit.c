@@ -1,7 +1,6 @@
 // pretty much the pit's sole purpose is to calibrate the lapic timer
 
 #include <isa/cpu.h>
-#include <io.h>
 #include <kernel.h>
 #include <pit.h>
 #include <kprintf.h>

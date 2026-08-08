@@ -1,5 +1,5 @@
 #pragma once
-#include <io.h>
+#include <isa/cpu.h>
 #define COM1 0x3f8
 
 void serial_init(void);

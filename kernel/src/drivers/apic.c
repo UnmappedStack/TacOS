@@ -3,7 +3,7 @@
 #include <pit.h>
 #include <panic.h>
 #include <paging.h>
-#include <io.h>
+#include <isa/cpu.h>
 #include <kernel.h>
 #include <kprintf.h>
 

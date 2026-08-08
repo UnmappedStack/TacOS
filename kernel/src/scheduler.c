@@ -5,7 +5,7 @@
 #include <string.h>
 #include <panic.h>
 #include <kernel.h>
-#include <msr.h>
+#include <isa/cpu.h>
 #include <kprintf.h>
 
 /* A BRIEF OVERVIEW OF THE SCHEDULER */

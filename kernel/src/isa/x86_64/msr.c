@@ -1,16 +1,14 @@
 #include <stdbool.h>
 #include <stdint.h>
-#include <msr.h>
+#include <isa/x86_64/msr.h>
 
 CPUIDResult cpuid(uint32_t leaf, uint32_t subleaf) {
     CPUIDResult r;
-
     __asm__ volatile (
         "cpuid"
         : "=a"(r.eax), "=b"(r.ebx), "=c"(r.ecx), "=d"(r.edx)
         : "a"(leaf), "c"(subleaf)
     );
-
     return r;
 }
 

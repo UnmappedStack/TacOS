@@ -9,7 +9,6 @@
 #include <smp.h>
 #include <panic.h>
 #include <kernel.h>
-#include <msr.h>
 #include <util.h>
 #include <lock.h>
 #include <limine.h>
