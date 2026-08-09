@@ -1,4 +1,5 @@
 #include <stdbool.h>
+#include <panic.h>
 #include <stdint.h>
 #include <isa/x86_64/msr.h>
 
@@ -40,4 +41,17 @@ void wrmsr(uint32_t msr, uint64_t value) {
         : "c"(msr), "a"(lo), "d"(hi)
         : "memory"
     );
+}
+
+/* accesses through gsbase for x86_64 */
+CPU *get_current_cpu_info(void) {
+    CPU *ret = (CPU*) rdmsr(GSBASE);
+    if (ret == NULL) {
+        kpanic("GSBase not set yet");
+    }
+    return ret;
+}
+
+void set_current_cpu_info(CPU *cpu_info) {
+    wrmsr(GSBASE, (uint64_t)cpu_info);
 }

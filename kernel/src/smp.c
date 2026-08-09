@@ -23,7 +23,7 @@ static volatile struct limine_mp_request smp_request = {
  * !! Must be under a lock by caller !! */
 CPU *cpu_info_init(uint64_t lapic_id) {
     CPU *cpu_info = &kernel_info.processors[lapic_id];
-    wrmsr(GSBASE, (uint64_t)cpu_info);
+    set_current_cpu_info(cpu_info);
     return cpu_info;
 }
 
@@ -83,9 +83,5 @@ void smp_init(void) {
 }
 
 CPU *current_processor(void) {
-    CPU *ret = (CPU*) rdmsr(GSBASE);
-    if (ret == NULL) {
-        kpanic("GSBase not set yet");
-    }
-    return ret;
+    return get_current_cpu_info();
 }
