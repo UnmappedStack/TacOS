@@ -2,27 +2,32 @@
 #include <mm.h>
 
 void *memcpy(void *dest, const void *src, size_t n) {
-    // it is actually faster to manually loop if its a relatively small memory buffer...
-    if (n < PAGE_BYTES * 2) {
-        for (size_t i = 0; i < n; i++) {
-            ((uint8_t*)dest)[i] = ((uint8_t*)src)[i];
-        }
+    // rep movsb is faster for large buffers if its x86...
+#if defined(__x86_64__)
+    if (n >= PAGE_BYTES * 2) {
+        __asm__ volatile("rep movsb"
+                         : "=D"(dest), "=S"(src), "=c"(n)
+                         : "D"(dest), "S"(src), "c"(n)
+                         : "memory");
         return dest;
     }
-    // ...but rep movsb is faster for large buffers.
-    __asm__ volatile("rep movsb"
-                     : "=D"(dest), "=S"(src), "=c"(n)
-                     : "D"(dest), "S"(src), "c"(n)
-                     : "memory");
+#endif
+    // ...but it is actually faster to manually loop if its a relatively small memory buffer
+    for (size_t i = 0; i < n; i++) {
+        ((uint8_t*)dest)[i] = ((uint8_t*)src)[i];
+    }
     return dest;
 }
 
 void *memset(void *dest, int ch, size_t n) {
-    if (n < PAGE_BYTES * 2) {
-        for (size_t i = 0; i < n; i++)
-            ((uint8_t*)dest)[i] = ch;
+#if defined(__x86_64__)
+    if (n >= PAGE_BYTES * 2) {
+        __asm__ volatile("rep stosb" : "+D"(dest), "+c"(n) : "a"(ch) : "memory");
+        return dest;
     }
-    __asm__ volatile("rep stosb" : "+D"(dest), "+c"(n) : "a"(ch) : "memory");
+#endif
+    for (size_t i = 0; i < n; i++)
+        ((uint8_t*)dest)[i] = ch;
     return dest;
 }
 
