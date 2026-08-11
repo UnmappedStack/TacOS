@@ -1,6 +1,6 @@
 #include <kernel.h>
 #include <limine.h>
-#include <acpi.h>
+#include <isa/x86_64/acpi.h>
 #include <string.h>
 #include <paging.h>
 #include <kprintf.h>

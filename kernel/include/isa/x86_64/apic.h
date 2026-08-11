@@ -1,5 +1,5 @@
 #pragma once
-#include <acpi.h>
+#include <isa/x86_64/acpi.h>
 #include <stdbool.h>
 #include <stdint.h>
 

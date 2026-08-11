@@ -1,4 +1,4 @@
-#include <apic.h>
+#include <isa/x86_64/apic.h>
 #include <util.h>
 #include <pit.h>
 #include <panic.h>

@@ -5,7 +5,7 @@
  * do it this way lol. */
 
 #include <kprintf.h>
-#include <apic.h>
+#include <isa/cpu.h>
 #include <kernel.h>
 #include <smp.h>
 #include <lock.h>

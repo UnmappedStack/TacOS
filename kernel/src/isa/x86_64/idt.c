@@ -1,6 +1,5 @@
-#include <isa/x86_64/idt.h>
+#include <isa/cpu.h>
 #include <util.h>
-#include <apic.h>
 #include <kernel.h>
 #include <kprintf.h>
 #include <smp.h>

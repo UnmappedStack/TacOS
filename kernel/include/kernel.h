@@ -2,8 +2,6 @@
 #include <smp.h>
 #include <slab.h>
 #include <scheduler.h>
-#include <apic.h>
-#include <acpi.h>
 #include <list.h>
 #include <framebuffer.h>
 #include <isa/cpu.h>
