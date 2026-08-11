@@ -32,6 +32,8 @@ typedef struct {
     IDTGate idt[256];
     GlobalSchedulerInfo schedulers;
     CPU *processors;
+
+    bool smp_enabled; // if not then we shouldn't send out IPIs on panic
 } KernelInfo;
 
 extern KernelInfo kernel_info;

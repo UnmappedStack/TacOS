@@ -79,6 +79,8 @@ void smp_init(void) {
         cpu->goto_address = ap_entry;
     }
     while (num_aps_initialised < num_cores - 1) IO_WAIT();
+
+    kernel_info.smp_enabled = true;
     kprintf("All application processors initialised.\n");
 }
 

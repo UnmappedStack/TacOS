@@ -1,3 +1,9 @@
+/* This probably has more ISA-checking macros littered throughout than I'd like.
+ * I'm not going to mark it as to-do however simply because it has not caused any
+ * real issues besides slightly non-satisfying code. You can probably find a bunch of
+ * old messages of me wondering on Discord how to do this better then just deciding to
+ * do it this way lol. */
+
 #include <kprintf.h>
 #include <apic.h>
 #include <kernel.h>
@@ -8,6 +14,7 @@
 #include <assets.h>
 #include <stddef.h>
 
+#if defined(__x86_64__)
 typedef struct {
     uint64_t cr2;
     uint64_t r15;
@@ -33,6 +40,9 @@ typedef struct {
     uint64_t rsp;
     uint64_t ss;
 } IDTEFrame;
+#else
+#error "define error frame for new ISA"
+#endif
 
 struct stack_frame {
     struct stack_frame *rbp;
@@ -66,19 +76,23 @@ static char *exceptions[] = {
     [30] = "Security Exception",
 };
 
-// if msg is null then it'll use whatever it finds from frame->type (mostly for exceptions),
-// but if its set then it'll use it as the error message (for manual calls)
+/* if msg is null then it'll use whatever it finds from frame->type (mostly for exceptions),
+   but if its set then it'll use it as the error message (for manual calls) */
 Spinlock panic_lock = {0};
 void panic_handler(const char *msg, IDTEFrame frame) {
     DISABLE_INTERRUPTS();
+    kprintf("\n === KERNEL PANIC ENTERED === \n\n");
     spinlock_acquire(&panic_lock); // never released
 
-    // stop all other processors
+    if (!kernel_info.smp_enabled) goto skip_ipis;
+    // stop all other processors (41 is defined as a halt interrupt)
     send_ipi(kernel_info.lapic_addr, 41, IPI_DELIVERY_FIXED |
                                          IPI_DESTINATION_PHYSICAL |
                                          IPI_LEVEL_DEASSERT |
                                          IPI_TRIGGER_EDGE |
                                          IPI_DEST_SHORTHAND_ALL_EXCEPT_SELF);
+
+skip_ipis:
     uint64_t cr3;
     __asm__ volatile("movq %%cr3, %0" : "=r"(cr3));
     int i = 0;
@@ -98,8 +112,10 @@ void panic_handler(const char *msg, IDTEFrame frame) {
     ASCII_ART_LINE(); kprintf(" WOAH! You messed this all up!\n");
     ASCII_ART_LINE(); kprintf(" This is ALL your fault. I take ZERO responsibility!\n");
     ASCII_ART_NEWLINE();
+    int current_cpu = (kernel_info.smp_enabled) ? current_processor()->lapic_id : 0;
+#if defined(__x86_64__)
     ASCII_ART_LINE(); kprintf(" Exception type: %s in ring %u\n", error_type, frame.ss & 0b11);
-    ASCII_ART_LINE(); kprintf(" SS: %u, CS: %u, CPU%u\n", frame.ss, frame.cs, current_processor()->lapic_id);
+    ASCII_ART_LINE(); kprintf(" SS: %u, CS: %u, CPU%u\n", frame.ss, frame.cs, current_cpu);
     ASCII_ART_LINE(); kprintf(" Error code: %x\n", frame.code);
     ASCII_ART_NEWLINE();
     ASCII_ART_LINE(); kprintf(" Register dump:\n");
@@ -109,9 +125,6 @@ void panic_handler(const char *msg, IDTEFrame frame) {
     ASCII_ART_LINE(); kprintf("   R8: %x,  R9: %x\n",  frame.r8, frame.r9);
     ASCII_ART_LINE(); kprintf("  RBP: %x, RSP: %x\n", frame.rbp, frame.rsp);
     ASCII_ART_LINE(); kprintf("  CR2: %x, CR3: %x\n", frame.cr2, cr3);
-    if (msg != NULL) {
-        ASCII_ART_LINE(); kprintf(" (Manually induced panic so registers may be null)\n");
-    }
     ASCII_ART_NEWLINE();
     ASCII_ART_LINE(); kprintf(" Stack Trace (Most recent call last): \n");
     ASCII_ART_LINE(); kprintf("  -> %x\n", frame.rip);
@@ -124,6 +137,11 @@ void panic_handler(const char *msg, IDTEFrame frame) {
         }
         stack = stack->rbp;
     }
+#endif
+    ASCII_ART_NEWLINE();
+    if (msg != NULL) {
+        ASCII_ART_LINE(); kprintf(" (Manually induced panic so registers may be null)\n");
+    }
     while(i < (int)(sizeof(ascii_art)/sizeof(ascii_art[0]))) ASCII_ART_NEWLINE();
     FREEZE_DEVICE();
 }
@@ -134,9 +152,11 @@ void kpanic(const char *msg) {
     // we don't care about any of the frame data since this is a panic, not an exception...
     // *except* rbp+rip (for a stack trace) and cs+ss
     IDTEFrame frame = {0};
+#if defined(x86_64)
     __asm__ volatile("movq %%rbp, %0" : "=r"(frame.rbp));
     __asm__ volatile("movq %%rbp, %0" : "=r"(frame.rip));
     __asm__ volatile("movq %%cs, %0" : "=r"(frame.cs));
     __asm__ volatile("movq %%ss, %0" : "=r"(frame.ss));
+#endif
     panic_handler(msg, frame);
 }
