@@ -11,7 +11,8 @@ echo "[BOOTLOADER] Building bootloader"
 make -C limine-binary >/dev/null
 
 echo "[KERNEL] Building kernel"
-make -C kernel
+cc kernel/nob.c -o kernel/nob
+./kernel/nob --arch x86_64
 
 echo "[IMAGE] Setting up sysroot"
 mkdir -p iso_root

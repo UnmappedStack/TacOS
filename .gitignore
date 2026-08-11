@@ -4,3 +4,7 @@
 /limine-binary
 /kernel/obj
 *;*
+/nob
+/kernel/nob
+/nob.old
+/kernel/nob.old
