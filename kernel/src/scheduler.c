@@ -147,6 +147,10 @@ Thread *create_thread(SchedClass sched_class, int nice, uint8_t flags) {
     return thread;
 }
 
+int count_leading_zeroes(uint64_t x) {
+    return __builtin_ctzll(x);
+}
+
 /* Assumes there is something in the calendar queue, caller is responsible for
  * if there is not. Caller is also responsible for locking the queue.
  * Selects the next bucket which a thread should be taken from in a processor's
@@ -155,13 +159,11 @@ CalendarBucket *select_bucket_from_calendar(ProcessorQueue *current_queue, int *
     // first check remaining ones for this year
     int next_available;
     if (current_queue->bucket_bitmap >> current_queue->current_bucket) {
-        // see https://gcc.gnu.org/onlinedocs/gcc/Bit-Operation-Builtins.html for __builtin_clzll()
-        // (it basically just does the bsf instruction)
-        next_available = __builtin_ctzll(current_queue->bucket_bitmap >> current_queue->current_bucket)
+        next_available = count_leading_zeroes(current_queue->bucket_bitmap >> current_queue->current_bucket)
                                     + current_queue->current_bucket;
     } else {
         // we need to check for the next 'year'
-        next_available = __builtin_ctzll(current_queue->bucket_bitmap);
+        next_available = count_leading_zeroes(current_queue->bucket_bitmap);
     }
     CalendarBucket *bucket = &current_queue->calendar_queue[next_available];
     *next_available_buf = next_available;
