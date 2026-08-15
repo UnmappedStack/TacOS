@@ -1,4 +1,5 @@
-# TODO: This should probably be a makefile
+# TODO: This should probably be a makefile or nob or something idk
+# We assume that arg 1 is the architecture.
 
 set -e
 
@@ -11,8 +12,10 @@ echo "[BOOTLOADER] Building bootloader"
 make -C limine-binary >/dev/null
 
 echo "[KERNEL] Building kernel"
-cc kernel/nob.c -o kernel/nob
-./kernel/nob --arch x86_64
+cd kernel
+cc nob.c -o nob
+./nob --arch $1
+cd ..
 
 echo "[IMAGE] Setting up sysroot"
 mkdir -p iso_root

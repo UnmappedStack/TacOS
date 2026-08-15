@@ -20,8 +20,13 @@ static Arena arena = {0}; // this maybe shouldn't be global but whatever
 
 #define OUTPUT_PATH "bin/tacos"
 
-#define LD "ld"
-#define CC "cc"
+// this kinda depends on your own toolchain stuff and should be adjusted.
+// TODO: allow this to be adjusted by cmdline arguments
+#define CC_X86_64  "cc"
+#define LD_X86_64  "ld"
+#define CC_RISCV64 "/usr/bin/rv64tools/riscv64-linux-cc"
+#define LD_RISCV64 "/usr/bin/rv64tools/riscv64-linux-ld"
+
 const char *cflags[] = {
 	"-fno-builtin",
     "-Wall",
@@ -30,18 +35,11 @@ const char *cflags[] = {
 	"-ffreestanding",
     "-fno-stack-protector",
     "-fno-PIE",
-    "-m64",
     "-MMD",
     "-MP",
-    "-mno-80387",
-    "-mno-mmx",
 	"-g",
-    "-mno-sse",
-    "-mno-sse2",
 	"-fno-omit-frame-pointer",
-    "-mno-red-zone",
 	"-O0",
-	"-mcmodel=kernel",
 	"-std=c23",
     "-pipe",
     "-Iinclude",
@@ -67,30 +65,43 @@ typedef enum {
 const struct {
 #define MAX_FLAGS 25
     char *stringified;
-    char *march_flag;
     char *link_target;
     char *cflags[MAX_FLAGS];
     char *ldflags[MAX_FLAGS];
+    int   num_cflags;
     char *cc;
     char *ld;
 } arches[] = {
     [X86_64] = {
         .stringified = "x86_64",
-        .march_flag = "-march=x86-64",
         .link_target = "elf_x86_64",
-        .cflags = {},
+        .cflags = {
+            "-march=x86-64",
+            "-m64",
+            "-mcmodel=kernel",
+            "-mno-80387",
+            "-mno-mmx",
+            "-mno-sse",
+            "-mno-sse2",
+            "-mno-red-zone",
+        },
+        .num_cflags = 8,
         .ldflags = {},
-        .cc = "cc",
-        .ld = "ld",
+        .cc = CC_X86_64,
+        .ld = LD_X86_64,
     },
     [RISCV64] = {
         .stringified = "riscv64",
-        .march_flag = "-march=riscv64",
-        .link_target = "elf_riscv64",
-        .cflags = {},
+        .link_target = "elf64lriscv",
+        .cflags = {
+            "-march=rv64imac_zbb_zba_zihintpause",
+            "-mabi=lp64",
+            "-mcmodel=medany",
+        },
+        .num_cflags = 3,
         .ldflags = {},
-        .cc = "cc",
-        .ld = "ld",
+        .cc = CC_RISCV64,
+        .ld = LD_RISCV64,
     },
 };
 
@@ -121,9 +132,8 @@ int build_source(const char *path, const char **flags, int num_flags, const char
     cmd_append(&cmd, invokee, "-o", output, path);
     da_append_many(&cmd, flags, num_flags);
 
-    // if its less than 0 it's nasm and we don't need it
-    if ((int)arch >= 0)
-        cmd_append(&cmd, arches[arch].march_flag);
+    if ((int)arch >= 0) // cc not asm
+        da_append_many(&cmd, arches[arch].cflags, arches[arch].num_cflags);
 
     if (!cmd_run(&cmd)) {
         printf("Failed to build %s\n", path);
@@ -133,7 +143,7 @@ int build_source(const char *path, const char **flags, int num_flags, const char
 }
 
 int compile_c_source(const char *path, Arch archflag) {
-    return build_source(path, cflags, ARRLEN(cflags), CC, archflag);
+    return build_source(path, cflags, ARRLEN(cflags), arches[archflag].cc, archflag);
 }
 
 int compile_nasm_source(const char *path) {
@@ -188,7 +198,7 @@ int search_and_build_dir(const char *path, Arch target_arch) {
 int link_to_executable(Arch arch) {
     Dir_Entry dir;
     Cmd cmd = {0};
-    cmd_append(&cmd, LD);
+    cmd_append(&cmd, arches[arch].ld);
 
     if (!dir_entry_open(OBJDIR, &dir)) return -1;
     for (;;) {
@@ -224,21 +234,17 @@ int main(int argc, char **argv) {
         }
     }
 
-    // TODO: nob gives us an easier way to do cmdline parsing
-    Arch target_arch = -1;
-    for (int i = 1; i < argc; i++) {
-        if (!strcmp(argv[i], "--arch")) {
-            target_arch = str_to_arch(argv[++i]);
+    Arch target_arch = X86_64; // default
+    shift(argv, argc);
+    while (argc) {
+        char *arg = shift(argv, argc); 
+        if (!strcmp(arg, "--arch")) {
+            target_arch = str_to_arch(shift(argv, argc));
             printf(" # Select target architecture %s\n", arches[target_arch].stringified);
         } else {
-            fprintf(stderr, " !! Unexpected flag/argument %s\n", argv[i]);
+            fprintf(stderr, " !! Unexpected flag/argument %s\n", arg);
             return -1;
         }
-    }
-
-    if ((int)target_arch < 0) {
-        fprintf(stderr, "Must specify target architecture (--arch [arch])\n"); // TODO: list ISAs
-        return -1;
     }
 
     if (!mkdir_if_not_exists(OBJDIR)) return -1;
