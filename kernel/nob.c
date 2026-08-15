@@ -63,6 +63,47 @@ const char *ldflags[] = {
     "-T", "linker.ld",
 };
 
+typedef enum {
+    X86_64, RISCV64, NUM_ARCHES
+} Arch;
+
+const struct {
+#define MAX_FLAGS 25
+    char *stringified;
+    char *march_flag;
+    char *link_target;
+    char *cflags[MAX_FLAGS];
+    char *ldflags[MAX_FLAGS];
+    char *cc;
+    char *ld;
+} arches[] = {
+    [X86_64] = {
+        .stringified = "x86_64",
+        .march_flag = "-march=x86-64",
+        .link_target = "elf_x86_64",
+        .cflags = {},
+        .ldflags = {},
+        .cc = "cc",
+        .ld = "ld",
+    },
+    [RISCV64] = {
+        .stringified = "riscv64",
+        .march_flag = "-march=riscv64",
+        .link_target = "elf_riscv64",
+        .cflags = {},
+        .ldflags = {},
+        .cc = "cc",
+        .ld = "ld",
+    },
+};
+
+Arch str_to_arch(const char *s) {
+    for (Arch arch = 0; arch < NUM_ARCHES; arch++) {
+        if (!strcmp(arches[arch].stringified, s)) return arch;
+    }
+    return -1;
+}
+
 void replace_char_with_char(char *s, char from, char to) {
     for (; *s; s++) {
         if (*s != from) continue;
@@ -73,7 +114,7 @@ void replace_char_with_char(char *s, char from, char to) {
 // invokee -> cc? nasm? what should be invoked
 // flags -> compiler/assembler flags
 // path -> file to build
-int build_source(const char *path, const char **flags, int num_flags, const char *invokee, const char *arch) {
+int build_source(const char *path, const char **flags, int num_flags, const char *invokee, Arch arch) {
     const char *path_no_src = &path[4]; // skip `src/`
     Cmd cmd = {0};
     char *output = temp_sprintf(OBJDIR "/%s.o", path_no_src);
@@ -84,16 +125,9 @@ int build_source(const char *path, const char **flags, int num_flags, const char
     for (int i = 0; i < num_flags; i++)
         cmd_append(&cmd, flags[i]);
 
-    char *archflag;
-    char new_arch[10];
-    // kinda broken idk
-    if (arch && !strcmp(arch, "x86_64"))
-        strcpy(new_arch, "x86-64");
-    else if (arch) strcpy(new_arch, "arch");
-    if (arch) {
-        archflag = temp_sprintf("-march=%s", new_arch);
-        cmd_append(&cmd, archflag);
-    }
+    // if its less than 0 it's nasm and we don't need it
+    if ((int)arch >= 0)
+        cmd_append(&cmd, arches[arch].march_flag);
 
     if (!cmd_run(&cmd)) {
         printf("Failed to build %s\n", path);
@@ -102,15 +136,15 @@ int build_source(const char *path, const char **flags, int num_flags, const char
     return 0;
 }
 
-int compile_c_source(const char *path, const char *archflag) {
+int compile_c_source(const char *path, Arch archflag) {
     return build_source(path, cflags, ARRLEN(cflags), CC, archflag);
 }
 
 int compile_nasm_source(const char *path) {
-    return build_source(path, nasmflags, ARRLEN(nasmflags), "nasm", NULL);
+    return build_source(path, nasmflags, ARRLEN(nasmflags), "nasm", -1);
 }
 
-int build_source_file(const char *path, const char *arch) {
+int build_source_file(const char *path, Arch arch) {
     const char *extension = &strrchr(path, '.')[1];
     if (!strcmp(extension, "c")) {
         return compile_c_source(path, arch);
@@ -121,7 +155,7 @@ int build_source_file(const char *path, const char *arch) {
     return -1;
 }
 
-int search_and_build_dir(const char *path, const char *target_arch) {
+int search_and_build_dir(const char *path, Arch target_arch) {
     Dir_Entry dir;
     if (!dir_entry_open(path, &dir)) return -1;
 
@@ -136,7 +170,7 @@ int search_and_build_dir(const char *path, const char *target_arch) {
 
         if (get_file_type(child_path) == NOB_FILE_DIRECTORY) {
             if (!memcmp(&path[strlen(path)-3], "isa", 4) &&
-                    strcmp(dir.name, target_arch)) {
+                    strcmp(dir.name, arches[target_arch].stringified)) {
                 /* dir for architecture-specific stuff
                  * which is not the target arch we want */
                 continue;
@@ -155,7 +189,7 @@ int search_and_build_dir(const char *path, const char *target_arch) {
 }
 
 // quite simple compared to building, and no recursive stuff is required.
-int link_to_executable(const char *arch) {
+int link_to_executable(Arch arch) {
     Dir_Entry dir;
     Cmd cmd = {0};
     cmd_append(&cmd, LD);
@@ -176,23 +210,10 @@ int link_to_executable(const char *arch) {
 
     cmd_append(&cmd, "-o", OUTPUT_PATH);
 
-    if (!strcmp(arch, "x86_64")) {
-        cmd_append(&cmd, "-m", "elf_x86_64");
-    } else assert(false && "unreachable");
+    cmd_append(&cmd, "-m", arches[arch].link_target);
 
     if (!cmd_run(&cmd)) return -1;
     return 0;
-}
-
-const char *allowed_arches[] = {"x86_64", "riscv64"};
-bool check_arch_allowed(const char *arch) {
-    if (!arch) goto failed;
-    for (int i = 0; i < ARRLEN(allowed_arches); i++) {
-        if (!strcmp(allowed_arches[i], arch)) return true;
-    }
-failed:
-    fprintf(stderr, " !! No such architecture supported !!\n");
-    return false;
 }
 
 int main(int argc, char **argv) {
@@ -208,20 +229,19 @@ int main(int argc, char **argv) {
         }
     }
 
-    char *target_arch = NULL;
+    // TODO: nob gives us an easier way to do cmdline parsing
+    Arch target_arch = -1;
     for (int i = 1; i < argc; i++) {
         if (!strcmp(argv[i], "--arch")) {
-            target_arch = argv[++i];
-            printf(" # Select target architecture %s\n", target_arch);
+            target_arch = str_to_arch(argv[++i]);
+            printf(" # Select target architecture %s\n", arches[target_arch].stringified);
         } else {
             fprintf(stderr, " !! Unexpected flag/argument %s\n", argv[i]);
             return -1;
         }
     }
 
-    if (!check_arch_allowed(target_arch)) return -1;
-
-    if (!target_arch) {
+    if ((int)target_arch < 0) {
         fprintf(stderr, "Must specify target architecture (--arch [arch])\n"); // TODO: list ISAs
         return -1;
     }
