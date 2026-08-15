@@ -1,7 +1,4 @@
-/* Build system for the kernel, written in C using the very nifty nob.h library. 
- * I already really hate this build system. Like, a lot.
- *
- * TODO: rewrite it completely, this shit is unsalvagable. */
+/* Build system for the kernel, written in C using the very nifty nob.h library. */
 
 #define ARENA_IMPLEMENTATION 
 #define NOB_IMPLEMENTATION
@@ -122,8 +119,7 @@ int build_source(const char *path, const char **flags, int num_flags, const char
     output[3] = '/'; // we want the obj/ to still be / not _
     
     cmd_append(&cmd, invokee, "-o", output, path);
-    for (int i = 0; i < num_flags; i++)
-        cmd_append(&cmd, flags[i]);
+    da_append_many(&cmd, flags, num_flags);
 
     // if its less than 0 it's nasm and we don't need it
     if ((int)arch >= 0)
@@ -205,8 +201,7 @@ int link_to_executable(Arch arch) {
         cmd_append(&cmd, object);
     }
 
-    for (int i = 0; i < ARRLEN(ldflags); i++)
-        cmd_append(&cmd, ldflags[i]);
+    da_append_many(&cmd, ldflags, ARRLEN(ldflags));
 
     cmd_append(&cmd, "-o", OUTPUT_PATH);
 
