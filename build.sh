@@ -47,7 +47,7 @@ if [[ $1 == "x86_64" ]]; then
 
     echo "[IMAGE] Installing legacy limine BIOS onto image"
     ./limine-binary/limine bios-install image.iso &>/dev/null
-elif [[ $1 == "riscv_64" ]]; then
+elif [[ $1 == "riscv64" ]]; then
     echo "[IMAGE] Installing bootloader onto image"
     cp -v limine-binary/limine-uefi-cd.bin iso_root/boot/limine/
 	cp -v limine-binary/BOOTRISCV64.EFI iso_root/EFI/BOOT/
@@ -57,12 +57,15 @@ elif [[ $1 == "riscv_64" ]]; then
     		-hfsplus -apm-block-size 2048 \
     		--efi-boot boot/limine/limine-uefi-cd.bin \
     		-efi-boot-part --efi-boot-image --protective-msdos-label \
-    		iso_root -o $(IMAGE_NAME).iso
+    		iso_root -o image.iso
 fi
 
 echo "[QEMU] Running image in qemu"
 if [[ $1 == "x86_64" ]]; then
     qemu-system-x86_64 image.iso -serial stdio --no-reboot --no-shutdown -monitor telnet:127.0.0.1:8000,server,nowait -smp 5
 elif [[ $1 == "riscv64" ]]; then
-    qemu-system-riscv64 image.iso -device ramfb -drive if=pflash,unit=0,format=raw,file=edk2-ovmf-bins/ovmf-code-riscv64.fd,readonly=on -cpu rv64 -M virt
+    qemu-system-riscv64 -cdrom image.iso -device ramfb \
+        -drive if=pflash,unit=0,format=raw,file=edk2-ovmf-bins/ovmf-code-riscv64.fd,readonly=on \
+        -cpu rv64 -M virt -serial stdio \
+        -device qemu-xhci -device usb-kbd -device usb-tablet
 fi
