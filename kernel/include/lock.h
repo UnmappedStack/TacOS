@@ -13,6 +13,6 @@
 #elif defined(__riscv)
 #define Spinlock int
 // TODO: stub
-#define spinlock_acquire(lock) {(void)lock;FREEZE_DEVICE();}
-#define spinlock_release(lock) {(void)lock;FREEZE_DEVICE();}
+#define spinlock_acquire(lock) {(void)lock;}
+#define spinlock_release(lock) {(void)lock;}
 #endif
