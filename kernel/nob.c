@@ -244,6 +244,14 @@ int main(int argc, char **argv) {
         if (!strcmp(arg, "--arch")) {
             target_arch = str_to_arch(shift(argv, argc));
             printf(" # Select target architecture %s\n", arches[target_arch].stringified);
+        } else if (!strcmp(arg, "clean")) {
+            Cmd cmd = {0};
+            cmd_append(&cmd, "rm", "-rf", OBJDIR);
+            cmd_run(&cmd);
+            cmd = (Cmd){0};
+            cmd_append(&cmd, "rm", "-rf", BINDIR);
+            cmd_run(&cmd);
+            return 0;
         } else {
             fprintf(stderr, " !! Unexpected flag/argument %s\n", arg);
             return -1;
