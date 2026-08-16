@@ -40,6 +40,11 @@ typedef struct {
     uint64_t rsp;
     uint64_t ss;
 } IDTEFrame;
+#elif defined(__riscv)
+typedef struct {
+    uint64_t type;
+    // TODO
+} IDTEFrame;
 #else
 #error "define error frame for new ISA"
 #endif
@@ -84,15 +89,8 @@ void panic_handler(const char *msg, IDTEFrame frame) {
     kprintf("\n === KERNEL PANIC ENTERED === \n\n");
     spinlock_acquire(&panic_lock); // never released
 
-    if (!kernel_info.smp_enabled) goto skip_ipis;
-    // stop all other processors (41 is defined as a halt interrupt)
-    send_ipi(kernel_info.lapic_addr, 41, IPI_DELIVERY_FIXED |
-                                         IPI_DESTINATION_PHYSICAL |
-                                         IPI_LEVEL_DEASSERT |
-                                         IPI_TRIGGER_EDGE |
-                                         IPI_DEST_SHORTHAND_ALL_EXCEPT_SELF);
+    if (kernel_info.smp_enabled) halt_all_processors();
 
-skip_ipis:
     uint64_t cr3;
     __asm__ volatile("movq %%cr3, %0" : "=r"(cr3));
     int i = 0;
@@ -112,7 +110,7 @@ skip_ipis:
     ASCII_ART_LINE(); kprintf(" WOAH! You messed this all up!\n");
     ASCII_ART_LINE(); kprintf(" This is ALL your fault. I take ZERO responsibility!\n");
     ASCII_ART_NEWLINE();
-    int current_cpu = (kernel_info.smp_enabled) ? current_processor()->lapic_id : 0;
+    int current_cpu = (kernel_info.smp_enabled) ? current_processor()->id : 0;
 #if defined(__x86_64__)
     ASCII_ART_LINE(); kprintf(" Exception type: %s in ring %u\n", error_type, frame.ss & 0b11);
     ASCII_ART_LINE(); kprintf(" SS: %u, CS: %u, CPU%u\n", frame.ss, frame.cs, current_cpu);
@@ -137,6 +135,10 @@ skip_ipis:
         }
         stack = stack->rbp;
     }
+#elif defined(__riscv)
+    // TODO
+    (void) current_cpu;
+    (void) error_type;
 #endif
     ASCII_ART_NEWLINE();
     if (msg != NULL) {
@@ -152,7 +154,7 @@ void kpanic(const char *msg) {
     // we don't care about any of the frame data since this is a panic, not an exception...
     // *except* rbp+rip (for a stack trace) and cs+ss
     IDTEFrame frame = {0};
-#if defined(x86_64)
+#if defined(__x86_64__)
     __asm__ volatile("movq %%rbp, %0" : "=r"(frame.rbp));
     __asm__ volatile("movq %%rbp, %0" : "=r"(frame.rip));
     __asm__ volatile("movq %%cs, %0" : "=r"(frame.cs));

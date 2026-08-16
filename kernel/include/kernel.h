@@ -20,14 +20,19 @@ typedef struct {
     uint64_t cr3;
 
     /* ACPI & APIC stuff */
+#if defined(__x86_64__)
     RSDP *rsdp_table;
     RSDT *rsdt;
-    uintptr_t lapic_addr;
     IOApic ioapic_device;
     uintptr_t ioapic_addr;
+    uintptr_t lapic_addr;
     uint64_t pit_counter; // for lapic timer calibration
+#endif
+    uintptr_t cpu_id;
 
+#if defined(__x86_64__)
     IDTGate idt[256];
+#endif
     GlobalSchedulerInfo schedulers;
     CPU *processors;
 

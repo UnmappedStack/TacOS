@@ -6,7 +6,7 @@
 
 /* All information and status stuff related to one CPU. */
 typedef struct {
-    uint64_t lapic_id;
+    uint64_t id;
     ProcessorQueue *scheduler;
     uint64_t cr3;
 } CPU;

@@ -28,6 +28,7 @@ static Arena arena = {0}; // this maybe shouldn't be global but whatever
 #define LD_RISCV64 "/usr/bin/rv64tools/riscv64-linux-ld"
 
 const char *cflags[] = {
+    "-fmax-errors=2",
 	"-fno-builtin",
     "-Wall",
     "-Wextra",
@@ -55,7 +56,6 @@ const char *nasmflags[] = {
 
 const char *ldflags[] = {
     "-z", "max-page-size=0x1000",
-    "-T", "linker.ld",
 };
 
 typedef enum {
@@ -66,6 +66,7 @@ const struct {
 #define MAX_FLAGS 25
     char *stringified;
     char *link_target;
+    char *linker_script;
     char *cflags[MAX_FLAGS];
     char *ldflags[MAX_FLAGS];
     int   num_cflags;
@@ -75,6 +76,7 @@ const struct {
     [X86_64] = {
         .stringified = "x86_64",
         .link_target = "elf_x86_64",
+        .linker_script = "linker_scripts/x86_64.lds",
         .cflags = {
             "-march=x86-64",
             "-m64",
@@ -93,6 +95,7 @@ const struct {
     [RISCV64] = {
         .stringified = "riscv64",
         .link_target = "elf64lriscv",
+        .linker_script = "linker_scripts/riscv64.lds",
         .cflags = {
             "-march=rv64imac_zbb_zba_zihintpause",
             "-mabi=lp64",
@@ -214,8 +217,8 @@ int link_to_executable(Arch arch) {
     da_append_many(&cmd, ldflags, ARRLEN(ldflags));
 
     cmd_append(&cmd, "-o", OUTPUT_PATH);
-
     cmd_append(&cmd, "-m", arches[arch].link_target);
+    cmd_append(&cmd, "-T", arches[arch].linker_script);
 
     if (!cmd_run(&cmd)) return -1;
     return 0;

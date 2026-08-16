@@ -1,6 +1,5 @@
 #include <isa/x86_64/apic.h>
 #include <util.h>
-#include <pit.h>
 #include <panic.h>
 #include <paging.h>
 #include <isa/cpu.h>
@@ -32,7 +31,7 @@ void write_ioapic(void *ioapic_addr, uint32_t reg, uint32_t value) {
 }
 
 void send_ipi(uintptr_t lapic_addr, uint8_t vector, uint32_t flags) {
-    write_lapic(lapic_addr, LAPIC_INTERRUPT_COMMAND_REGISTER + 0x8, current_processor()->lapic_id << 24);
+    write_lapic(lapic_addr, LAPIC_INTERRUPT_COMMAND_REGISTER + 0x8, current_processor()->id << 24);
     write_lapic(lapic_addr, LAPIC_INTERRUPT_COMMAND_REGISTER, vector | flags);
 }
 

@@ -3,7 +3,6 @@
 #include <scheduler.h>
 #include <scheduler.h>
 #include <slab.h>
-#include <pit.h>
 #include <paging.h>
 #include <panic.h>
 #include <framebuffer.h>
@@ -23,13 +22,8 @@ void __stack_chk_fail(void) {
 void _start(void) {
     serial_init();
 
-    if (!cpu_has_msr())
-        kpanic("MSRs not supported");
-    else kprintf("MSRs supported!\n");
-
     framebuffer_init();
-    gdt_init();
-    idt_init();
+    isa_early_init();
     exceptions_init();
     pma_init();
 
@@ -38,11 +32,9 @@ void _start(void) {
     SWITCH_STACK(KERNEL_STACK_TOP);
     kprintf("Page tree switched successfully\n");
     
-    acpi_init();
-    apic_init();
-    pit_init();
-    init_local_apic(kernel_info.lapic_addr);
-    init_lapic_timer();
+    power_management_init();
+    interrupt_controller_init();
+    timer_init();
 
     smp_init();
     global_scheduler_init();
@@ -52,7 +44,7 @@ void _start(void) {
     add_thread_to_current_processor(create_thread(SCHED_TIMESHARE, 15, 0));
     add_thread_to_current_processor(create_thread(SCHED_TIMESHARE, 20, 0));
 
-    unlock_lapic_timer();
+    unlock_timer();
     ENABLE_INTERRUPTS();
     for (;;);
 

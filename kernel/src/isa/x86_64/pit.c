@@ -2,7 +2,6 @@
 
 #include <isa/cpu.h>
 #include <kernel.h>
-#include <pit.h>
 #include <kprintf.h>
 #include <util.h>
 

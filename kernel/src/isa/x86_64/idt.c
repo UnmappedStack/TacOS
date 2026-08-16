@@ -31,7 +31,7 @@ void test_isr(void*) {
 
     // we only want to load balance on one processor, otherwise it'll be too often
     cpu->scheduler->total_ticks++;
-    if (cpu->lapic_id == 0 && cpu->scheduler->total_ticks % 50 == 0)
+    if (cpu->id == 0 && cpu->scheduler->total_ticks % 50 == 0)
         thread = migrate_push();
     else thread = thread_select();
     const char *colours[] = {
@@ -42,13 +42,13 @@ void test_isr(void*) {
         "\e[0;35m", // P
     };
     if (thread != NULL)
-        kprintf("%s%u\e[0m,", colours[cpu->lapic_id], thread->tid);
+        kprintf("%s%u\e[0m,", colours[cpu->id], thread->tid);
     end_of_interrupt();
 }
 
 __attribute__((interrupt))
 void halt_isr(void*) {
-    kprintf("Halt CPU%u\n", current_processor()->lapic_id);
+    kprintf("Halt CPU%u\n", current_processor()->id);
     FREEZE_DEVICE();
 }
 
