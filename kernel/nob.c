@@ -28,8 +28,8 @@ static Arena arena = {0}; // this maybe shouldn't be global but whatever
 #define LD_RISCV64 "/usr/bin/rv64tools/riscv64-linux-ld"
 
 const char *cflags[] = {
-    "-fmax-errors=2",
 	"-fno-builtin",
+    "-Wno-pointer-to-int-cast",
     "-Wall",
     "-Wextra",
 	"-Werror",
@@ -159,6 +159,8 @@ int build_source_file(const char *path, Arch arch) {
         return compile_c_source(path, arch);
     } else if (!strcmp(extension, "asm")) {
         return compile_nasm_source(path);
+    } else if (!strcmp(extension, "S")) {
+        return compile_c_source(path, arch);
     }
     fprintf(stderr, "Unexpected file type of %s (%s), cannot build.\n");
     return -1;
@@ -184,7 +186,7 @@ int search_and_build_dir(const char *path, Arch target_arch) {
                  * which is not the target arch we want */
                 continue;
             }
-            if (!search_and_build_dir(child_path, target_arch) < 0) return -1;
+            if (search_and_build_dir(child_path, target_arch) < 0) return -1;
             continue;
         }
         printf(" > %s\n", child_path);
