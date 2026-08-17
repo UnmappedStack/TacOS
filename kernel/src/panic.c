@@ -92,7 +92,11 @@ void panic_handler(const char *msg, IDTEFrame frame) {
     if (kernel_info.smp_enabled) halt_all_processors();
 
     uint64_t cr3;
+#if defined(__x86_64__)
     __asm__ volatile("movq %%cr3, %0" : "=r"(cr3));
+#else
+    (void) cr3;
+#endif
     int i = 0;
 #define ASCII_ART_LINE() kprintf(ascii_art[i++]);
 #define ASCII_ART_NEWLINE() \

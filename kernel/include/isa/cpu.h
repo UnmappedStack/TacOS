@@ -44,7 +44,12 @@
     // there's a lot of stubs here that all are meaningless. TODO: actually do riscv64 stuff
     #include <isa/riscv64/riscv64.h>
     #include <isa/riscv64/sbi.h>
-    #define isa_early_init() {}
+    #include <isa/riscv64/interrupts.h>
+    #include <isa/riscv64/csr.h>
+    #define isa_early_init() \
+        do { \
+            interrupts_init(); \
+        } while(0)
     #define exceptions_init() FREEZE_DEVICE()
     #define SWITCH_PAGE_TREE(cr3) FREEZE_DEVICE()
     #define SWITCH_STACK(stack_top) FREEZE_DEVICE()
