@@ -4,14 +4,14 @@
 prepare_for_interrupt:
     // We need space on the stack for the following structure:
     // {
-    //      u64 regs[31];
+    //      u64 regs[32];
     //      u64 ret_addr; (sepc)
     //      u64 cause;
     //      u64 sstatus;
     //      u64 val;
     // }
     // This ends up being 24 bytes (4 elements * 8 bytes)
-    // + 248 bytes (31 registers * 8 bytes), then rounded up to
+    // + 248 bytes (32 registers * 8 bytes), then rounded up to
     // be 16 byte aligned.
     addi sp, sp, -280
     // Then create the frame
