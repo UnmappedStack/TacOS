@@ -10,10 +10,10 @@ prepare_for_interrupt:
     //      u64 sstatus;
     //      u64 val;
     // }
-    // This ends up being 24 bytes (3 elements * 8 bytes)
+    // This ends up being 24 bytes (4 elements * 8 bytes)
     // + 248 bytes (31 registers * 8 bytes), then rounded up to
     // be 16 byte aligned.
-    addi sp, sp, -528
+    addi sp, sp, -280
     // Then create the frame
     csrr t1, 0x141 // sepc
     sd t1, 0(sp)
@@ -94,5 +94,5 @@ prepare_for_interrupt:
     ld x29, 264(sp)
     ld x30, 272(sp)
     ld x31, 280(sp)
-    addi sp, sp, 528 // registers frame + interrupt frame
+    addi sp, sp, 280 // registers frame + interrupt frame
     sret
