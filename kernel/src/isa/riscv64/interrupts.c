@@ -8,16 +8,13 @@
 typedef struct {
     uint64_t return_addr;
     uint64_t cause, val;
+    uint64_t regs[31];
 } InterruptStackFrame;
 
 void interrupt_handler(InterruptStackFrame *frame) {
-    kprintf("\n");
-    kprintf("   > ret addr: %x\n", frame->return_addr);
-    kprintf("   > cause:    %x\n", frame->cause);
-    kprintf("   > value:    %x\n", frame->val);
     switch (frame->cause) {
     case INTERRUPT_EBREAK:
-        kprintf("   > (ebreak)\n");
+        kprintf("\n   > EBREAK -> scause=%x\n", frame->cause);
         /* so basically we have to check if the instruction at the return
          * address is aligned. if it is then just increment it by 16 bytes,
          * otherwise by a full 32 bytes. then we can just return to the
@@ -25,7 +22,7 @@ void interrupt_handler(InterruptStackFrame *frame) {
         bool is_compressed = (*((uint16_t*)frame->return_addr) & 0b11) != 0b11;
         uint64_t instruction_size = (is_compressed) ? 2 : 4;
         frame->return_addr += instruction_size;
-        kprintf("   > %s, instruction increment %u\n",
+        kprintf("   > %s, instruction increment %u\n\n",
                 (is_compressed) ? "compressed" : "non-compressed", instruction_size);
         break;
     default:
