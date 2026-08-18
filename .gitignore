@@ -3,7 +3,8 @@
 /iso_root
 /limine-binary
 /kernel/obj
-*;*
+/;
+/kernel/;
 /nob
 /kernel/nob
 /nob.old

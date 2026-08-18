@@ -97,7 +97,7 @@ const struct {
         .link_target = "elf64lriscv",
         .linker_script = "linker_scripts/riscv64.lds",
         .cflags = {
-            "-march=rv64imac_zbb_zba_zihintpause_zicntr",
+            "-march=rv64ima_zbb_zba_zihintpause_zicntr",
             "-mabi=lp64",
             "-mcmodel=medany",
         },
