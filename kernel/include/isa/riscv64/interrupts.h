@@ -9,7 +9,7 @@ typedef struct {
     uint64_t return_addr;
     uint64_t cause, val;
     uint64_t sstatus;
-    uint64_t regs[31];
+    uint64_t regs[32];
 } InterruptStackFrame;
 
 void interrupts_init(void);

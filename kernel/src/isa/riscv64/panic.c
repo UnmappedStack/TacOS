@@ -55,6 +55,10 @@ void panic_handler(const char *msg, InterruptStackFrame *frame) {
     ASCII_ART_LINE(); kprintf(" Exception type: %s in %c-mode\n", error_type, privilege_level);
     ASCII_ART_LINE(); kprintf(" Cause %u, value %u\n", frame->cause, frame->val);
     ASCII_ART_NEWLINE();
+    ASCII_ART_LINE(); kprintf(" Register dump:\n");
+    for (int r = 0; r < 16; r++) {
+        ASCII_ART_LINE(); kprintf("   x%u: %x, x%u: %x\n", r*2, frame->regs[r*2], r*2+1, frame->regs[r*2+1]);
+    }
     if (msg != NULL) {
         ASCII_ART_LINE(); kprintf(" (Manually induced panic so registers may be null)\n");
     }
