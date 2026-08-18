@@ -1,7 +1,6 @@
 #include <stdbool.h>
-#include <panic.h>
 #include <stdint.h>
-#include <isa/x86_64/msr.h>
+#include <isa/cpu.h>
 
 CPUIDResult cpuid(uint32_t leaf, uint32_t subleaf) {
     CPUIDResult r;

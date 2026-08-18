@@ -3,7 +3,7 @@
 // continuous pages are not needed because it can be threaded together into continuous
 // pages within virtual memory.
 
-#include <panic.h>
+#include <isa/cpu.h>
 #include <kernel.h>
 #include <util.h>
 #include <pma.h>

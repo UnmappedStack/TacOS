@@ -3,7 +3,6 @@
 #include <limine.h>
 #include <util.h>
 #include <string.h>
-#include <panic.h>
 #include <kernel.h>
 #include <isa/cpu.h>
 #include <kprintf.h>

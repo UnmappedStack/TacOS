@@ -2,7 +2,7 @@
 #include <kprintf.h>
 #include <kernel.h>
 #include <mm.h>
-#include <panic.h>
+#include <isa/cpu.h>
 #include <pma.h>
 
 Cache *cache_create(uint64_t object_size) {

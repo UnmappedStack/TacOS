@@ -1,7 +1,7 @@
 #include <mm.h>
 #include <kprintf.h>
-#include <panic.h>
 #include <paging.h>
+#include <isa/cpu.h>
 #include <limine.h>
 #include <string.h>
 #include <pma.h>

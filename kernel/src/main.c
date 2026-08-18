@@ -4,7 +4,6 @@
 #include <scheduler.h>
 #include <slab.h>
 #include <paging.h>
-#include <panic.h>
 #include <framebuffer.h>
 #include <util.h>
 #include <isa/cpu.h>

@@ -10,6 +10,7 @@
     #include <isa/x86_64/paging.h>
     #include <isa/x86_64/pit.h>
     #include <isa/x86_64/x86_64.h>
+    #include <isa/x86_64/panic.h>
     #define isa_early_init() \
         do { \
             if (!cpu_has_msr()) \
@@ -46,6 +47,7 @@
     #include <isa/riscv64/sbi.h>
     #include <isa/riscv64/interrupts.h>
     #include <isa/riscv64/csr.h>
+    #include <isa/riscv64/panic.h>
     #define isa_early_init() \
         do { \
             interrupts_init(); \

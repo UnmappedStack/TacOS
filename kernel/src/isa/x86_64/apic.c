@@ -1,6 +1,5 @@
 #include <isa/x86_64/apic.h>
 #include <util.h>
-#include <panic.h>
 #include <paging.h>
 #include <isa/cpu.h>
 #include <kernel.h>

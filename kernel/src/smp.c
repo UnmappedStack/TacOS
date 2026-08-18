@@ -7,7 +7,6 @@
 #include <mm.h>
 #include <paging.h>
 #include <smp.h>
-#include <panic.h>
 #include <kernel.h>
 #include <util.h>
 #include <lock.h>
