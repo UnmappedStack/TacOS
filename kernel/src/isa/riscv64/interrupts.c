@@ -42,8 +42,5 @@ extern void prepare_for_interrupt(void); // asm handler, will call interrupt_han
 void interrupts_init(void) {
     csr_write(CSR_REG_STVEC, (uintptr_t)&prepare_for_interrupt);
     __asm__ volatile("ebreak");
-    kprintf("btw i returned\n");
-    char *ptr = (void*)2;
-    *ptr = 'h';
-    kprintf(ptr);
+    kpanic("uwu");
 }

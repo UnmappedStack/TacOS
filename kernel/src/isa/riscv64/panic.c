@@ -25,7 +25,15 @@ static const char *exceptions[] = {
     "Hardware check",
 };
 
+typedef struct StackFrame StackFrame;
+struct StackFrame {
+    StackFrame *fp;
+    uint64_t rp;
+};
+
 #define SPP_MASK (1 << 8)
+#define REGISTER_RETURN_ADDRESS 1
+#define REGISTER_FRAME_POINTER  8
 
 Spinlock panic_lock = {0};
 void panic_handler(const char *msg, InterruptStackFrame *frame) {
@@ -47,18 +55,20 @@ void panic_handler(const char *msg, InterruptStackFrame *frame) {
         error_type = exceptions[frame->cause];
     else error_type = "Unknown exception";
 
-    for (int n = 0; n < 7; n++) ASCII_ART_NEWLINE();
+    //for (int n = 0; n < 7; n++) ASCII_ART_NEWLINE();
     ASCII_ART_LINE(); kprintf(" WOAH! You messed this all up!\n");
     ASCII_ART_LINE(); kprintf(" This is ALL your fault. I take ZERO responsibility!\n");
     ASCII_ART_NEWLINE();
     char privilege_level = (frame->sstatus & SPP_MASK) ? 'S' : 'U';
     ASCII_ART_LINE(); kprintf(" Exception type: %s in %c-mode\n", error_type, privilege_level);
-    ASCII_ART_LINE(); kprintf(" Cause %u, value %u\n", frame->cause, frame->val);
+    ASCII_ART_LINE(); kprintf(" Cause %u, value %x\n", frame->cause, frame->val);
     ASCII_ART_NEWLINE();
     ASCII_ART_LINE(); kprintf(" Register dump:\n");
     for (int r = 0; r < 16; r++) {
         ASCII_ART_LINE(); kprintf("   x%u: %x, x%u: %x\n", r*2, frame->regs[r*2], r*2+1, frame->regs[r*2+1]);
     }
+    ASCII_ART_NEWLINE();
+    ASCII_ART_LINE(); kprintf(" Fault occurred at the instruction after %x\n", frame->regs[REGISTER_RETURN_ADDRESS]);
     if (msg != NULL) {
         ASCII_ART_LINE(); kprintf(" (Manually induced panic so registers may be null)\n");
     }
@@ -67,6 +77,8 @@ void panic_handler(const char *msg, InterruptStackFrame *frame) {
 }
 
 void kpanic(const char *s) {
-    kprintf("STUB: kernel panic occurred: %s\n", s);
-    FREEZE_DEVICE();
+    InterruptStackFrame frame = {0};
+    __asm__ volatile("sd ra, %0" : "=m"(frame.regs[REGISTER_RETURN_ADDRESS]));
+    frame.sstatus |= SPP_MASK; // s-mode
+    panic_handler(s, &frame);
 }

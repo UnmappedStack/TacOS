@@ -1,5 +1,8 @@
 .global prepare_for_interrupt
 
+// TODO: this wont work if an interrupt is called from userspace,
+// the stack needs to be switched to the kernel stack if it detects
+// that it came from userspace.
 .align 4
 prepare_for_interrupt:
     // We need space on the stack for the following structure:
@@ -14,19 +17,10 @@ prepare_for_interrupt:
     // + 248 bytes (32 registers * 8 bytes), then rounded up to
     // be 16 byte aligned.
     addi sp, sp, -280
-    // Then create the frame
-    csrr t1, 0x141 // sepc
-    sd t1, 0(sp)
-    csrr t1, 0x142 // cause
-    sd t1, 8(sp)
-    csrr t1, 0x143 // value
-    sd t1, 16(sp)
-    csrr t1, 0x100 // sstatus
-    sd t1, 24(sp)
     // save registers
     sd x0, 32(sp)
     sd x1, 40(sp)
-    sd x2, 48(sp)
+    // (sp/x2 is loaded later)
     sd x3, 56(sp)
     sd x4, 64(sp)
     sd x5, 72(sp)
@@ -56,6 +50,20 @@ prepare_for_interrupt:
     sd x29, 264(sp)
     sd x30, 272(sp)
     sd x31, 280(sp)
+    // Then create the frame (done after saving regs to avoid messing up t1)
+    csrr t1, 0x141 // sepc
+    sd t1, 0(sp)
+    csrr t1, 0x142 // cause
+    sd t1, 8(sp)
+    csrr t1, 0x143 // value
+    sd t1, 16(sp)
+    csrr t1, 0x100 // sstatus
+    sd t1, 24(sp)
+    // the stack pointer now needs to be loaded, which will be sp-280 (aka
+    // where it was before we moved it down)
+    addi t1, sp, 280
+    sd t1, 48(sp)
+    // actually call the main handler
     mv a0, sp // move the stack frame into call arguments
     call interrupt_handler
     // put the potentially modified sepc return addr back
