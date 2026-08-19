@@ -17,6 +17,7 @@ void framebuffer_init(void) {
         kernel_info.framebuffers[i].height        = fb_response->framebuffers[i]->height;
         kernel_info.framebuffers[i].pitch         = fb_response->framebuffers[i]->pitch;
         kernel_info.framebuffers[i].bytes_per_pix = fb_response->framebuffers[i]->bpp/8;
+        fill_framebuffer(i, 0xff0000);
     }
     kprintf("Initiated %u framebuffer(s)\n", fb_response->framebuffer_count);
 }

@@ -13,10 +13,12 @@ void serial_init(void) {
     outb(COM1 + 4, 0x1E);
     outb(COM1 + 0, 0xAE);
 
+    /* TODO: Uncomment this but make it only be done when a serial device is detected
     // the COM1 port with an offset of 0 is the recieve/reading buffer.
     // when it gives the value 0xAE, it is ready to be used and not faulty, so we wait for such an event.
     if(inb(COM1) != 0xAE)
         for (;;);
+    */
 
     // finally we go into normal operation mode
     outb(COM1 + 4, 0x0F);

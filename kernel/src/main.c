@@ -19,8 +19,8 @@ void __stack_chk_fail(void) {
 }
 void _start(void) {
     serial_init();
-
     framebuffer_init();
+
     isa_early_init();
     exceptions_init();
     pma_init();
