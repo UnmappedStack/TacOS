@@ -26,4 +26,3 @@ void framebuffer_draw_rect(int fb,
                             uint32_t colour);
 void fill_framebuffer(int fb, uint32_t colour);
 void framebuffer_draw_pixel(int fb, uint64_t x, uint64_t y, uint32_t colour);
-void tty_write_text(int colour, char *s);

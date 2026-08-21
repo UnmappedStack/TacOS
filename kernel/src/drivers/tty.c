@@ -44,8 +44,22 @@ void scroll_lines(int fb, int num_lines) {
 }
 
 void tty_draw_char(int colour, unsigned char ch) {
+    // TODO/FIXME: temporary and bad thing to ignore ansi which is kinda broken.
+    // Actually implement an ANSI state machine.
+    static int num_in_ansi = 0;
+    if (ch == '\e') {
+        num_in_ansi = 6;
+        return;
+    }
+    if (num_in_ansi) {
+        num_in_ansi--;
+        return;
+    }
+
+    // actual char drawing, after the disgusting ansi skip thing
     for (int fb = 0; fb < kernel_info.num_framebuffers; fb++) {
         Framebuffer *buf = &kernel_info.framebuffers[fb];
+        if (!buf->addr) continue;
         int *x = &buf->tty.cursor_x;
         int *y = &buf->tty.cursor_y;
         if (*y >= buf->tty.chars_height) scroll_lines(fb, 8);
@@ -55,11 +69,14 @@ void tty_draw_char(int colour, unsigned char ch) {
             continue;
         }
         draw_char_at(fb, (*x)++ * FONT_WIDTH, *y * FONT_HEIGHT, colour, ch);
-        if (*x >= buf->tty.chars_width) *x = 0;
+        if (*x >= buf->tty.chars_width) {
+            *x = 0;
+            (*y)++;
+        }
     }
 }
 
-void tty_write_text(int colour, char *s) {
+void tty_write_text(int colour, const char *s) {
     for (; *s; s++) {
         tty_draw_char(colour, *s);
     }

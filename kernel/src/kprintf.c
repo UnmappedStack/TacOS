@@ -1,13 +1,18 @@
 #include <kprintf.h>
+#include <tty.h>
 #include <lock.h>
 #include <string.h>
 #include <serial.h>
 #include <stdarg.h>
 
-// this has its own function despite being just a wrapper of write_serial because
-// in the future it will be generic to both tty logging and serial.
+void print_char(char c) {
+    write_serial_char(c);
+    tty_draw_char(0xffffff, c);
+}
+
 void print_string(const char *s) {
     write_serial(s);
+    tty_write_text(0xffffff, s);
 }
 
 // this is a pretty simple kprintf implementation. it's similar to printf except not posix, so it
@@ -23,28 +28,28 @@ void kprintf(const char *fmt, ...) {
     va_start(args, fmt);
     for (; *fmt; fmt++) {
         if (*fmt != '%') {
-            write_serial_char(*fmt);
+            print_char(*fmt);
             continue;
         }
         char buf[64] = {0};
         switch (*(++fmt)) {
             case '%':
-                write_serial_char('%');
+                print_char('%');
                 break;
             case 'c':
-                write_serial_char(va_arg(args, int));
+                print_char(va_arg(args, int));
                 break;
             case 's':
-                write_serial(va_arg(args, char*));
+                print_string(va_arg(args, char*));
                 break;
             case 'u':
                 uint64_to_string(va_arg(args, uint64_t), buf);
-                write_serial(buf);
+                print_string(buf);
                 break;
             case 'x':
                 uint64_to_hex_string(va_arg(args, uint64_t), buf);
-                write_serial("0x");
-                write_serial(buf);
+                print_string("0x");
+                print_string(buf);
                 break;
             default: break;
         }
