@@ -27,7 +27,6 @@ void framebuffer_init(void) {
         kernel_info.framebuffers[i].tty.chars_height = kernel_info.framebuffers[i].height / FONT_HEIGHT;
     }
     kprintf("Initiated %u framebuffer(s)\n", fb_response->framebuffer_count);
-    tty_write_text(0xffffff, "hi from the framebuffer (i still need to switch to the minecraft font)");
 }
 
 void framebuffer_draw_rect(int fb,

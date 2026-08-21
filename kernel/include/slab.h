@@ -1,6 +1,7 @@
 #pragma once
 #include <list.h>
 #include <stdint.h>
+#include <lock.h>
 
 typedef struct {
     /* these each are a circular doubly linked list of slabs.
@@ -12,6 +13,8 @@ typedef struct {
 
     uint64_t object_size;
     uint64_t objects_per_slab;
+
+    Spinlock lock;
 } Cache;
 
 typedef struct {
