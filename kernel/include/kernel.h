@@ -10,6 +10,7 @@
 // this will probably also contain locking information later when there's smp etc
 typedef struct {
     Framebuffer framebuffers[MAX_FRAMEBUFFERS];
+    int num_framebuffers;
 
     /* pmm stuff */
     struct list pmm_nodes;
