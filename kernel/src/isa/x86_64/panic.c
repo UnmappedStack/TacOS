@@ -6,6 +6,7 @@
 
 #include <kprintf.h>
 #include <isa/cpu.h>
+#include <serial.h>
 #include <kernel.h>
 #include <smp.h>
 #include <lock.h>
@@ -85,11 +86,11 @@ void panic_handler(const char *msg, IDTEFrame frame) {
     uint64_t cr3;
     __asm__ volatile("movq %%cr3, %0" : "=r"(cr3));
     int i = 0;
-#define ASCII_ART_LINE() kprintf(ascii_art[i++]);
+#define ASCII_ART_LINE() write_serial(ascii_art[i++]);
 #define ASCII_ART_NEWLINE() \
     do { \
         ASCII_ART_LINE(); \
-        kprintf("\n"); \
+        write_serial("\n"); \
     } while (0)
     const char *error_type;
     if (msg != NULL)

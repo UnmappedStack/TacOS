@@ -22,7 +22,7 @@ static Arena arena = {0}; // this maybe shouldn't be global but whatever
 
 // this kinda depends on your own toolchain stuff and should be adjusted.
 // TODO: allow this to be adjusted by cmdline arguments
-#define CC_X86_64  "cc"
+#define CC_X86_64  "clang"
 #define LD_X86_64  "ld"
 #define CC_RISCV64 "/usr/bin/rv64tools/riscv64-linux-cc"
 #define LD_RISCV64 "/usr/bin/rv64tools/riscv64-linux-ld"
@@ -44,7 +44,8 @@ const char *cflags[] = {
 	"-std=c23",
     "-pipe",
     "-Iinclude",
-    "-c", 
+    "-c",
+    "-fsanitize=undefined",
 };
 
 const char *nasmflags[] = {

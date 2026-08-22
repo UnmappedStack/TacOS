@@ -17,6 +17,7 @@ void __stack_chk_fail(void) {
     print_string("Stack smashing detected\n");
     FREEZE_DEVICE();
 }
+
 void _start(void) {
     serial_init();
     framebuffer_init();

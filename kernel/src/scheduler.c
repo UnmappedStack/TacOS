@@ -252,6 +252,7 @@ Thread *thread_select(void) {
             current_queue->current_bucket = 0;
         Thread *thread = CONTAINER_OF(thread_list, Thread, bucket_list);
         calendar_queue_reinsert_thread(current_queue, thread);
+
         spinlock_release(&current_queue->lock);
         return thread;
     }
@@ -262,6 +263,7 @@ Thread *thread_select(void) {
         list_remove(thread_list);
         list_insert(&current_queue->idle_threads, thread_list);
         Thread *thread = CONTAINER_OF(thread_list, Thread, class_list);
+
         spinlock_release(&current_queue->lock);
         return thread;
     }

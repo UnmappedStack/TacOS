@@ -30,8 +30,8 @@ void test_isr(void*) {
     Thread *thread;
 
     // we only want to load balance on one processor, otherwise it'll be too often
-    cpu->scheduler->total_ticks++;
-    if (cpu->id == 0 && cpu->scheduler->total_ticks % 50 == 0)
+    if (!cpu->id) cpu->scheduler->total_ticks++;
+    if (!cpu->id && cpu->scheduler->total_ticks % 50 == 0)
         thread = migrate_push();
     else thread = thread_select();
     const char *colours[] = {

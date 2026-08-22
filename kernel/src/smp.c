@@ -18,8 +18,7 @@
 static volatile struct limine_mp_request smp_request = {
     .id = LIMINE_MP_REQUEST, .revision = 1};
 
-/* create a CPU* struct for a local processor and store it in gsbase
- * !! Must be under a lock by caller !! */
+/* create a CPU* struct for a local processor and store it in gsbase */
 CPU *cpu_info_init(uint64_t lapic_id) {
     CPU *cpu_info = &kernel_info.processors[lapic_id];
     set_current_cpu_info(cpu_info);
@@ -27,7 +26,7 @@ CPU *cpu_info_init(uint64_t lapic_id) {
 }
 
 static int num_aps_initialised = 0;
-static Spinlock init_lock;
+static Spinlock init_lock = {0};
 /* after the stack has been changed */
 void ap_stage2(void) {
     CPU *cpu = current_processor();

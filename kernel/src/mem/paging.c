@@ -8,7 +8,7 @@
 #include <stddef.h>
 #include <kernel.h>
 
-// x86_64-specific virtual memory mapping and related functionality which
+// ISA agnostic virtual memory mapping and related functionality which
 // the vmm can be built upon
 
 // the limine bootloader will detect this and fill it with the necessary info about 
