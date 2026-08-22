@@ -201,5 +201,5 @@ void apic_init(void) {
     }
 
     init_local_apic(lapic_registers_virt);
-    kprintf("APIC init OK\n");
+    kprintf("APIC init OK (lapic addr: %x)\n", kernel_info.lapic_addr);
 }
