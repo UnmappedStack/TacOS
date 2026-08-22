@@ -145,6 +145,4 @@ void kpanic(const char *msg) {
     __asm__ volatile("movq %%cs, %0" : "=r"(frame.cs));
     __asm__ volatile("movq %%ss, %0" : "=r"(frame.ss));
     panic_handler(msg, frame);
-
-    (void) font; // please the compiler
 }

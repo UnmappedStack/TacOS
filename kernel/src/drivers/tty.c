@@ -7,8 +7,6 @@
 
 // TODO; this should probably store a buffer
 void draw_char_at(int fb, int x, int y, int colour, unsigned char ch) {
-    (void) ascii_art; // make the compiler happy
-
     static_assert(FONT_WIDTH == 8, "font width should probably change to allow larger font sizes (but width 8 is required rn)");
     for (int down = 0; down < FONT_HEIGHT; down++) {
         uint8_t char_byte = font[(FONT_HEIGHT * ch) + down];

@@ -57,7 +57,7 @@ void ap_entry(struct limine_mp_info *this_cpu) {
     spinlock_acquire(&init_lock);
     isa_early_init();
     CPU *cpu = cpu_info_init(get_limine_cpu_id(this_cpu));
-    cpu->id = get_limine_cpu_id(this_cpu);
+    cpu->id  = get_limine_cpu_id(this_cpu);
     cpu->cr3 = create_address_space();
     SWITCH_PAGE_TREE(cpu->cr3);
     SWITCH_STACK(KERNEL_STACK_TOP);

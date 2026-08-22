@@ -1,4 +1,9 @@
-/* Implementations for functions ubsan will try to call */
+/* Implementations for functions ubsan will try to call.
+ *
+ * TODO: currently these just kernel panic which will give the location
+ * and error type but a more proper impl would also give info like the
+ * faulting value. */
+
 #include <isa/cpu.h>
 
 void __ubsan_handle_add_overflow(void) {
