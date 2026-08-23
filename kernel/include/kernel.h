@@ -29,7 +29,6 @@ typedef struct {
     uintptr_t lapic_addr;
     uint64_t pit_counter; // for lapic timer calibration
 #endif
-    uintptr_t cpu_id;
 
 #if defined(__x86_64__)
     IDTGate idt[256];

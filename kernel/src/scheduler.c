@@ -294,7 +294,6 @@ void processor_scheduler_init(void) {
 
     list_insert(&kernel_info.schedulers.processor_queues, &new_queue->list);
     processor->scheduler = new_queue;
-    kprintf("Processor scheduler init OK\n");
 }
 
 /* Initialises the scaffolding for scheduling needed for all processors */

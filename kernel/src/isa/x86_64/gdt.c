@@ -33,5 +33,4 @@ __attribute__((noinline)) void gdt_init(void) {
 
     __asm__ volatile("lgdt (%0)" : : "r" (&gdtr));
     reload_gdt();
-    kprintf("GDT init OK\n");
 }

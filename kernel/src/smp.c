@@ -25,6 +25,8 @@ CPU *cpu_info_init(uint64_t lapic_id) {
     return cpu_info;
 }
 
+#define PAUSE() __builtin_ia32_pause()
+
 static int num_aps_initialised = 0;
 static Spinlock init_lock = {0};
 /* after the stack has been changed */
@@ -36,14 +38,13 @@ void ap_stage2(void) {
               (uint64_t)kernel_info.lapic_addr - kernel_info.hhdm,
               PAGE_PRESENT | PAGE_WRITE);
 #endif
+    DISABLE_INTERRUPTS();
     init_local_interrupt_controller(kernel_info.lapic_addr);
     timer_local_init();
     lock_timer();
-    DISABLE_INTERRUPTS();
-    kprintf("AP%u init OK\n", cpu->id);
     spinlock_release(&init_lock);
     num_aps_initialised++;
-    while (!kernel_info.schedulers.ready) IO_WAIT();
+    while (!kernel_info.schedulers.ready) PAUSE();
     processor_scheduler_init();
     unlock_timer();
     ENABLE_INTERRUPTS();
@@ -54,7 +55,7 @@ void ap_stage2(void) {
 // entry point for all application processors
 void ap_entry(struct limine_mp_info *this_cpu) {
     DISABLE_INTERRUPTS();
-    spinlock_acquire(&init_lock);
+    spinlock_acquire(&init_lock); // released in ap_stage2
     isa_early_init();
     CPU *cpu = cpu_info_init(get_limine_cpu_id(this_cpu));
     cpu->id  = get_limine_cpu_id(this_cpu);

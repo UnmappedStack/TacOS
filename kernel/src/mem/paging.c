@@ -121,6 +121,5 @@ uintptr_t create_address_space(void) {
     map_kernel_into_vspace(pml4);
     create_stack_for_vspace(pml4);
     
-    kprintf("Created address space at pml4=%x\n", pml4_paddr);
     return pml4_paddr;
 }

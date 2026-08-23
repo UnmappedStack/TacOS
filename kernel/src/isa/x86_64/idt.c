@@ -43,6 +43,7 @@ void test_isr(void*) {
     };
     if (thread != NULL)
         kprintf("%s%u\e[0m,", colours[cpu->id], thread->tid);
+
     end_of_interrupt();
 }
 
@@ -63,8 +64,6 @@ void idt_init(void) {
     
     // halt interrupt
     kernel_info.idt[41] = idt_descriptor((uint64_t) halt_isr, 8, 0x8E);
-
-    kprintf("IDT init OK\n");
 }
 
 extern void divide_exception(void);

@@ -15,7 +15,6 @@
         do { \
             if (!cpu_has_msr()) \
                 kpanic("MSRs not supported"); \
-            else kprintf("MSRs supported!\n"); \
             gdt_init(); \
             idt_init(); \
         } while (0)
