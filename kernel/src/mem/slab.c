@@ -1,4 +1,5 @@
 #include <slab.h>
+#include <string.h>
 #include <kprintf.h>
 #include <kernel.h>
 #include <mm.h>
