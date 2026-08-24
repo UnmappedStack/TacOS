@@ -23,7 +23,7 @@ typedef struct {
     /* ACPI & APIC stuff */
 #if defined(__x86_64__)
     RSDP *rsdp_table;
-    RSDT *rsdt;
+    XSDT *xsdt;
     IOApic ioapic_device;
     uintptr_t ioapic_addr;
     uintptr_t lapic_addr;

@@ -7,6 +7,11 @@ typedef struct {
     char OEMID[6];
     uint8_t revision;
     uint32_t rsdt_address;
+
+    uint32_t length;
+    uint64_t xsdt_address;
+    uint8_t extended_checksum;
+    uint8_t rsvd[3];
 } __attribute__((packed)) RSDP;
 
 typedef struct {
@@ -21,10 +26,11 @@ typedef struct {
     uint32_t creator_revision;
 } __attribute__((packed)) ISDTHeader;
 
+//technically either rsdt OR xsdt
 typedef struct {
     ISDTHeader header;
-    uint32_t entries[0];
-} __attribute__((packed)) RSDT;
+    uint64_t entries[0];
+} __attribute__((packed)) XSDT;
 
 void acpi_init(void);
-void *find_MADT(RSDT *root_rsdt);
+void *find_MADT(XSDT *root_rsdt);

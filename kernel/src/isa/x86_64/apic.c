@@ -142,7 +142,7 @@ void apic_init(void) {
     // disable pic
     outb(0x21, 0xff);
     outb(0xA1, 0xff);
-    MADT *madt = (MADT *)find_MADT(kernel_info.rsdt);
+    MADT *madt = (MADT *)find_MADT(kernel_info.xsdt);
     if (!madt) kpanic("MADT not found");
     // map the lapic addr
     map_page((uint64_t *)(kernel_info.cr3 + kernel_info.hhdm),

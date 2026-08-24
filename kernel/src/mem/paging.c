@@ -102,8 +102,7 @@ void map_all_memory_into_vspace(uint64_t *pml4) {
         uintptr_t paddr = entries[i]->base;
         uintptr_t vaddr = entries[i]->base + kernel_info.hhdm;
         uint64_t  type  = entries[i]->type;
-        if (type != LIMINE_MEMMAP_USABLE && type != LIMINE_MEMMAP_FRAMEBUFFER &&
-            type != LIMINE_MEMMAP_BOOTLOADER_RECLAIMABLE && type != LIMINE_MEMMAP_KERNEL_AND_MODULES) continue;
+        if (type == LIMINE_MEMMAP_BAD_MEMORY || type == LIMINE_MEMMAP_RESERVED) continue;
         map_consecutive_pages(pml4, vaddr, paddr, entries[i]->length/PAGE_BYTES, PAGE_PRESENT | PAGE_WRITE);
     }
 }
