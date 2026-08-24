@@ -33,6 +33,7 @@ uint64_t *get_or_create_next_layer(uint64_t *parent_layer, uint64_t idx) {
      * be used for further child tables. */
     if (!parent_layer[idx]) {
         uintptr_t child_paddr = pma_palloc();
+        memset((void*)(child_paddr+kernel_info.hhdm), 0, PAGE_BYTES);
         parent_layer[idx] = PAGE_PRESENT | PAGE_WRITE | PAGE_USER | child_paddr;
         memset((void*)(child_paddr + kernel_info.hhdm), 0, 512);
     }
@@ -41,7 +42,7 @@ uint64_t *get_or_create_next_layer(uint64_t *parent_layer, uint64_t idx) {
 }
 
 void map_page(uint64_t *pml4vaddr, uintptr_t vaddr, uintptr_t paddr, uint64_t flags) {
-    vaddr &= ~0xFFFF000000000000; /* high bits must be cleared as they are used for other stuff */
+    vaddr &= ~0xFFFF000000000000ULL; /* high bits must be cleared as they are used for other stuff */
 
     uint64_t *current_layer_vaddr = pml4vaddr;
     for (uint8_t pml_level = 4; pml_level > 1; pml_level--) {
@@ -101,8 +102,8 @@ void map_all_memory_into_vspace(uint64_t *pml4) {
         uintptr_t paddr = entries[i]->base;
         uintptr_t vaddr = entries[i]->base + kernel_info.hhdm;
         uint64_t  type  = entries[i]->type;
-        if (type == LIMINE_MEMMAP_BAD_MEMORY ||
-            type == LIMINE_MEMMAP_RESERVED) continue;
+        if (type != LIMINE_MEMMAP_USABLE && type != LIMINE_MEMMAP_FRAMEBUFFER &&
+            type != LIMINE_MEMMAP_BOOTLOADER_RECLAIMABLE && type != LIMINE_MEMMAP_KERNEL_AND_MODULES) continue;
         map_consecutive_pages(pml4, vaddr, paddr, entries[i]->length/PAGE_BYTES, PAGE_PRESENT | PAGE_WRITE);
     }
 }
@@ -116,6 +117,7 @@ void create_stack_for_vspace(uint64_t *pml4) {
 uintptr_t create_address_space(void) {
     uintptr_t pml4_paddr = pma_palloc();
     uint64_t *pml4 = (uint64_t*) (pml4_paddr + kernel_info.hhdm);
+    memset(pml4, 0, PAGE_BYTES);
 
     map_all_memory_into_vspace(pml4);
     map_kernel_into_vspace(pml4);

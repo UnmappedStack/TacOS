@@ -56,7 +56,7 @@ uintptr_t pma_palloc(void) {
     if (list_empty(&kernel_info.pmm_nodes))
         kpanic("Out of Memory");
 
-    PMMNode *node = CONTAINER_OF(kernel_info.pmm_nodes.prev, PMMNode, list);
+    PMMNode *node = CONTAINER_OF(kernel_info.pmm_nodes.next, PMMNode, list);
     list_remove(&node->list);
 
     if (node->size_pages > PAGE_BYTES) {
