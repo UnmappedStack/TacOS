@@ -72,7 +72,7 @@ prepare_for_interrupt:
     // restore registers
     ld x0, 32(sp)
     ld x1, 40(sp)
-    ld x2, 48(sp)
+    // sp doesn't get restored as it would mess it up
     ld x3, 56(sp)
     ld x4, 64(sp)
     ld x5, 72(sp)

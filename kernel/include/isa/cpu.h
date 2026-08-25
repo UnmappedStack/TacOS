@@ -50,6 +50,7 @@
     #define isa_early_init() \
         do { \
             interrupts_init(); \
+            kprintf("here1\n"); \
         } while(0)
     #define exceptions_init() FREEZE_DEVICE()
     #define SWITCH_PAGE_TREE(cr3) FREEZE_DEVICE()
