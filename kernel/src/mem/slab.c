@@ -14,6 +14,8 @@ Cache *cache_create(uint64_t object_size) {
         kpanic("Object size too small (must be over sizeof(struct list))");
 
     Cache *cache = (Cache*) (pma_valloc());
+    memset(cache, 0, PAGE_BYTES);
+
     cache->object_size = object_size;
     cache->objects_per_slab = (PAGE_BYTES - sizeof(Slab)) / object_size;
 
@@ -27,6 +29,7 @@ Cache *cache_create(uint64_t object_size) {
 // create a new free slab for a cache & return it
 Slab *cache_grow(Cache *cache) {
     Slab *new_slab = (Slab*) (pma_valloc());
+    memset(new_slab, 0, PAGE_BYTES);
 
     list_insert(&cache->free, &new_slab->list);
     list_init(&new_slab->objects);
