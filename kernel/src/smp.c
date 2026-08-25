@@ -26,8 +26,6 @@ CPU *cpu_info_init(uint64_t lapic_id) {
     return cpu_info;
 }
 
-#define PAUSE() __builtin_ia32_pause()
-
 static int num_aps_initialised = 0;
 static Spinlock init_lock = {0};
 /* after the stack has been changed */
@@ -38,6 +36,8 @@ void ap_stage2(void) {
               (uint64_t)kernel_info.lapic_addr,
               (uint64_t)kernel_info.lapic_addr - kernel_info.hhdm,
               PAGE_PRESENT | PAGE_WRITE);
+#elif defined(__riscv)
+    (void) cpu;
 #endif
     init_local_interrupt_controller(kernel_info.lapic_addr);
     timer_local_init();

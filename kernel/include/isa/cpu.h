@@ -37,6 +37,7 @@
                                                  IPI_TRIGGER_EDGE | \
                                                  IPI_DEST_SHORTHAND_ALL_EXCEPT_SELF); \
         } while(0)
+    #define PAUSE() __builtin_ia32_pause()
 #elif defined(__riscv)
     static_assert(__riscv_xlen == 64 && "64 bit is supported");
     // there's a lot of stubs here that all are meaningless. TODO: actually do riscv64 stuff
@@ -45,6 +46,7 @@
     #include <isa/riscv64/interrupts.h>
     #include <isa/riscv64/csr.h>
     #include <isa/riscv64/panic.h>
+    #define PAUSE() __builtin_riscv_pause()
     #define isa_early_init() \
         do { \
             interrupts_init(); \

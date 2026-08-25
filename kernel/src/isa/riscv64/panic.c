@@ -1,4 +1,5 @@
 #include <isa/cpu.h>
+#include <serial.h>
 #include <stddef.h>
 #include <lock.h>
 #include <assets.h>
@@ -42,11 +43,11 @@ void panic_handler(const char *msg, InterruptStackFrame *frame) {
     spinlock_acquire(&panic_lock); // never released
 
     int i = 0;
-#define ASCII_ART_LINE() kprintf(ascii_art[i++]);
+#define ASCII_ART_LINE() write_serial(ascii_art[i++]);
 #define ASCII_ART_NEWLINE() \
     do { \
         ASCII_ART_LINE(); \
-        kprintf("\n"); \
+        write_serial("\n"); \
     } while (0)
     const char *error_type;
     if (msg != NULL)
