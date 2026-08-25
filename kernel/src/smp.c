@@ -43,7 +43,6 @@ void ap_stage2(void) {
     timer_local_init();
 
     num_aps_initialised++;
-    kprintf("Initiated CPU%u\n", cpu->id);
     while (!kernel_info.schedulers.ready) PAUSE();
 
     // maybe it'd be better to just make processor_scheduler_init()

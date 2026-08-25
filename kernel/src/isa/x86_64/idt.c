@@ -43,7 +43,7 @@ void test_isr(void*) {
         "\e[0;35m", // P
     };
     if (thread != NULL)
-        kprintf("%s%u\e[0m,", colours[cpu->id], thread->tid);
+        kprintf("%s%u\e[0m,", colours[cpu->id % 5], thread->tid);
 
     end_of_interrupt();
 }
