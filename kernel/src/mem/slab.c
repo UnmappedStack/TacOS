@@ -1,4 +1,5 @@
 #include <slab.h>
+#include <util.h>
 #include <string.h>
 #include <kprintf.h>
 #include <kernel.h>
@@ -47,8 +48,8 @@ void *slab_alloc(Cache *cache) {
     /* first, find a slab to use (or create one if
      * there's none with free objects) */
     Slab *slab;
-    if (!list_empty(&cache->partial)) slab = (Slab*) cache->partial.next;
-    else if (!list_empty(&cache->free)) slab = (Slab*) cache->free.next;
+    if (!list_empty(&cache->partial)) slab = CONTAINER_OF(cache->partial.next, Slab, list); 
+    else if (!list_empty(&cache->free)) slab = CONTAINER_OF(cache->free.next, Slab, list);
     else slab = cache_grow(cache);
 
     // get the object to return the memory of & remove it from the freelist
@@ -87,7 +88,7 @@ bool is_object_on_slab(Slab *slab, void *object) {
 // not gonna be unnecessarily memory greedy. feel free to open an issue with an idea.
 Slab *is_object_on_slab_list(struct list *list, void *object) {
     for (struct list *at = list->next; at != list; at = at->next) {
-        Slab *this_slab = (Slab*) at;
+        Slab *this_slab = CONTAINER_OF(at, Slab, list);
         if (is_object_on_slab(this_slab, object)) return this_slab;
     }
     return NULL;
