@@ -1,3 +1,5 @@
+
+
 #include <isa/x86_64/apic.h>
 #include <util.h>
 #include <paging.h>
@@ -113,17 +115,6 @@ void init_lapic_timer(void) {
     write_lapic(lapic_addr, LAPIC_TIMER_LVT_REGISTER, 40 | 0x20000);
     write_lapic(lapic_addr, LAPIC_TIMER_DIVIDER_REGISTER, 3);
     write_lapic(lapic_addr, LAPIC_TIMER_INITIAL_COUNT_REGISTER, num_ticks);
-}
-
-void lock_lapic_timer(void) {
-    write_lapic(kernel_info.lapic_addr, LAPIC_TIMER_LVT_REGISTER,
-                read_lapic(kernel_info.lapic_addr, LAPIC_TIMER_LVT_REGISTER) &
-                    ~0x20000);
-}
-
-void unlock_lapic_timer(void) {
-    write_lapic(kernel_info.lapic_addr, LAPIC_TIMER_LVT_REGISTER,
-                read_lapic(kernel_info.lapic_addr, LAPIC_TIMER_LVT_REGISTER) | 0x20000);
 }
 
 void end_of_interrupt(void) {

@@ -3,6 +3,7 @@
  * a non-slab heap for this, pooling or something. */
 
 #include <pma.h>
+#include <string.h>
 #include <isa/cpu.h>
 #include <mm.h>
 #include <paging.h>
@@ -38,15 +39,20 @@ void ap_stage2(void) {
               (uint64_t)kernel_info.lapic_addr - kernel_info.hhdm,
               PAGE_PRESENT | PAGE_WRITE);
 #endif
-    DISABLE_INTERRUPTS();
     init_local_interrupt_controller(kernel_info.lapic_addr);
     timer_local_init();
-    lock_timer();
-    spinlock_release(&init_lock);
+
     num_aps_initialised++;
+    kprintf("Initiated CPU%u\n", cpu->id);
     while (!kernel_info.schedulers.ready) PAUSE();
+
+    // maybe it'd be better to just make processor_scheduler_init()
+    // thread-safe... the granularity could be wayyy better (TODO, but its a
+    // microoptimisation anyways tbh since this isnt a hotpath)
+    spinlock_acquire(&init_lock);
     processor_scheduler_init();
-    unlock_timer();
+    spinlock_release(&init_lock);
+
     ENABLE_INTERRUPTS();
     for (;;);
 }
@@ -55,7 +61,6 @@ void ap_stage2(void) {
 // entry point for all application processors
 void ap_entry(struct limine_mp_info *this_cpu) {
     DISABLE_INTERRUPTS();
-    spinlock_acquire(&init_lock); // released in ap_stage2
     isa_early_init();
     CPU *cpu = cpu_info_init(get_limine_cpu_id(this_cpu));
     cpu->id  = get_limine_cpu_id(this_cpu);
@@ -71,15 +76,14 @@ void smp_init(void) {
     int num_cores = smp_request.response->cpu_count;
     /* TODO: this gives one page max, only allowing for PAGE_BYTES/sizeof(CPU) processors max.
      * Make it expandable once there's a VMA. */
-    if ((size_t)num_cores >= PAGE_BYTES/sizeof(CPU)) kpanic("too many processors (fixme)");
+    if ((size_t)num_cores >= PAGE_BYTES/sizeof(CPU)) kpanic("too many processors (FIXME)");
     kernel_info.processors = (CPU*)pma_valloc();
     cpu_info_init(0)->id = 0; // it needs to also set up the cpu local struct for the bp here
-    for (int i = 0; i < num_cores; i++) {
+    for (int i = 1; i < num_cores; i++) {
         struct limine_mp_info *cpu = smp_request.response->cpus[i];
-        if (get_limine_cpu_id(cpu) == 0) continue;
         cpu->goto_address = ap_entry;
     }
-    while (num_aps_initialised < num_cores - 1) IO_WAIT();
+    while (num_aps_initialised < num_cores - 1) PAUSE();
 
     kernel_info.smp_enabled = true;
     kprintf("All application processors initialised.\n");

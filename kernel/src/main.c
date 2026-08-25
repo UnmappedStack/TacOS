@@ -43,7 +43,6 @@ void _start(void) {
     add_thread_to_current_processor(create_thread(SCHED_TIMESHARE, 15, 0));
     add_thread_to_current_processor(create_thread(SCHED_TIMESHARE, 20, 0));
 
-    unlock_timer();
     ENABLE_INTERRUPTS();
     for (;;);
 

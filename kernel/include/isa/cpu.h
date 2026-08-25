@@ -26,8 +26,6 @@
     #define timer_local_init() init_lapic_timer()
     #define power_management_init() acpi_init()
     #define interrupt_controller_init() apic_init()
-    #define unlock_timer() unlock_lapic_timer()
-    #define lock_timer() lock_lapic_timer()
     #define init_local_interrupt_controller(mmio_addr) init_local_apic(mmio_addr)
     #define get_limine_cpu_id(cpu) (cpu->lapic_id) // TODO: move this to bootloader specific stuff
     // (41 is defined as a halt interrupt, TODO maybe make it a macro) + move this to another file
@@ -57,8 +55,6 @@
     #define power_management_init() FREEZE_DEVICE()
     #define interrupt_controller_init() FREEZE_DEVICE()
     #define timer_init() FREEZE_DEVICE()
-    #define unlock_timer() FREEZE_DEVICE()
-    #define lock_timer() FREEZE_DEVICE()
     #define set_current_cpu_info(cpu_info) FREEZE_DEVICE()
     #define init_local_interrupt_controller(mmio_addr) FREEZE_DEVICE()
     #define timer_local_init() FREEZE_DEVICE()

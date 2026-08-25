@@ -33,9 +33,9 @@ uint64_t *get_or_create_next_layer(uint64_t *parent_layer, uint64_t idx) {
      * be used for further child tables. */
     if (!parent_layer[idx]) {
         uintptr_t child_paddr = pma_palloc();
-        memset((void*)(child_paddr+kernel_info.hhdm), 0, PAGE_BYTES);
+        memset((void*)(child_paddr + kernel_info.hhdm), 0, PAGE_BYTES);
+
         parent_layer[idx] = PAGE_PRESENT | PAGE_WRITE | PAGE_USER | child_paddr;
-        memset((void*)(child_paddr + kernel_info.hhdm), 0, 512);
     }
     // once we know it exists, we can return it
     return (uint64_t*) (PAGE_ALIGN_DOWN((uintptr_t)parent_layer[idx]) + kernel_info.hhdm);

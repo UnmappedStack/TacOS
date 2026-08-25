@@ -6,6 +6,7 @@
 #include <isa/cpu.h>
 #include <kernel.h>
 #include <util.h>
+#include <lock.h>
 #include <pma.h>
 #include <kprintf.h>
 #include <limine.h>
@@ -51,11 +52,13 @@ void pma_init(void) {
     kprintf("PMA init OK\n");
 }
 
+Spinlock pma_lock = {0};
 // allocate one physical page
 uintptr_t pma_palloc(void) {
     if (list_empty(&kernel_info.pmm_nodes))
         kpanic("Out of Memory");
 
+    spinlock_acquire(&pma_lock);
     PMMNode *node = CONTAINER_OF(kernel_info.pmm_nodes.next, PMMNode, list);
     list_remove(&node->list);
 
@@ -65,7 +68,8 @@ uintptr_t pma_palloc(void) {
         if (new_node->size_pages)
             list_insert(&kernel_info.pmm_nodes, &new_node->list);
     }
-    
+    spinlock_release(&pma_lock);
+
     return (uintptr_t)node - kernel_info.hhdm;
 }
 
@@ -74,8 +78,11 @@ uintptr_t pma_palloc(void) {
 // it is the caller's responsibility if something is wrong.
 void pma_pfree(uintptr_t ptr) {
     PMMNode *node = (PMMNode*) (ptr + kernel_info.hhdm);
+    
+    spinlock_acquire(&pma_lock);
     node->size_pages = 1;
     list_insert(&kernel_info.pmm_nodes, &node->list);
+    spinlock_release(&pma_lock);
 }
 
 // allocate one physical page, returning a virtual address

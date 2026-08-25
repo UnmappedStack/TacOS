@@ -23,6 +23,7 @@ IDTGate idt_descriptor(uint64_t offset, uint16_t segment, uint8_t flags) {
 
 __attribute__((interrupt))
 void test_isr(void*) {
+    DISABLE_INTERRUPTS();
     CPU *cpu = current_processor();
     if (kernel_info.schedulers.least_loaded_processor == NULL ||
             cpu->scheduler->num_threads < kernel_info.schedulers.least_loaded_processor->num_threads)
@@ -42,7 +43,7 @@ void test_isr(void*) {
         "\e[0;35m", // P
     };
     if (thread != NULL)
-        kprintf("%s%u\e[0m,", colours[cpu->id % 5], thread->tid);
+        kprintf("%s%u\e[0m,", colours[cpu->id], thread->tid);
 
     end_of_interrupt();
 }

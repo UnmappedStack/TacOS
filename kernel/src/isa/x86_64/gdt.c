@@ -20,8 +20,8 @@ GDTDescriptor gdt_descriptor(uint32_t limit, uint32_t base, uint8_t access, uint
 //TODO: tss
 extern void reload_gdt(void);
 GDTDescriptor gdt[5] = {0};
-GDTR gdtr;
 __attribute__((noinline)) void gdt_init(void) {
+    GDTR gdtr;
     gdt[0] = gdt_descriptor(0,0,0,0);
     gdt[1] = gdt_descriptor(0, 0, 0x9a, 2); // kernel code
     gdt[2] = gdt_descriptor(0, 0, 0x92, 0); // kernel data
