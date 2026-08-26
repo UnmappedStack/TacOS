@@ -25,6 +25,8 @@ void framebuffer_init(void) {
             = 0;
         kernel_info.framebuffers[i].tty.chars_width  = kernel_info.framebuffers[i].width  / FONT_WIDTH;
         kernel_info.framebuffers[i].tty.chars_height = kernel_info.framebuffers[i].height / FONT_HEIGHT;
+
+        fill_framebuffer(i, BG_DEFAULT);
     }
     kprintf("Initiated %u framebuffer(s)\n", fb_response->framebuffer_count);
 }

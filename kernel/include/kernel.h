@@ -1,5 +1,6 @@
 #pragma once
 #include <smp.h>
+#include <tty.h>
 #include <slab.h>
 #include <scheduler.h>
 #include <list.h>
@@ -11,6 +12,7 @@
 typedef struct {
     Framebuffer framebuffers[MAX_FRAMEBUFFERS];
     int num_framebuffers;
+    GlobalTTYState tty_state;
 
     /* pmm stuff */
     struct list pmm_nodes;

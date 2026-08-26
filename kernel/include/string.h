@@ -7,3 +7,4 @@ void uint64_to_string(uint64_t num, char *str);
 void *memcpy(void *dest, const void *src, size_t n);
 void *memset(void *dest, int ch, size_t n);
 int memcmp(const void *s1, const void *s2, size_t n);
+uint64_t str_to_u64(const char *str);

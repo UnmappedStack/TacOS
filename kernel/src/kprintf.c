@@ -7,12 +7,12 @@
 
 void print_char(char c) {
     write_serial_char(c);
-    tty_draw_char(0xffffff, c);
+    tty_write_char(c);
 }
 
 void print_string(const char *s) {
     write_serial(s);
-    tty_write_text(0xffffff, s);
+    tty_write_text(s);
 }
 
 // this is a pretty simple kprintf implementation. it's similar to printf except not posix, so it
@@ -21,9 +21,9 @@ void print_string(const char *s) {
 //
 // It supports %c, %s, %x pretty much the same as on posix, except %u is a bit different, as it formats 64 bit unsigned integers instead
 // of unsigned smaller data sizes. It then just writes it to serial output.
+Spinlock kprintf_lock = {0};
 void kprintf(const char *fmt, ...) {
-    static Spinlock lock = {0};
-    spinlock_acquire(&lock);
+    spinlock_acquire(&kprintf_lock);
     va_list args;
     va_start(args, fmt);
     for (; *fmt; fmt++) {
@@ -54,6 +54,6 @@ void kprintf(const char *fmt, ...) {
             default: break;
         }
     }
-    spinlock_release(&lock);
+    spinlock_release(&kprintf_lock);
     va_end(args);
 }

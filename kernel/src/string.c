@@ -98,3 +98,13 @@ void uint64_to_hex_string(uint64_t num, char *str) {
     memcpy(str, buffer, 17);
 }
 
+uint64_t str_to_u64(const char *str) {
+    uint64_t result = 0;
+    while (*str) {
+        if (*str < '0' || *str > '9')
+            break;
+        result = result * 10 + (*str - '0');
+        str++;
+    }
+    return result;
+}

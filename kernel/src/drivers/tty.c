@@ -5,8 +5,8 @@
 #include <framebuffer.h>
 #include <assets.h>
 
-// TODO; this should probably store a buffer
-void draw_char_at(int fb, int x, int y, int colour, unsigned char ch) {
+// TODO: this should probably store a buffer
+void draw_char_at(int fb, int x, int y, int colour, int bg, unsigned char ch) {
     static_assert(FONT_WIDTH == 8, "font width should probably change to allow larger font sizes (but width 8 is required rn)");
     for (int down = 0; down < FONT_HEIGHT; down++) {
         uint8_t char_byte = font[(FONT_HEIGHT * ch) + down];
@@ -15,7 +15,7 @@ void draw_char_at(int fb, int x, int y, int colour, unsigned char ch) {
             if (char_bit_set)
                 framebuffer_draw_pixel(fb, x+across, y+down, colour);
             else
-                framebuffer_draw_pixel(fb, x+across, y+down, 0);
+                framebuffer_draw_pixel(fb, x+across, y+down, bg);
         }
     }
 }
@@ -32,7 +32,7 @@ void scroll_pixels(int fb, size_t num_pix) {
         new_row_loc += framebuffer->pitch;
         old_row_loc += framebuffer->pitch;
     }
-    framebuffer_draw_rect(fb, 0, max_height, framebuffer->width, num_pix, 0);
+    framebuffer_draw_rect(fb, 0, max_height, framebuffer->width, num_pix, BG_DEFAULT);
 }
 
 void scroll_lines(int fb, int num_lines) {
@@ -41,20 +41,7 @@ void scroll_lines(int fb, int num_lines) {
     scroll_pixels(fb, FONT_HEIGHT * num_lines);
 }
 
-void tty_draw_char(int colour, unsigned char ch) {
-    // TODO/FIXME: temporary and bad thing to ignore ansi which is kinda broken.
-    // Actually implement an ANSI state machine.
-    static int num_in_ansi = 0;
-    if (ch == '\e') {
-        num_in_ansi = 6;
-        return;
-    }
-    if (num_in_ansi) {
-        num_in_ansi--;
-        return;
-    }
-
-    // actual char drawing, after the disgusting ansi skip thing
+void tty_draw_char(int colour, int bg, unsigned char ch) {
     for (int fb = 0; fb < kernel_info.num_framebuffers; fb++) {
         Framebuffer *buf = &kernel_info.framebuffers[fb];
         if (!buf->addr) continue;
@@ -66,7 +53,7 @@ void tty_draw_char(int colour, unsigned char ch) {
             (*y)++;
             continue;
         }
-        draw_char_at(fb, (*x)++ * FONT_WIDTH, *y * FONT_HEIGHT, colour, ch);
+        draw_char_at(fb, (*x)++ * FONT_WIDTH, *y * FONT_HEIGHT, colour, bg, ch);
         if (*x >= buf->tty.chars_width) {
             *x = 0;
             (*y)++;
@@ -74,8 +61,86 @@ void tty_draw_char(int colour, unsigned char ch) {
     }
 }
 
-void tty_write_text(int colour, const char *s) {
+void tty_set_cell_graphics_mode(TTYCmd cmd) {
+    // ANSI base colours except for default
+    int tty_colours[] = {
+        0x000000, /*red*/ 0x853A3C, /*green*/ 0x72854D, /*yellow*/ 0x7C684D,
+        /*blue*/ 0x394B57, /*magenta*/0x9A6C91, 0x00FFFF, 0xFFFFFF,
+    };
+    for (int arg = 0; arg < cmd.num_args; arg++) {
+        if (cmd.args[arg] >= 30 && cmd.args[arg] <= 39) {
+            uint32_t col = (cmd.args[arg] == 39)
+                               ? FG_DEFAULT
+                               : tty_colours[cmd.args[arg] - 30];
+            kernel_info.tty_state.fg_colour = col;
+        } else if (cmd.args[arg] >= 40 && cmd.args[arg] <= 49) {
+            uint32_t col = (cmd.args[arg] == 49)
+                               ? BG_DEFAULT
+                               : tty_colours[cmd.args[arg] - 40];
+            kernel_info.tty_state.bg_colour = col;
+        }
+    }
+}
+
+void run_ansi_cmd(TTYCmd cmd) {
+    switch (cmd.cmd) {
+    case 'm':
+        tty_set_cell_graphics_mode(cmd);
+        break;
+    default:
+        /* unrecognised ansi command, we just ignore. TODO: somehow
+         * report it being deadlock prone */
+    }
+}
+
+void escape_mode(unsigned char ch) {
+    TTYCmd *cmd = &kernel_info.tty_state.cmd;
+    if (ch >= '0' && ch <= '9') {
+        // digit of an argument
+        cmd->current_arg[cmd->current_arg_len++] = ch;
+    } else if (ch == ';') {
+        // end of an argument, turn it to an int and save it
+        cmd->args[cmd->num_args++] = str_to_u64(cmd->current_arg);
+        cmd->current_arg_len = 0;
+    } else if ((ch >= 'a' && ch <= 'z') || (ch >= 'A' && ch <= 'Z')) {
+        // save last argument first
+        cmd->args[cmd->num_args++] = str_to_u64(cmd->current_arg);
+        cmd->current_arg_len = 0;
+        // then execute the command
+        cmd->cmd = ch;
+        kernel_info.tty_state.state = StateNormal;
+        run_ansi_cmd(*cmd);
+        cmd->num_args = 0;
+    }
+}
+
+void tty_write_char(unsigned char ch) {
+    if (!kernel_info.tty_state.init_complete) {
+        kernel_info.tty_state.fg_colour = FG_DEFAULT;
+        kernel_info.tty_state.bg_colour = BG_DEFAULT;
+        kernel_info.tty_state.init_complete = true;
+    }
+    switch (kernel_info.tty_state.state) {
+    case StateNormal:
+        if (ch == '\x1b' || ch == '\e') {
+            kernel_info.tty_state.state = StateEscape;
+            return;
+        }
+        tty_draw_char(kernel_info.tty_state.fg_colour, kernel_info.tty_state.bg_colour, ch);
+        break;
+    case StateEscape:
+        if (ch != '[') return; // only csi is supported rn
+        kernel_info.tty_state.state = StateCSI;
+        return;
+    case StateCSI:
+        escape_mode(ch);
+        return;
+    default: ;;
+    }
+}
+
+void tty_write_text(const char *s) {
     for (; *s; s++) {
-        tty_draw_char(colour, *s);
+        tty_write_char(*s);
     }
 }
