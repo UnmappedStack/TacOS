@@ -108,3 +108,9 @@ uint64_t str_to_u64(const char *str) {
     }
     return result;
 }
+
+uint64_t strlen(const char *str) {
+    uint64_t ret = 0;
+    for (; *str; str++) ret++;
+    return ret;
+}

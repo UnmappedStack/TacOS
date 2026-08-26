@@ -5,6 +5,7 @@
 
 #include <isa/cpu.h>
 #include <kernel.h>
+#include <string.h>
 #include <util.h>
 #include <lock.h>
 #include <pma.h>
@@ -38,17 +39,29 @@ void pma_init(void) {
 
     kprintf("Memory map dump:\n");
     list_init(&kernel_info.pmm_nodes);
+    kprintf("+====================+====================+========================+\n");
+    kprintf("|    Base address    |   Size in bytes    |          Type          |\n");
+    kprintf("+====================+====================+========================+\n");
     for (size_t i = 0; i < num_entries; i++) {
         uint64_t base   = entries[i]->base;
         uint64_t length = entries[i]->length;
         uint64_t type   = entries[i]->type;
-        size_t size_pages = length / PAGE_BYTES;
-        kprintf(" -> %x (%u pages): %s\n", base, size_pages, types_stringified[type]);
+        uint64_t size_pages = length / PAGE_BYTES;
+
+        static char buf[20] = "0x";
+        uint64_to_hex_string(length, buf+2);
+        static char spaces[23];
+        int num_spaces = 22-strlen(types_stringified[type]);
+        memset(spaces, ' ', num_spaces);
+        spaces[num_spaces] = 0;
+
+        kprintf("| %x | %s | %s%s |\n", base, buf, types_stringified[type], spaces);
         if (type != LIMINE_MEMMAP_USABLE) continue;
         PMMNode *node = (PMMNode*) (base + kernel_info.hhdm);
         node->size_pages = size_pages;
         list_insert(&kernel_info.pmm_nodes, &node->list);
     }
+    kprintf("+====================+====================+========================+\n");
     kprintf("PMA init OK\n");
 }
 
