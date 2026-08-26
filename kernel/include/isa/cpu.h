@@ -46,14 +46,13 @@
     #include <isa/riscv64/interrupts.h>
     #include <isa/riscv64/csr.h>
     #include <isa/riscv64/panic.h>
+    #include <isa/riscv64/paging.h>
     #define PAUSE() __builtin_riscv_pause()
     #define isa_early_init() \
         do { \
             interrupts_init(); \
         } while(0)
     #define exceptions_init() {}
-    #define SWITCH_PAGE_TREE(cr3) FREEZE_DEVICE()
-    #define SWITCH_STACK(stack_top) FREEZE_DEVICE()
     #define power_management_init() FREEZE_DEVICE()
     #define interrupt_controller_init() FREEZE_DEVICE()
     #define timer_init() FREEZE_DEVICE()
@@ -64,9 +63,6 @@
     #define get_limine_cpu_id(cpu) (cpu->hartid) // TODO: move this to bootloader specific stuff
     #define get_current_cpu_info() (0)
     #define halt_all_processors() FREEZE_DEVICE()
-    #define PAGE_PRESENT 0
-    #define PAGE_WRITE 0
-    #define PAGE_USER 0
     #define outb(port, b) \
         do { \
             (void)b; \

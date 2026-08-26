@@ -24,6 +24,7 @@ void interrupt_handler(InterruptStackFrame *frame) {
     case EXCEPTION_INSTRUCTION_ACCESS_FAULT:
     case EXCEPTION_ILLEGAL_INSTRUCTION:
     case EXCEPTION_LOAD_ADDRESS_MISALIGNED:
+    case EXCEPTION_LOAD_ADDRESS_FAULT:
     case EXCEPTION_STORE_AMO_ACCESS_FAULT:
     case EXCEPTION_INSTRUCTION_PAGE_FAULT:
     case EXCEPTION_LOAD_PAGE_FAULT:
@@ -33,7 +34,7 @@ void interrupt_handler(InterruptStackFrame *frame) {
         panic_handler(NULL, frame);
         break;
     default:
-        kprintf("   > unhandled interrupt (probably an exception), freeze this cpu (TODO handle this properly)\n");
+        kprintf("   > unhandled interrupt %u (probably an exception), freeze this cpu (TODO handle this properly)\n", frame->cause);
         FREEZE_DEVICE();
     }
 }

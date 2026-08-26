@@ -11,3 +11,8 @@
 #define SWITCH_STACK(STACK_TOP) \
     __asm__ volatile("movq %0, %%rsp;" \
                      "movq $0, %%rbp" : : "r"(STACK_TOP));
+
+#define PAGE_TABLE_ENTRY(paddr, flags) (flags | paddr)
+
+// TODO: this wont support higher flags like execute disable properly
+#define PADDR_FROM_TABLE_ENTRY(entry) (PAGE_ALIGN_DOWN(entry))

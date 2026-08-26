@@ -35,10 +35,14 @@ uint64_t *get_or_create_next_layer(uint64_t *parent_layer, uint64_t idx) {
         uintptr_t child_paddr = pma_palloc();
         memset((void*)(child_paddr + kernel_info.hhdm), 0, PAGE_BYTES);
 
-        parent_layer[idx] = PAGE_PRESENT | PAGE_WRITE | PAGE_USER | child_paddr;
+        parent_layer[idx] = PAGE_TABLE_ENTRY(
+                                child_paddr,
+                                PAGE_PRESENT | PAGE_WRITE | PAGE_USER
+                            );
     }
     // once we know it exists, we can return it
-    return (uint64_t*) (PAGE_ALIGN_DOWN((uintptr_t)parent_layer[idx]) + kernel_info.hhdm);
+    uint64_t paddr = PADDR_FROM_TABLE_ENTRY((uintptr_t)parent_layer[idx]);
+    return (uint64_t*) (paddr + kernel_info.hhdm);
 }
 
 void map_page(uint64_t *pml4vaddr, uintptr_t vaddr, uintptr_t paddr, uint64_t flags) {
@@ -54,7 +58,7 @@ void map_page(uint64_t *pml4vaddr, uintptr_t vaddr, uintptr_t paddr, uint64_t fl
 
     /* now that we've actually got the pml1 table and the offset into it, we can
      * just add the mapping to the page tree */
-    current_layer_vaddr[TABLE_FROM_VADDR(vaddr, 1)] = paddr | flags;
+    current_layer_vaddr[TABLE_FROM_VADDR(vaddr, 1)] = PAGE_TABLE_ENTRY(paddr, flags);
 }
 
 // This could probably be faster, but I feel like this is the more readable implementation
@@ -121,6 +125,6 @@ uintptr_t create_address_space(void) {
     map_all_memory_into_vspace(pml4);
     map_kernel_into_vspace(pml4);
     create_stack_for_vspace(pml4);
-    
+   
     return pml4_paddr;
 }
