@@ -22,10 +22,17 @@ extern uint64_t readonly_end[];
 extern uint64_t writable_start[];
 extern uint64_t writable_end[];
 
+// TODO: move all isa specific stuff in this file away
 /* vaddr is the virtual address we're trying to map to,
  * tlevel is the pml table level we're getting the index of,
  * and it should return a specific index of the set of that pml level */
-#define TABLE_FROM_VADDR(vaddr, tlevel) (((vaddr) >> (12+9*(tlevel-1))) & 511)
+#if defined(__riscv)
+#define ISA_OFFSET 0
+#elif defined(__x86_64__)
+#define ISA_OFFSET 12
+#endif
+#define TABLE_FROM_VADDR(vaddr, tlevel) (((vaddr) >> (ISA_OFFSET+9*(tlevel-1))) & 511)
+
 
 uint64_t *get_or_create_next_layer(uint64_t *parent_layer, uint64_t idx) {
     /* if the index of a page tree level needed does not already exist,
@@ -37,7 +44,7 @@ uint64_t *get_or_create_next_layer(uint64_t *parent_layer, uint64_t idx) {
 
         parent_layer[idx] = PAGE_TABLE_ENTRY(
                                 child_paddr,
-                                PAGE_PRESENT | PAGE_WRITE | PAGE_USER
+                                INNER_NODE_FLAGS
                             );
     }
     // once we know it exists, we can return it
@@ -49,6 +56,9 @@ void map_page(uint64_t *pml4vaddr, uintptr_t vaddr, uintptr_t paddr, uint64_t fl
     vaddr &= ~0xFFFF000000000000ULL; /* high bits must be cleared as they are used for other stuff */
 
     uint64_t *current_layer_vaddr = pml4vaddr;
+    #if defined(__riscv)
+            vaddr /= PAGE_BYTES; // on riscv it needs the virtual frame number, not the address
+    #endif
     for (uint8_t pml_level = 4; pml_level > 1; pml_level--) {
         current_layer_vaddr = get_or_create_next_layer(
                                   current_layer_vaddr,

@@ -1,4 +1,5 @@
 #pragma once
+#include <stdint.h>
 
 #define SUPERVISOR_INTERRUPT_ENABLE_BIT (1 << 1)
 
@@ -13,3 +14,5 @@
             WAIT_FOR_INTERRUPT(); \
         } \
     } while (0)
+
+void switch_page_tree(uintptr_t cr3);
