@@ -15,3 +15,5 @@
 #define PFN_MASK (0xfffffffffff)
 #define PAGE_TABLE_ENTRY(paddr, flags) (flags | ((paddr/PAGE_BYTES)<<10))
 #define PADDR_FROM_TABLE_ENTRY(entry) (((entry>>10)&PFN_MASK)*PAGE_BYTES)
+
+#define VOFF 0

@@ -17,3 +17,5 @@
 
 // TODO: this wont support higher flags like execute disable properly
 #define PADDR_FROM_TABLE_ENTRY(entry) (PAGE_ALIGN_DOWN(entry))
+
+#define VOFF 12
