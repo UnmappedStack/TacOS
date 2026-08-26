@@ -2,7 +2,7 @@
 #include <stdint.h>
 
 #define FG_DEFAULT 0xC9CACA
-#define BG_DEFAULT 0x121418
+#define BG_DEFAULT 0x24282F
 #define MAX_ANSI_ARGS 27 // compliant ansi shouldnt surpass this i think
 
 typedef enum {

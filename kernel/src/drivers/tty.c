@@ -1,4 +1,5 @@
 #include <tty.h>
+#include <serial.h>
 #include <kernel.h>
 #include <string.h>
 #include <kprintf.h>
@@ -64,10 +65,16 @@ void tty_draw_char(int colour, int bg, unsigned char ch) {
 void tty_set_cell_graphics_mode(TTYCmd cmd) {
     // ANSI base colours except for default
     int tty_colours[] = {
-        0x000000, /*red*/ 0x853A3C, /*green*/ 0x72854D, /*yellow*/ 0x7C684D,
-        /*blue*/ 0x394B57, /*magenta*/0x9A6C91, 0x00FFFF, 0xFFFFFF,
+        0x000000, /*red*/ 0x853A3C, /*green*/ 0x72854D, /*yellow*/ 0xE9B771,
+        /*blue*/ 0x588193, /*magenta*/0x9A6C91, 0x00FFFF, 0xFFFFFF,
     };
     for (int arg = 0; arg < cmd.num_args; arg++) {
+
+        if (cmd.args[arg] >= 90 && cmd.args[arg] <= 97)
+            cmd.args[arg] -= 90 - 30;
+        else if (cmd.args[arg] >= 100 && cmd.args[arg] <= 107)
+            cmd.args[arg] -= 100 - 40;
+
         if (cmd.args[arg] >= 30 && cmd.args[arg] <= 39) {
             uint32_t col = (cmd.args[arg] == 39)
                                ? FG_DEFAULT
@@ -78,6 +85,9 @@ void tty_set_cell_graphics_mode(TTYCmd cmd) {
                                ? BG_DEFAULT
                                : tty_colours[cmd.args[arg] - 40];
             kernel_info.tty_state.bg_colour = col;
+        } else if (cmd.args[arg] == 0) {
+            kernel_info.tty_state.bg_colour = BG_DEFAULT;
+            kernel_info.tty_state.fg_colour = FG_DEFAULT;
         }
     }
 }
@@ -88,8 +98,7 @@ void run_ansi_cmd(TTYCmd cmd) {
         tty_set_cell_graphics_mode(cmd);
         break;
     default:
-        /* unrecognised ansi command, we just ignore. TODO: somehow
-         * report it being deadlock prone */
+        write_serial("unknown ansi command\n");
     }
 }
 

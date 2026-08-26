@@ -34,7 +34,6 @@ void _start(void) {
     power_management_init();
     interrupt_controller_init();
     timer_init();
-
     smp_init();
     global_scheduler_init();
     processor_scheduler_init();
