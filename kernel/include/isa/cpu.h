@@ -39,7 +39,7 @@
         } while(0)
     #define PAUSE() __builtin_ia32_pause()
 #elif defined(__riscv)
-    static_assert(__riscv_xlen == 64 && "64 bit is supported");
+    static_assert(__riscv_xlen == 64 && "64 bit must be supported");
     // there's a lot of stubs here that all are meaningless. TODO: actually do riscv64 stuff
     #include <isa/riscv64/riscv64.h>
     #include <isa/riscv64/sbi.h>
@@ -47,18 +47,17 @@
     #include <isa/riscv64/csr.h>
     #include <isa/riscv64/panic.h>
     #include <isa/riscv64/paging.h>
+    #include <isa/riscv64/timer.h>
     #define PAUSE() __builtin_riscv_pause()
     #define isa_early_init() \
         do { \
             interrupts_init(); \
         } while(0)
     #define exceptions_init() {}
-    #define power_management_init() FREEZE_DEVICE()
-    #define interrupt_controller_init() FREEZE_DEVICE()
-    #define timer_init() FREEZE_DEVICE()
+    #define power_management_init() kprintf("TODO: device searching + power management for RISC-V64 port\n")
+    #define interrupt_controller_init() kprintf("TODO: interrupt controller for RISC-V64 port\n")
     #define set_current_cpu_info(cpu_info) FREEZE_DEVICE()
     #define init_local_interrupt_controller(mmio_addr) FREEZE_DEVICE()
-    #define timer_local_init() FREEZE_DEVICE()
     #define IO_WAIT() FREEZE_DEVICE()
     #define get_limine_cpu_id(cpu) (cpu->hartid) // TODO: move this to bootloader specific stuff
     #define get_current_cpu_info() (0)

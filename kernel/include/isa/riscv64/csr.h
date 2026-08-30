@@ -1,8 +1,9 @@
 #pragma once
 #include <stdint.h>
 
-#define CSR_REG_SSTATUS "0x100"
-#define CSR_REG_STVEC  "0x105"
+#define CSR_REG_SSTATUS  "0x100"
+#define CSR_REG_STVEC    "0x105"
+#define CSR_REG_STIMECMP "0x14D"
 
 #define csr_set_bits(csr, val) \
     __asm__ volatile("csrs " csr ", %0" :: "r"(val))

@@ -34,7 +34,7 @@ void interrupt_handler(InterruptStackFrame *frame) {
         panic_handler(NULL, frame);
         break;
     default:
-        kprintf("   > unhandled interrupt %u (probably an exception), freeze this cpu (TODO handle this properly)\n", frame->cause);
+        kprintf("   > unhandled interrupt %u, freeze this cpu (TODO handle this properly)\n", frame->cause);
         FREEZE_DEVICE();
     }
 }
