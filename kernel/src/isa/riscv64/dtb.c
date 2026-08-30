@@ -1,3 +1,5 @@
+//TODO: have a cleaner thing for verbosity than the weird macros to determine if the dtb tree
+//should be shown
 #include <isa/cpu.h>
 #include <string.h>
 #include <kprintf.h>
@@ -16,6 +18,8 @@ uint32_t u32_big_to_little_endian(uint32_t big) {
 #define WORD_ALIGN_UP(x) ((((x) + (4-1)) / 4) * 4)
 #define WRITE_INDENTS(x) for (int i = 0; i < x; i++) kprintf("  ");
 
+//#define DTB_SHOW_TREE // uncomment to show full tree (its a lot)
+
 // this should be moved to a limine specific thing for abstraction idk. it'll
 // be in a prekernel eventually.
 static volatile struct limine_dtb_request dtb_request = {
@@ -27,35 +31,40 @@ void dtb_init(void) {
 
     DTBHeader *dtb = dtb_response->dtb_ptr;
     if (endian_swap(dtb->magic) != DTB_HEADER_MAGIC) kpanic("invalid dtb magic");
-    kprintf(" [DTB] version: %u\n", endian_swap(dtb->version));
+    kprintf("[DTB] version: %u\n", endian_swap(dtb->version));
 
     unsigned char *strings = (unsigned char*) ((uintptr_t)dtb + endian_swap(dtb->strings_offset));
+    (void) strings;
     uint32_t *struct_token = (uint32_t*)((uintptr_t)dtb + endian_swap(dtb->struct_offset));
     int depth = 0;
     while (endian_swap(*struct_token) != DTB_STRUCT_END) {
         switch (endian_swap(*struct_token)) {
         case DTB_STRUCT_BEGIN_NODE:
-            WRITE_INDENTS(depth);
             char *s = (char*)((uintptr_t)struct_token + sizeof(uint32_t));
+            #ifdef DTB_SHOW_TREE
+            WRITE_INDENTS(depth);
             kprintf("DTB node: %s\n", s);
+            #endif
             struct_token += WORD_ALIGN_UP(strlen(s)+1) / sizeof(uint32_t) + 1;
             depth++;
             break;
         case DTB_STRUCT_PROP:
-            WRITE_INDENTS(depth);
             DTBProp *prop = (DTBProp*)(++struct_token);
+            #ifdef DTB_SHOW_TREE
+            WRITE_INDENTS(depth);
             kprintf("DTB prop: %s\n", strings + endian_swap(prop->nameoff));
+            #endif
             uint32_t len_bytes = WORD_ALIGN_UP(endian_swap(prop->len) + sizeof(DTBProp));
             struct_token += len_bytes/sizeof(uint32_t); 
             break;
         case DTB_STRUCT_NOP:
-            WRITE_INDENTS(depth);
-            kprintf("DTB NOP\n");
             struct_token++;
             break;
         case DTB_STRUCT_END_NODE:
             depth--;
+            #ifdef DTB_SHOW_TREE
             WRITE_INDENTS(depth);
+            #endif
             struct_token++;
             break;
         default:
@@ -64,5 +73,5 @@ void dtb_init(void) {
         }
     }
 
-    kprintf("DTB init OK\n");
+    kprintf("\nDTB init OK\n");
 }
