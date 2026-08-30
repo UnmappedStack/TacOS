@@ -5,7 +5,7 @@
 #include <list.h>
 
 typedef struct {
-    struct list list; // points to next+prev PMMNode
+    LList list; // points to next+prev PMMNode
     size_t size_pages;
     // We don't need a FREE flag because if it's in the list then we
     // already know that it's free.

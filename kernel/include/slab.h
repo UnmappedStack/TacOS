@@ -7,9 +7,9 @@ typedef struct {
     /* these each are a circular doubly linked list of slabs.
      * each slab contains its own freelist of slabs for the cache's allocation
      * size and will be moved into the appropriate list as needed.*/
-    struct list free;
-    struct list partial;
-    struct list filled;
+    LList free;
+    LList partial;
+    LList filled;
 
     uint64_t object_size;
     uint64_t objects_per_slab;
@@ -18,8 +18,8 @@ typedef struct {
 } Cache;
 
 typedef struct {
-    struct list list; // other slabs on this slab group in the cache
-    struct list objects; // all *free* objects on the slab (freelist)
+    LList list; // other slabs on this slab group in the cache
+    LList objects; // all *free* objects on the slab (freelist)
     uint64_t num_objects_free;
     Cache *cache; // cache which owns this slab
 

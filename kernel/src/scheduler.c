@@ -84,7 +84,7 @@ int calculate_thread_priority(ProcessorQueue *queue, Thread *thread) {
 // recalculates the priorities of all threads on a scheduler's queue
 // (only timeshare threads)
 void recalculate_queue_priorities(ProcessorQueue *queue) {
-    for (struct list *list = queue->timeshare_threads.next;
+    for (LList *list = queue->timeshare_threads.next;
              list != &queue->timeshare_threads; list = list->next) {
         Thread *thread = CONTAINER_OF(list, Thread, class_list);
         thread->priority = calculate_thread_priority(queue, thread);
@@ -179,7 +179,7 @@ Thread *move_thread_between_queues(ProcessorQueue *steal_from, ProcessorQueue *g
     int next_available;
 
     CalendarBucket *bucket = select_bucket_from_calendar(steal_from, &next_available);
-    struct list *thread_list = bucket->threads.next;
+    LList *thread_list = bucket->threads.next;
     Thread *thread = CONTAINER_OF(thread_list, Thread, bucket_list);
     if (thread->flags & THREAD_FLAG_AFFINITIVE) {
         /* We need to respect processor affinity. The reason I decided to
@@ -240,7 +240,7 @@ Thread *thread_select(void) {
 
         int next_available;
         CalendarBucket *bucket = select_bucket_from_calendar(current_queue, &next_available);
-        struct list *thread_list = bucket->threads.next;
+        LList *thread_list = bucket->threads.next;
 
         list_remove(thread_list);
         if (list_empty(&bucket->threads)) {
@@ -259,7 +259,7 @@ Thread *thread_select(void) {
 
     // nothing in calendar queue, try get something from the idle queue
     if (!list_empty(&current_queue->idle_threads)) {
-        struct list *thread_list = current_queue->idle_threads.next;
+        LList *thread_list = current_queue->idle_threads.next;
         list_remove(thread_list);
         list_insert(&current_queue->idle_threads, thread_list);
         Thread *thread = CONTAINER_OF(thread_list, Thread, class_list);

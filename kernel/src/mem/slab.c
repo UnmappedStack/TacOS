@@ -10,8 +10,8 @@
 Cache *cache_create(uint64_t object_size) {
     if (object_size > PAGE_BYTES)
         kpanic("Object size too large (must be under 1 page)");
-    else if (object_size < sizeof(struct list))
-        kpanic("Object size too small (must be over sizeof(struct list))");
+    else if (object_size < sizeof(LList))
+        kpanic("Object size too small (must be over sizeof(LList))");
 
     Cache *cache = (Cache*) (pma_valloc());
     memset(cache, 0, PAGE_BYTES);
@@ -38,7 +38,7 @@ Slab *cache_grow(Cache *cache) {
 
     // add a bunch of empty objects
     for (size_t i = 0; i < cache->objects_per_slab; i++) {
-        struct list *object = (void*)((uintptr_t)new_slab + sizeof(Slab) + (cache->object_size * i));
+        LList *object = (void*)((uintptr_t)new_slab + sizeof(Slab) + (cache->object_size * i));
         list_insert(&new_slab->objects, object);
     }
     return new_slab;
@@ -59,7 +59,7 @@ void *slab_alloc(Cache *cache) {
     if (list_empty(&slab->objects)) {
         kpanic("Got empty list in slab_alloc");
     }
-    struct list *object = slab->objects.next;
+    LList *object = slab->objects.next;
     list_remove(object);
     slab->num_objects_free--;
 
@@ -89,8 +89,8 @@ bool is_object_on_slab(Slab *slab, void *object) {
 // the slab, otherwise it returns NULL if not found.
 // this is just a linear search, probably could be faster but I'm not sure how in a way that's
 // not gonna be unnecessarily memory greedy. feel free to open an issue with an idea.
-Slab *is_object_on_slab_list(struct list *list, void *object) {
-    for (struct list *at = list->next; at != list; at = at->next) {
+Slab *is_object_on_slab_list(LList *list, void *object) {
+    for (LList *at = list->next; at != list; at = at->next) {
         Slab *this_slab = CONTAINER_OF(at, Slab, list);
         if (is_object_on_slab(this_slab, object)) return this_slab;
     }
@@ -115,7 +115,7 @@ void slab_free(Cache *cache, void *object) {
 
     if (from_full) {
         // if it was taken from a full slab then it will no longer be full slab, so it'll need to become partial
-        struct list *insert_into = (cache->object_size > 1) ? &cache->partial : &cache->free;
+        LList *insert_into = (cache->object_size > 1) ? &cache->partial : &cache->free;
         list_remove(&slab->list);
         list_insert(insert_into, &slab->list);
     } else if (slab->num_objects_free == cache->objects_per_slab) {

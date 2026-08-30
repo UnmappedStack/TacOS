@@ -19,9 +19,9 @@ typedef enum {
 #define NUM_BUCKETS 64
 
 typedef struct {
-    struct list class_list;  /* linked list of other threads of this class
+    LList class_list;  /* linked list of other threads of this class
                               * in the ProcessorQueue it belongs to */
-    struct list bucket_list; /* linked list of other threads in this calendar
+    LList bucket_list; /* linked list of other threads in this calendar
                                 queue bucket */
 
     /* misc info */
@@ -35,16 +35,16 @@ typedef struct {
 } Thread;
 
 typedef struct {
-    struct list threads;
+    LList threads;
 } CalendarBucket;
 
 typedef struct {
-    struct list list; // the other processor queues as a linked list
+    LList list; // the other processor queues as a linked list
 
-    struct list realtime_threads;
-    struct list interactive_timeshare_threads;
-    struct list timeshare_threads;
-    struct list idle_threads;
+    LList realtime_threads;
+    LList interactive_timeshare_threads;
+    LList timeshare_threads;
+    LList idle_threads;
 
     CalendarBucket calendar_queue[NUM_BUCKETS];
     uint64_t current_bucket;
@@ -62,7 +62,7 @@ static_assert(NUM_BUCKETS <= 64, "bitmap too small for number of threads");
 typedef struct {
     Cache *processor_queue_cache;
     Cache *thread_cache;
-    struct list processor_queues;
+    LList processor_queues;
     int tid_upto;
     bool ready;
     ProcessorQueue *least_loaded_processor;

@@ -15,7 +15,7 @@ typedef struct {
     GlobalTTYState tty_state;
 
     /* pmm stuff */
-    struct list pmm_nodes;
+    LList pmm_nodes;
     uintptr_t hhdm;
     struct limine_memmap_response *memmap;
 
