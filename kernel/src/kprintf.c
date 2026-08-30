@@ -40,7 +40,12 @@ void kprintf(const char *fmt, ...) {
                 print_char(va_arg(args, int));
                 break;
             case 's':
-                print_string(va_arg(args, char*));
+                char *s = va_arg(args, char*);
+                if (!s) {
+                    print_string("(null)");
+                    break;
+                }
+                print_string(s);
                 break;
             case 'u':
                 uint64_to_string(va_arg(args, uint64_t), buf);

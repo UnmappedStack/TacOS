@@ -48,13 +48,14 @@
     #include <isa/riscv64/panic.h>
     #include <isa/riscv64/paging.h>
     #include <isa/riscv64/timer.h>
+    #include <isa/riscv64/dtb.h>
     #define PAUSE() __builtin_riscv_pause()
     #define isa_early_init() \
         do { \
             interrupts_init(); \
         } while(0)
     #define exceptions_init() {}
-    #define power_management_init() kprintf("TODO: device searching + power management for RISC-V64 port\n")
+    #define power_management_init() dtb_init() 
     #define interrupt_controller_init() kprintf("TODO: interrupt controller for RISC-V64 port\n")
     #define set_current_cpu_info(cpu_info) FREEZE_DEVICE()
     #define init_local_interrupt_controller(mmio_addr) FREEZE_DEVICE()
