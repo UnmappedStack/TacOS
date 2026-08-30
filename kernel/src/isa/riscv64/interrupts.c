@@ -5,8 +5,9 @@
 
 // non-exception interrupts
 #define INTERRUPT_EBREAK 3
+#define INTERRUPT_TIMER  5
 
-void interrupt_handler(InterruptStackFrame *frame) {
+void handle_exception(InterruptStackFrame *frame) {
     switch (frame->cause) {
     case INTERRUPT_EBREAK:
         kprintf("\n   > EBREAK -> scause=%x\n", frame->cause);
@@ -36,6 +37,23 @@ void interrupt_handler(InterruptStackFrame *frame) {
     default:
         kprintf("   > unhandled interrupt %u, freeze this cpu (TODO handle this properly)\n", frame->cause);
         FREEZE_DEVICE();
+    }
+}
+
+void interrupt_handler(InterruptStackFrame *frame) {
+    bool exception = !((frame->cause >> 63) & 1);
+    
+    if (exception) return handle_exception(frame);
+
+    uint64_t cause = frame->cause & ~(1ULL << 63);
+    switch (cause) {
+    case INTERRUPT_TIMER:
+        kprintf("Timer interrupt!\n");
+        timer_set_timeout(1000);
+        break;
+    default:
+        kprintf("Unexpected interrupt %u\n", cause);
+        break;
     }
 }
 

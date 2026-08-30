@@ -2,6 +2,7 @@
 //should be shown
 #include <isa/cpu.h>
 #include <string.h>
+#include <kernel.h>
 #include <kprintf.h>
 #include <limine.h>
 
@@ -14,7 +15,16 @@ uint32_t u32_big_to_little_endian(uint32_t big) {
     small |= ((big & 0xFF00) << 8); // 0010 -> 0100
     return small;
 }
-#define endian_swap(n) u32_big_to_little_endian(n)
+
+uint64_t u64_big_to_little_endian(uint64_t big) {
+    uint64_t little = 0;
+    little |= (uint64_t)u32_big_to_little_endian(big >> 32) << 32;
+    little |= u32_big_to_little_endian((uint32_t)big);
+    return little;
+}
+
+#define endian_swap(n)   u32_big_to_little_endian(n)
+#define endian_swap64(n) u64_big_to_little_endian(n)
 #define WORD_ALIGN_UP(x) ((((x) + (4-1)) / 4) * 4)
 #define WRITE_INDENTS(x) for (int i = 0; i < x; i++) kprintf("  ");
 
@@ -33,7 +43,7 @@ void dtb_init(void) {
     if (endian_swap(dtb->magic) != DTB_HEADER_MAGIC) kpanic("invalid dtb magic");
     kprintf("[DTB] version: %u\n", endian_swap(dtb->version));
 
-    unsigned char *strings = (unsigned char*) ((uintptr_t)dtb + endian_swap(dtb->strings_offset));
+    char *strings = (char*) ((uintptr_t)dtb + endian_swap(dtb->strings_offset));
     (void) strings;
     uint32_t *struct_token = (uint32_t*)((uintptr_t)dtb + endian_swap(dtb->struct_offset));
     int depth = 0;
@@ -50,12 +60,23 @@ void dtb_init(void) {
             break;
         case DTB_STRUCT_PROP:
             DTBProp *prop = (DTBProp*)(++struct_token);
+            char *name = strings + endian_swap(prop->nameoff);
             #ifdef DTB_SHOW_TREE
             WRITE_INDENTS(depth);
-            kprintf("DTB prop: %s\n", strings + endian_swap(prop->nameoff));
+            kprintf("DTB prop: %s\n", name);
             #endif
+            // TODO: make handling specific things a different function
+            if (!strcmp(name, "timebase-frequency")) {
+                uint64_t timebase_freq;
+                if (endian_swap(prop->len)==8)
+                    timebase_freq = endian_swap64(*((uint64_t*)((uintptr_t)prop + sizeof(DTBProp))));
+                else if (endian_swap(prop->len)==4)
+                    timebase_freq = endian_swap(*((uint32_t*)((uintptr_t)prop + sizeof(DTBProp))));
+                else kpanic("unexpected size for property timebase-frequency");
+                kernel_info.timebase_freq = timebase_freq;
+            }
             uint32_t len_bytes = WORD_ALIGN_UP(endian_swap(prop->len) + sizeof(DTBProp));
-            struct_token += len_bytes/sizeof(uint32_t); 
+            struct_token += len_bytes/sizeof(uint32_t);
             break;
         case DTB_STRUCT_NOP:
             struct_token++;

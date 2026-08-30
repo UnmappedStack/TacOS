@@ -19,6 +19,7 @@ void __stack_chk_fail(void) {
 }
 
 void _start(void) {
+    DISABLE_INTERRUPTS();
     serial_init();
     framebuffer_init();
 

@@ -32,6 +32,11 @@ typedef struct {
     uint64_t pit_counter; // for lapic timer calibration
 #endif
 
+    /* DTB stuff */
+#if defined(__riscv)
+    uint64_t timebase_freq;
+#endif
+
 #if defined(__x86_64__)
     IDTGate idt[256];
 #endif

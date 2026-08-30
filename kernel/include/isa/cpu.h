@@ -54,6 +54,11 @@
         do { \
             interrupts_init(); \
         } while(0)
+    #define timer_init() \
+        do { \
+            timer_global_init(); \
+            timer_local_init(); \
+        } while(0)
     #define exceptions_init() {}
     #define power_management_init() dtb_init() 
     #define interrupt_controller_init() kprintf("TODO: interrupt controller for RISC-V64 port\n")

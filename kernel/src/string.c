@@ -43,6 +43,13 @@ int memcmp(const void *s1, const void *s2, size_t n) {
     return 0;
 }
 
+int strcmp(const char *s1, const char *s2) {
+    size_t len1 = strlen(s1);
+    size_t len2 = strlen(s2);
+    if (len1 != len2) return 1;
+    return memcmp(s1, s2, len1);
+}
+
 // Gets the number of digits of a base 10 number
 int get_num_length(uint64_t num) {
     int length = 0;

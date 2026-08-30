@@ -9,3 +9,4 @@ void *memset(void *dest, int ch, size_t n);
 int memcmp(const void *s1, const void *s2, size_t n);
 uint64_t str_to_u64(const char *str);
 uint64_t strlen(const char *str);
+int strcmp(const char *s1, const char *s2);
