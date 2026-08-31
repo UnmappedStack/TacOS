@@ -1,5 +1,6 @@
 #pragma once
 #include <stdint.h>
+#include <smp.h>
 
 #define SUPERVISOR_INTERRUPT_ENABLE_BIT (1 << 1)
 
@@ -16,3 +17,5 @@
     } while (0)
 
 void switch_page_tree(uintptr_t cr3);
+CPU *get_current_cpu_info(void);
+void set_current_cpu_info(CPU *cpu_info);

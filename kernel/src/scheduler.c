@@ -51,6 +51,7 @@
  *  [X] SMP support (hopefully easy from how previous steps were designed);
  *  [X] Load balancing;
  *  [ ] Interactiveness determination;
+ *  [ ] NUMA readiness would be cool
  */
 
 ProcessorQueue *current_processor_queue(void) {
