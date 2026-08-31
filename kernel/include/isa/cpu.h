@@ -69,7 +69,7 @@ extern volatile struct limine_riscv_bsp_hartid_request bsp_id_request;
     #define init_local_interrupt_controller(mmio_addr) {}
     #define IO_WAIT() FREEZE_DEVICE()
     #define get_limine_cpu_id(cpu) (cpu->hartid) // TODO: move this to bootloader specific stuff
-    #define halt_all_processors() FREEZE_DEVICE()
+    #define halt_all_processors() sbi_ipi_all()
     #define outb(port, b) \
         do { \
             (void)b; \

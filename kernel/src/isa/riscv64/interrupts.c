@@ -75,6 +75,7 @@ void interrupt_handler(InterruptStackFrame *frame) {
     case INTERRUPT_TIMER:
         handle_timer_interrupt();
         timer_set_timeout(PREEMPTION_INTERVAL_MS);
+        ENABLE_INTERRUPTS();
         break;
     default:
         kprintf("Unexpected interrupt %u\n", cause);

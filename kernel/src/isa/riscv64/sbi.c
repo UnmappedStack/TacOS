@@ -27,3 +27,8 @@ static inline long sbi_send_legacy1(long funcid, long arg0) {
 void sbi_write_char(char c) {
     sbi_send_legacy1(1, c);
 }
+
+void sbi_ipi_all(void) {
+    uint64_t bitmap = 0xffffffffffffffff;
+    sbi_send_legacy1(4, (uint32_t) &bitmap);
+}

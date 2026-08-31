@@ -1,5 +1,6 @@
 #include <isa/cpu.h>
 #include <serial.h>
+#include <kernel.h>
 #include <stddef.h>
 #include <lock.h>
 #include <assets.h>
@@ -41,6 +42,8 @@ void panic_handler(const char *msg, InterruptStackFrame *frame) {
     DISABLE_INTERRUPTS();
     kprintf("\n === KERNEL PANIC ENTERED === \n\n");
     spinlock_acquire(&panic_lock); // never released
+
+    if (kernel_info.smp_enabled) halt_all_processors();
 
     int i = 0;
 #define ASCII_ART_LINE() write_serial(ascii_art[i++]);

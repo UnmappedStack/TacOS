@@ -10,7 +10,7 @@ uint64_t read_time(void) {
 
 #define MS_PER_SEC 1000
 uint64_t ms_to_ticks(uint64_t ms, uint64_t freq) {
-    return freq * ms/MS_PER_SEC;
+    return freq * ms / MS_PER_SEC;
 }
 
 void timer_set_timeout(uint64_t ms) {
@@ -27,5 +27,4 @@ void timer_global_init(void) {
 void timer_local_init(void) {
     timer_set_timeout(PREEMPTION_INTERVAL_MS);
     csr_write(CSR_REG_SIE, STIE);
-    kprintf("Timer local init OK\n");
 }

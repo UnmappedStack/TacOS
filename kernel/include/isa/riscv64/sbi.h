@@ -6,3 +6,4 @@ typedef struct {
 } SBIRet;
 
 void sbi_write_char(char c);
+void sbi_ipi_all(void);
