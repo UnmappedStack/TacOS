@@ -78,6 +78,7 @@ void smp_init(void) {
     if ((size_t)num_cores >= PAGE_BYTES/sizeof(CPU)) kpanic("too many processors (FIXME)");
     kernel_info.processors = (CPU*)pma_valloc();
     cpu_info_init(0)->id = 0; // it needs to also set up the cpu local struct for the bp here
+    kprintf("here\n");
     for (int i = 1; i < num_cores; i++) {
         struct limine_mp_info *cpu = smp_request.response->cpus[i];
         cpu->goto_address = ap_entry;

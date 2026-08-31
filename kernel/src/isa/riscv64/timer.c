@@ -28,5 +28,4 @@ void timer_local_init(void) {
     timer_set_timeout(1000);
     csr_write(CSR_REG_SIE, STIE);
     kprintf("Timer local init OK\n");
-    for (;;);
 }
