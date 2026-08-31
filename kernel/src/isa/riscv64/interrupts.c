@@ -1,11 +1,36 @@
 #include <isa/cpu.h>
 #include <stddef.h>
+#include <kernel.h>
 #include <stdint.h>
 #include <kprintf.h>
 
 // non-exception interrupts
 #define INTERRUPT_EBREAK 3
 #define INTERRUPT_TIMER  5
+
+void handle_timer_interrupt(void) {
+    DISABLE_INTERRUPTS();
+    CPU *cpu = current_processor();
+    if (kernel_info.schedulers.least_loaded_processor == NULL ||
+            cpu->scheduler->num_threads < kernel_info.schedulers.least_loaded_processor->num_threads)
+        kernel_info.schedulers.least_loaded_processor = cpu->scheduler;
+    Thread *thread;
+
+    // we only want to load balance on one processor, otherwise it'll be too often
+    if (!cpu->id) cpu->scheduler->total_ticks++;
+    if (!cpu->id && cpu->scheduler->total_ticks % 50 == 0)
+        thread = migrate_push();
+    else thread = thread_select();
+    const char *colours[] = {
+        "\e[0;31m", // R
+        "\e[0;32m", // G
+        "\e[0;33m", // Y
+        "\e[0;34m", // B
+        "\e[0;35m", // P
+    };
+    if (thread != NULL)
+        kprintf("%s%u\e[0m,", colours[cpu->id % 5], thread->tid);
+}
 
 void handle_exception(InterruptStackFrame *frame) {
     switch (frame->cause) {
@@ -48,8 +73,8 @@ void interrupt_handler(InterruptStackFrame *frame) {
     uint64_t cause = frame->cause & ~(1ULL << 63);
     switch (cause) {
     case INTERRUPT_TIMER:
-        kprintf("Timer interrupt!\n");
-        timer_set_timeout(1000);
+        handle_timer_interrupt();
+        timer_set_timeout(PREEMPTION_INTERVAL_MS);
         break;
     default:
         kprintf("Unexpected interrupt %u\n", cause);
