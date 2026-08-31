@@ -18,6 +18,8 @@ typedef enum {
 
 #define NUM_BUCKETS 64
 
+#define PREEMPTION_INTERVAL_MS 10
+
 typedef struct {
     LList class_list;  /* linked list of other threads of this class
                               * in the ProcessorQueue it belongs to */

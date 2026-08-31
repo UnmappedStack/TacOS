@@ -65,7 +65,6 @@ void ap_entry(struct limine_mp_info *this_cpu) {
     cpu->id  = get_limine_cpu_id(this_cpu);
     cpu->cr3 = create_address_space();
     SWITCH_PAGE_TREE(cpu->cr3);
-    SWITCH_STACK(KERNEL_STACK_TOP);
     ap_stage2();
 }
 
@@ -78,6 +77,7 @@ void smp_init(void) {
     if ((size_t)num_cores >= PAGE_BYTES/sizeof(CPU)) kpanic("too many processors (FIXME)");
     kernel_info.processors = (CPU*)pma_valloc();
     cpu_info_init(0)->id = 0; // it needs to also set up the cpu local struct for the bp here
+    kprintf("im here (there are %u processors)\n", num_cores);
     for (int i = 1; i < num_cores; i++) {
         struct limine_mp_info *cpu = smp_request.response->cpus[i];
         cpu->goto_address = ap_entry;

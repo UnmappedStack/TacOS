@@ -18,18 +18,7 @@ void __stack_chk_fail(void) {
     FREEZE_DEVICE();
 }
 
-void _start(void) {
-    DISABLE_INTERRUPTS();
-    serial_init();
-    framebuffer_init();
-
-    isa_early_init();
-    exceptions_init();
-    pma_init();
-
-    kernel_info.cr3 = create_address_space();
-    SWITCH_PAGE_TREE(kernel_info.cr3);
-    SWITCH_STACK(KERNEL_STACK_TOP);
+void boot_stage2(void) {
     kprintf("Page tree switched successfully\n");
     
     power_management_init();
@@ -47,4 +36,19 @@ void _start(void) {
     for (;;);
 
     FREEZE_DEVICE();
+}
+
+void _start(void) {
+    DISABLE_INTERRUPTS();
+    serial_init();
+    framebuffer_init();
+
+    isa_early_init();
+    exceptions_init();
+    pma_init();
+
+    kernel_info.cr3 = create_address_space();
+    SWITCH_PAGE_TREE(kernel_info.cr3);
+
+    boot_stage2();
 }

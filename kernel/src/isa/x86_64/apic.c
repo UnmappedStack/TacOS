@@ -107,7 +107,7 @@ void init_lapic_timer(void) {
         write_lapic(lapic_addr, LAPIC_TIMER_INITIAL_COUNT_REGISTER, 0);
         write_lapic(lapic_addr, LAPIC_TIMER_DIVIDER_REGISTER, 3);
         write_lapic(lapic_addr, LAPIC_TIMER_INITIAL_COUNT_REGISTER, 0xFFFFFFFF);
-        pit_wait(10); // wait & calibrate to 10 ms
+        pit_wait(PREEMPTION_INTERVAL_MS); // wait & calibrate
         count = read_lapic(lapic_addr, LAPIC_TIMER_CURRENT_COUNT_REGISTER);
     }
     write_lapic(lapic_addr, LAPIC_TIMER_INITIAL_COUNT_REGISTER, 0);
