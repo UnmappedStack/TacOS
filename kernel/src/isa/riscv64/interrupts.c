@@ -85,6 +85,4 @@ void interrupt_handler(InterruptStackFrame *frame) {
 extern void prepare_for_interrupt(void); // asm handler, will call interrupt_handler() as defined above
 void interrupts_init(void) {
     csr_write(CSR_REG_STVEC, (uintptr_t)&prepare_for_interrupt);
-    __asm__ volatile("ebreak");
-    kprintf("Interrupt init OK\n");
 }

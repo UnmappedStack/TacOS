@@ -1,4 +1,7 @@
 #pragma once
+#include <limine.h>
+
+extern volatile struct limine_riscv_bsp_hartid_request bsp_id_request;
 
 #if defined(__x86_64__)
     #include <isa/x86_64/gdt.h>
@@ -53,6 +56,7 @@
     #define isa_early_init() \
         do { \
             interrupts_init(); \
+            kernel_info.bp_id = bsp_id_request.response->bsp_hartid; \
         } while(0)
     #define timer_init() \
         do { \
@@ -62,7 +66,7 @@
     #define exceptions_init() {}
     #define power_management_init() dtb_init() 
     #define interrupt_controller_init() kprintf("TODO: interrupt controller for RISC-V64 port\n")
-    #define init_local_interrupt_controller(mmio_addr) FREEZE_DEVICE()
+    #define init_local_interrupt_controller(mmio_addr) {}
     #define IO_WAIT() FREEZE_DEVICE()
     #define get_limine_cpu_id(cpu) (cpu->hartid) // TODO: move this to bootloader specific stuff
     #define halt_all_processors() FREEZE_DEVICE()

@@ -42,6 +42,7 @@ typedef struct {
 #endif
     GlobalSchedulerInfo schedulers;
     CPU *processors;
+    uint64_t bp_id;
 
     bool smp_enabled; // if not then we shouldn't send out IPIs on panic
 } KernelInfo;

@@ -103,7 +103,7 @@ uint64_t get_current_processor(void) {
 void init_lapic_timer(void) {
     static uint32_t count;
     uintptr_t lapic_addr = kernel_info.lapic_addr;
-    if (!get_current_processor()) {
+    if (get_current_processor() == kernel_info.bp_id) {
         write_lapic(lapic_addr, LAPIC_TIMER_INITIAL_COUNT_REGISTER, 0);
         write_lapic(lapic_addr, LAPIC_TIMER_DIVIDER_REGISTER, 3);
         write_lapic(lapic_addr, LAPIC_TIMER_INITIAL_COUNT_REGISTER, 0xFFFFFFFF);
@@ -170,5 +170,6 @@ void apic_init(void) {
     }
 
     init_local_apic(lapic_registers_virt);
+    kernel_info.bp_id = get_current_processor();
     kprintf("APIC init OK (lapic addr: %x)\n", kernel_info.lapic_addr);
 }

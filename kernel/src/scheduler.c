@@ -148,7 +148,17 @@ Thread *create_thread(SchedClass sched_class, int nice, uint8_t flags) {
 }
 
 int count_leading_zeroes(uint64_t x) {
+    if (!x) kpanic("count_leading_zeroes given 0");
+#ifdef __x86_64__
     return __builtin_ctzll(x);
+#endif
+    // this is much slower than __builtin_ctzll
+    int ret = 0;
+    for (size_t i = 0; i < 64; i++) {
+        if (x & (1ULL << i)) return ret;
+        ret++;
+    }
+    return -1; //theoretically unreachable
 }
 
 /* Assumes there is something in the calendar queue, caller is responsible for
@@ -174,8 +184,9 @@ CalendarBucket *select_bucket_from_calendar(ProcessorQueue *current_queue, int *
  * If it doesn't, it'll return null, otherwise it'll return the thread moved. */
 Thread *move_thread_between_queues(ProcessorQueue *steal_from, ProcessorQueue *give_to) {
     if (steal_from->num_threads == 1 || steal_from->num_threads == give_to->num_threads) return NULL;
-    if (!steal_from->bucket_bitmap) return NULL;
+    
     spinlock_acquire(&steal_from->lock);
+    if (!steal_from->bucket_bitmap) goto cleanup;
 
     int next_available;
 
@@ -187,6 +198,7 @@ Thread *move_thread_between_queues(ProcessorQueue *steal_from, ProcessorQueue *g
          * return NULL if the first thread found instead of looking for the first
          * non-affinitive one is to reduce lock time and be quick, we'll just check again
          * on the next migration. */
+cleanup:
         spinlock_release(&steal_from->lock);
         return NULL;
     }
