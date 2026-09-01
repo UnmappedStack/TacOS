@@ -34,6 +34,8 @@ static Spinlock init_lock = {0};
 /* after the stack has been changed */
 void ap_stage2(void) {
     CPU *cpu = current_processor();
+    // this mapping should probably just be part of init_local_interrupt_controller
+    // so that its not needing a yuck macro, TODO
 #if defined(__x86_64__)
     map_page((uint64_t *)(cpu->cr3 + kernel_info.hhdm),
               (uint64_t)kernel_info.lapic_addr,

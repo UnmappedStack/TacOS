@@ -51,6 +51,13 @@ void kprintf(const char *fmt, ...) {
                 uint64_to_string(va_arg(args, uint64_t), buf);
                 print_string(buf);
                 break;
+            case 'i':
+                int64_t uval = va_arg(args, int64_t);
+                uint64_t pos = (uval >= 0) ? uval : -uval;
+                if (uval < 0) print_string("-");
+                uint64_to_string(pos, buf);
+                print_string(buf);
+                break;
             case 'x':
                 uint64_to_hex_string(va_arg(args, uint64_t), buf);
                 print_string("0x");

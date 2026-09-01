@@ -40,7 +40,7 @@ struct StackFrame {
 Spinlock panic_lock = {0};
 void panic_handler(const char *msg, InterruptStackFrame *frame) {
     DISABLE_INTERRUPTS();
-    kprintf("\n === KERNEL PANIC ENTERED === \n\n");
+    kprintf("\e[0m\n === KERNEL PANIC ENTERED === \n\n");
     spinlock_acquire(&panic_lock); // never released
 
     if (kernel_info.smp_enabled) halt_all_processors();
@@ -59,7 +59,6 @@ void panic_handler(const char *msg, InterruptStackFrame *frame) {
         error_type = exceptions[frame->cause];
     else error_type = "Unknown exception";
 
-    //for (int n = 0; n < 7; n++) ASCII_ART_NEWLINE();
     ASCII_ART_LINE(); kprintf(" WOAH! You messed this all up!\n");
     ASCII_ART_LINE(); kprintf(" This is ALL your fault. I take ZERO responsibility!\n");
     ASCII_ART_NEWLINE();

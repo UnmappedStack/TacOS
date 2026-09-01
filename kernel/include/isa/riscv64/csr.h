@@ -8,6 +8,7 @@
 #define CSR_REG_STIMECMP "0x14D"
 
 #define STIE 0x20
+#define SSIP 0x02
 
 #define csr_set_bits(csr, val) \
     __asm__ volatile("csrs " csr ", %0" :: "r"(val))

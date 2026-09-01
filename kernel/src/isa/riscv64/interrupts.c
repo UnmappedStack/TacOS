@@ -5,6 +5,7 @@
 #include <kprintf.h>
 
 // non-exception interrupts
+#define INTERRUPT_IPI    1
 #define INTERRUPT_EBREAK 3
 #define INTERRUPT_TIMER  5
 
@@ -76,6 +77,12 @@ void interrupt_handler(InterruptStackFrame *frame) {
         handle_timer_interrupt();
         timer_set_timeout(PREEMPTION_INTERVAL_MS);
         ENABLE_INTERRUPTS();
+        break;
+    case INTERRUPT_IPI:
+        // this will later have a proper ipi system, but for now we just halt
+        // and assume its because of a panic
+        kprintf("Halt CPU%u\n", get_current_cpu_info()->id);
+        FREEZE_DEVICE();
         break;
     default:
         kprintf("Unexpected interrupt %u\n", cause);
