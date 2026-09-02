@@ -41,7 +41,7 @@ void dtb_init(void) {
 
     DTBHeader *dtb = dtb_response->dtb_ptr;
     if (endian_swap(dtb->magic) != DTB_HEADER_MAGIC) kpanic("invalid dtb magic");
-    kprintf("[DTB] version: %u\n", endian_swap(dtb->version));
+    klogf(LOG_DEBUG, "[DTB] version: %u\n", endian_swap(dtb->version));
 
     char *strings = (char*) ((uintptr_t)dtb + endian_swap(dtb->strings_offset));
     (void) strings;
@@ -53,7 +53,7 @@ void dtb_init(void) {
             char *s = (char*)((uintptr_t)struct_token + sizeof(uint32_t));
             #ifdef DTB_SHOW_TREE
             WRITE_INDENTS(depth);
-            kprintf("DTB node: %s\n", s);
+            klogf(LOG_DEBUG, "DTB node: %s\n", s);
             #endif
             struct_token += WORD_ALIGN_UP(strlen(s)+1) / sizeof(uint32_t) + 1;
             depth++;
@@ -63,7 +63,7 @@ void dtb_init(void) {
             char *name = strings + endian_swap(prop->nameoff);
             #ifdef DTB_SHOW_TREE
             WRITE_INDENTS(depth);
-            kprintf("DTB prop: %s\n", name);
+            klogf(LOG_DEBUG, "DTB prop: %s\n", name);
             #endif
             // TODO: make handling specific things a different function
             if (!strcmp(name, "timebase-frequency")) {
@@ -89,10 +89,11 @@ void dtb_init(void) {
             struct_token++;
             break;
         default:
-            kprintf("Unexpected structure in DTB: %u\n", endian_swap(*struct_token));
+            klogf(LOG_ERROR, "Unexpected structure in DTB: %u\n", endian_swap(*struct_token));
             FREEZE_DEVICE();
         }
     }
 
-    kprintf("\nDTB init OK\n");
+    kprintf("\n");
+    klogf(LOG_STATUS, "DTB init OK\n");
 }

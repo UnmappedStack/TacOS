@@ -20,7 +20,7 @@ void print_string(const char *s);
 #define klogf(level, ...) do { \
     if (level <= VERBOSITY_MAX_LEVEL) { \
         print_string(log_level_strings[level]); \
-        print_string(" " __FILE__ ":" STR(__LINE__) ": "); \
+        print_string(" "); \
         kprintf(__VA_ARGS__); \
     } \
 } while (0)

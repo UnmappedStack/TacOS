@@ -20,8 +20,8 @@ void timer_set_timeout(uint64_t ms) {
 }
 
 void timer_global_init(void) {
-    if (!kernel_info.timebase_freq) kprintf("no timebase freq dt entry found");
-    kprintf("Timer global init OK\n");
+    if (!kernel_info.timebase_freq) kpanic("no timebase freq dt entry found");
+    klogf(LOG_STATUS, "Timer global init OK\n");
 }
 
 void timer_local_init(void) {

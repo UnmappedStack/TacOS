@@ -37,11 +37,11 @@ void pma_init(void) {
 
     kernel_info.hhdm = hhdm_request.response->offset;
 
-    kprintf("Memory map dump:\n");
+    klogf(LOG_DEBUG, "Memory map dump:\n");
     list_init(&kernel_info.pmm_nodes);
-    kprintf("+====================+====================+========================+\n");
-    kprintf("|    Base address    |   Size in bytes    |          Type          |\n");
-    kprintf("+====================+====================+========================+\n");
+    klogf(LOG_DEBUG, "+====================+====================+========================+\n");
+    klogf(LOG_DEBUG, "|    Base address    |   Size in bytes    |          Type          |\n");
+    klogf(LOG_DEBUG, "+====================+====================+========================+\n");
     for (size_t i = 0; i < num_entries; i++) {
         uint64_t base   = entries[i]->base;
         uint64_t length = entries[i]->length;
@@ -55,14 +55,14 @@ void pma_init(void) {
         memset(spaces, ' ', num_spaces);
         spaces[num_spaces] = 0;
 
-        kprintf("| %x | %s | %s%s |\n", base, buf, types_stringified[type], spaces);
+        klogf(LOG_DEBUG, "| %x | %s | %s%s |\n", base, buf, types_stringified[type], spaces);
         if (type != LIMINE_MEMMAP_USABLE) continue;
         PMMNode *node = (PMMNode*) (base + kernel_info.hhdm);
         node->size_pages = size_pages;
         list_insert(&kernel_info.pmm_nodes, &node->list);
     }
-    kprintf("+====================+====================+========================+\n");
-    kprintf("PMA init OK\n");
+    klogf(LOG_DEBUG, "+====================+====================+========================+\n");
+    klogf(LOG_DEBUG, "PMA init OK\n");
 }
 
 Spinlock pma_lock = {0};

@@ -14,7 +14,7 @@ void acpi_init(void) {
     map_page(
         (uint64_t *)(kernel_info.cr3 + kernel_info.hhdm), (uint64_t)kernel_info.rsdp_table,
         ((uint64_t)kernel_info.rsdp_table) - kernel_info.hhdm, PAGE_PRESENT);
-    kprintf("Detected ACPI revision %u\n", kernel_info.rsdp_table->revision);
+    klogf(LOG_DEBUG, "Detected ACPI revision %u\n", kernel_info.rsdp_table->revision);
     uintptr_t phys_sdt_addr = (kernel_info.rsdp_table->revision) ?
                                     kernel_info.rsdp_table->xsdt_address :
                                     kernel_info.rsdp_table->rsdt_address;
@@ -24,7 +24,7 @@ void acpi_init(void) {
               PAGE_PRESENT);
     XSDT *xsdt = (XSDT *)(phys_sdt_addr + kernel_info.hhdm);
     kernel_info.xsdt = xsdt;
-    kprintf("ACPI init OK\n");
+    klogf(LOG_STATUS, "ACPI init OK\n");
 }
 
 void *find_MADT(XSDT *root_xsdt) {

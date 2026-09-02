@@ -65,7 +65,7 @@ extern volatile struct limine_riscv_bsp_hartid_request bsp_id_request;
         } while(0)
     #define exceptions_init() {}
     #define power_management_init() dtb_init() 
-    #define interrupt_controller_init() kprintf("TODO: interrupt controller for RISC-V64 port\n")
+    #define interrupt_controller_init() klogf(LOG_WARN, "TODO: interrupt controller for RISC-V64 port\n")
     #define init_local_interrupt_controller(mmio_addr) {}
     #define IO_WAIT() FREEZE_DEVICE()
     #define get_limine_cpu_id(cpu) (cpu->hartid) // TODO: move this to bootloader specific stuff

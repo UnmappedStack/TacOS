@@ -50,7 +50,7 @@ void test_isr(void*) {
 
 __attribute__((interrupt))
 void halt_isr(void*) {
-    kprintf("Halt CPU%u\n", current_processor()->id);
+    klogf(LOG_ERROR, "Halt CPU%u\n", current_processor()->id);
     FREEZE_DEVICE();
 }
 

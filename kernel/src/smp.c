@@ -74,7 +74,7 @@ void ap_entry(struct limine_mp_info *this_cpu) {
 
 /* starts application processors */
 void smp_init(void) {
-    kprintf("Initialising APs...\n");
+    klogf(LOG_STATUS, "Initialising APs...\n");
     size_t num_cores = smp_request.response->cpu_count;
     /* TODO: this gives one page max, only allowing for PAGE_BYTES/sizeof(CPU) processors max.
      * Make it expandable once there's a VMA. */
@@ -89,7 +89,7 @@ void smp_init(void) {
     while (num_aps_initialised < num_cores - 1) PAUSE();
 
     kernel_info.smp_enabled = true;
-    kprintf("All application processors initialised.\n");
+    klogf(LOG_STATUS, "All application processors initialised.\n");
 }
 
 CPU *current_processor(void) {

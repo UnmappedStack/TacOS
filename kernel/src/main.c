@@ -19,8 +19,8 @@ void __stack_chk_fail(void) {
 }
 
 void boot_stage2(void) {
-    kprintf("Page tree switched successfully\n");
-    
+    klogf(LOG_STATUS, "Page tree switched successfully\n");
+
     power_management_init();
     interrupt_controller_init();
     timer_init();

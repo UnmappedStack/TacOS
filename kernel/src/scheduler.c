@@ -317,5 +317,5 @@ void global_scheduler_init(void) {
 
     list_init(&kernel_info.schedulers.processor_queues);
     kernel_info.schedulers.ready = true;
-    kprintf("Global scheduler init OK\n");
+    klogf(LOG_STATUS, "Global scheduler init OK\n");
 }

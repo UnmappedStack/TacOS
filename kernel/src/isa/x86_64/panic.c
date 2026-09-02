@@ -78,7 +78,7 @@ static char *exceptions[] = {
 Spinlock panic_lock = {0};
 void panic_handler(const char *msg, IDTEFrame frame) {
     DISABLE_INTERRUPTS();
-    kprintf("\n === KERNEL PANIC ENTERED === \n\n");
+    klogf(LOG_ERROR, " === KERNEL PANIC ENTERED === \n\n");
     spinlock_acquire(&panic_lock); // never released
 
     if (kernel_info.smp_enabled) halt_all_processors();

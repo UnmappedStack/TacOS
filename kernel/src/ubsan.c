@@ -2,13 +2,14 @@
  * This file is, instead of the mpl2.0, under the Unlicense License in the public domain. */
 
 #include <stdarg.h>
+#include <stdarg.h>
 #include <stddef.h>
 #include <stdint.h>
 #include <kprintf.h>
 #include <isa/cpu.h>
 
 #define TINYUBSAN_TRAP() kpanic("UBSan (see error above)")
-#define TINYUBSAN_PRINT kprintf
+#define TINYUBSAN_PRINT(...) klogf(LOG_ERROR, __VA_ARGS__)
 
 struct tu_source_location {
   const char *file;

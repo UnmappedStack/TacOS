@@ -28,7 +28,7 @@ void framebuffer_init(void) {
 
         fill_framebuffer(i, BG_DEFAULT);
     }
-    kprintf("Initiated %u framebuffer(s)\n", fb_response->framebuffer_count);
+    klogf(LOG_STATUS, "Initiated %u framebuffer(s)\n", fb_response->framebuffer_count);
 }
 
 void framebuffer_draw_rect(int fb,

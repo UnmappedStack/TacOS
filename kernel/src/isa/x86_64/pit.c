@@ -29,7 +29,7 @@ void pit_init(void) {
     kernel_info.idt[32] = idt_descriptor((uint64_t)&decrement_pit_counter, 8, 0x8E);
     map_ioapic(32, 2, 0, POLARITY_HIGH, TRIGGER_EDGE);
     lock_pit();
-    kprintf("PIT init OK\n");
+    klogf(LOG_STATUS, "PIT init OK\n");
 }
 
 void unlock_pit(void) { unmask_ioapic(2, 0); }

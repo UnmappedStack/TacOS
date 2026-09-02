@@ -128,7 +128,7 @@ bool verify_apic(void) {
 }
 
 void apic_init(void) {
-    kprintf("Initiating APIC...\n");
+    klogf(LOG_STATUS, "Initiating APIC...\n");
     if (!verify_apic()) kpanic("APIC not supported");
     // disable pic
     outb(0x21, 0xff);
@@ -146,14 +146,14 @@ void apic_init(void) {
     MADTEntryHeader *entry =
         (MADTEntryHeader *)(((uint64_t)madt) + sizeof(MADT));
     uint64_t incremented = sizeof(MADT);
-    kprintf("Enumerating %u bytes of MADT entries...\n", madt->header.length);
+    klogf(LOG_DEBUG, "Enumerating %u bytes of MADT entries...\n", madt->header.length);
     while (incremented < madt->header.length) {
         if (entry->entry_type == IOAPIC) {
             IOApic *this_ioapic = (IOApic *)entry;
-            kprintf("I/O APIC device found. Information:\n");
-            kprintf("  -> I/O APIC ID: %u\n", this_ioapic->ioapic_id);
-            kprintf("  -> I/O APIC address: 0x%x\n", this_ioapic->ioapic_addr);
-            kprintf("  -> Global system interrupt base: %u\n",
+            klogf(LOG_DEBUG, "I/O APIC device found. Information:\n");
+            klogf(LOG_DEBUG, "  -> I/O APIC ID: %u\n", this_ioapic->ioapic_id);
+            klogf(LOG_DEBUG, "  -> I/O APIC address: 0x%x\n", this_ioapic->ioapic_addr);
+            klogf(LOG_DEBUG, "  -> Global system interrupt base: %u\n",
                    this_ioapic->global_system_interrupt_base);
             map_page((uint64_t *)(kernel_info.cr3 + kernel_info.hhdm),
                       (uint64_t)this_ioapic->ioapic_addr + kernel_info.hhdm,
@@ -163,7 +163,7 @@ void apic_init(void) {
             kernel_info.ioapic_addr = this_ioapic->ioapic_addr;
         } else if (entry->entry_type == LOCAL_APIC) {
             ProcessorLocalAPIC *this_local_apic = (ProcessorLocalAPIC *)entry;
-            kprintf("Processor local APIC device #%u found\n", this_local_apic->processor_id);
+            klogf(LOG_DEBUG, "Processor local APIC device #%u found\n", this_local_apic->processor_id);
         }
         entry = (MADTEntryHeader *)(((uint64_t)entry) + entry->record_length);
         incremented += entry->record_length;
@@ -171,5 +171,5 @@ void apic_init(void) {
 
     init_local_apic(lapic_registers_virt);
     kernel_info.bp_id = get_current_processor();
-    kprintf("APIC init OK (lapic addr: %x)\n", kernel_info.lapic_addr);
+    klogf(LOG_STATUS, "APIC init OK (lapic addr: %x)\n", kernel_info.lapic_addr);
 }
