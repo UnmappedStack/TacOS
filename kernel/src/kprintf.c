@@ -5,6 +5,13 @@
 #include <serial.h>
 #include <stdarg.h>
 
+const char *log_level_strings[] = {
+    [LOG_ERROR ] = "\e[0;31m[ERROR ]\e[0m",
+    [LOG_STATUS] = "\e[0;32m[STATUS]\e[0m",
+    [LOG_WARN  ] = "\e[0;33m[WARN  ]\e[0m",
+    [LOG_DEBUG ] = "\e[0;34m[DEBUG ]\e[0m",
+};
+
 void print_char(char c) {
     write_serial_char(c);
     tty_write_char(c);
