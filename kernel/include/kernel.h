@@ -1,5 +1,7 @@
 #pragma once
 #include <smp.h>
+#include <vmm.h>
+#include <vmm.h>
 #include <tty.h>
 #include <slab.h>
 #include <scheduler.h>
@@ -20,8 +22,9 @@ typedef struct {
     struct limine_memmap_response *memmap;
 
     /* vmem stuff */
-    uint64_t cr3;
+    VMSpace *vmspace; // this will later be per-process
     Cache *rbtree_cache;
+    Cache *vmspace_cache;
 
     /* ACPI & APIC stuff */
 #if defined(__x86_64__)

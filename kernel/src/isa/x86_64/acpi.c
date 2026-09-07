@@ -12,13 +12,13 @@ static volatile struct limine_rsdp_request rsdp_request = {
 void acpi_init(void) {
     kernel_info.rsdp_table = (RSDP*) rsdp_request.response->address;
     map_page(
-        (uint64_t *)(kernel_info.cr3 + kernel_info.hhdm), (uint64_t)kernel_info.rsdp_table,
+        (uint64_t *)(kernel_info.vmspace->cr3 + kernel_info.hhdm), (uint64_t)kernel_info.rsdp_table,
         ((uint64_t)kernel_info.rsdp_table) - kernel_info.hhdm, PAGE_PRESENT);
     klogf(LOG_DEBUG, "Detected ACPI revision %u\n", kernel_info.rsdp_table->revision);
     uintptr_t phys_sdt_addr = (kernel_info.rsdp_table->revision) ?
                                     kernel_info.rsdp_table->xsdt_address :
                                     kernel_info.rsdp_table->rsdt_address;
-    map_page((uint64_t *)(kernel_info.cr3 + kernel_info.hhdm),
+    map_page((uint64_t *)(kernel_info.vmspace->cr3 + kernel_info.hhdm),
               phys_sdt_addr + kernel_info.hhdm,
               phys_sdt_addr,
               PAGE_PRESENT);

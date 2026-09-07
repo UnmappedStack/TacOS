@@ -136,7 +136,7 @@ void apic_init(void) {
     MADT *madt = (MADT *)find_MADT(kernel_info.xsdt);
     if (!madt) kpanic("MADT not found");
     // map the lapic addr
-    map_page((uint64_t *)(kernel_info.cr3 + kernel_info.hhdm),
+    map_page((uint64_t *)(kernel_info.vmspace->cr3 + kernel_info.hhdm),
               (uint64_t)madt->local_apic_addr + kernel_info.hhdm,
               (uint64_t)madt->local_apic_addr,
               PAGE_PRESENT | PAGE_WRITE);
@@ -155,7 +155,7 @@ void apic_init(void) {
             klogf(LOG_DEBUG, "  -> I/O APIC address: 0x%x\n", this_ioapic->ioapic_addr);
             klogf(LOG_DEBUG, "  -> Global system interrupt base: %u\n",
                    this_ioapic->global_system_interrupt_base);
-            map_page((uint64_t *)(kernel_info.cr3 + kernel_info.hhdm),
+            map_page((uint64_t *)(kernel_info.vmspace->cr3 + kernel_info.hhdm),
                       (uint64_t)this_ioapic->ioapic_addr + kernel_info.hhdm,
                       (uint64_t)this_ioapic->ioapic_addr,
                       PAGE_PRESENT | PAGE_WRITE);

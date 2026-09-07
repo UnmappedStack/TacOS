@@ -1,5 +1,6 @@
 #include <serial.h>
 #include <rbtree.h>
+#include <vmm.h>
 #include <smp.h>
 #include <scheduler.h>
 #include <scheduler.h>
@@ -59,8 +60,8 @@ void _start(void) {
     exceptions_init();
     pma_init();
 
-    kernel_info.cr3 = create_address_space();
-    SWITCH_PAGE_TREE(kernel_info.cr3);
+    kernel_info.vmspace = create_virtual_memory_space();
+    SWITCH_PAGE_TREE(kernel_info.vmspace->cr3);
 
     boot_stage2();
 }
