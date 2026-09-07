@@ -24,6 +24,7 @@ typedef struct {
     /* vmem stuff */
     VMSpace *vmspace; // this will later be per-process
     Cache *rbtree_cache;
+    Cache *vmregion_cache;
     Cache *vmspace_cache;
 
     /* ACPI & APIC stuff */

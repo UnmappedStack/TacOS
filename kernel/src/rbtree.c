@@ -126,7 +126,7 @@ int rbtree_insert_first_node(Tree *tree, uint64_t key, Node **inserted_node_buf)
 // return 0 on success, -1 on error. will not rebalance the tree.
 // both *_buf args can be NULL if you don't care about them, otherwise they
 // will point to the parent of the inserted node and the inserted node.
-int rbtree_insert(Tree *tree, uint64_t key, Node **parent_buf, Node **inserted_node_buf) {
+int rbtree_insert_unbalanced(Tree *tree, uint64_t key, Node **parent_buf, Node **inserted_node_buf) {
 //    printf("Try insert key %zu...\n", key);
     if (!tree->root) {
         if (parent_buf) *parent_buf = NULL;
@@ -204,19 +204,20 @@ void rbtree_rebalance(Tree *tree, Node *parent, Node *node) {
     } while((parent = POINTER_FROM_COLOURED_POINTER(node->parent_and_colour)));
 }
 
-// ret 0 on success, -1 on error. inserts then ensures the tree is balanced.
-int rbtree_insert_balanced(Tree *tree, uint64_t key) {
+// ret inserted node on success, NULL on error. inserts then ensures the tree is balanced.
+Node *rbtree_insert(Tree *tree, uint64_t key) {
     Node *parent, *node;
-    if (rbtree_insert(tree, key, &parent, &node) < 0) {
+    if (rbtree_insert_unbalanced(tree, key, &parent, &node) < 0) {
         klogf(LOG_ERROR, "Failed insertion of key %zu\n", key);
-        return -1;
+        return NULL;
     }
    
     /* we don't wanna rebalance if it was the root node (aka the first node)
      * we just inserted */
     if (parent)
         rbtree_rebalance(tree, parent, node);
-    return 0;
+
+    return node;
 }
 
 // balanced removal of a specific node from a tree where the node is black, non-root, and a leaf
@@ -364,8 +365,6 @@ int rbtree_remove(Tree *tree, uint64_t key) {
     return rbtree_remove_node(tree, node);
 }
 
-#define DO_BALANCE true
-#define INSERT(rbtree, key) (DO_BALANCE ? rbtree_insert_balanced(rbtree, key) : rbtree_insert(rbtree, key, NULL, NULL))
 #define NUM_NUMS 10
 void rbtree_init(void) {
     kernel_info.rbtree_cache = cache_create(sizeof(Node));
@@ -375,7 +374,7 @@ void rbtree_init(void) {
     // insert some numbers then delete half of them
     Tree rbtree = {0};
     for (size_t i = 0; i < NUM_NUMS; i++) {
-        assert(!INSERT(&rbtree, i));
+        assert(rbtree_insert(&rbtree, i));
         if (i < 5) continue;
         assert(!rbtree_remove(&rbtree, i));
     }
@@ -386,5 +385,4 @@ void rbtree_init(void) {
         if (!n) klogf(LOG_ERROR, "Failed to find node of key %u\n", i);
         else    klogf(LOG_DEBUG, "Found node of key %u\n", i);
     }
-
 }

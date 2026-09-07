@@ -32,8 +32,6 @@ void __stack_chk_fail(void) {
 void boot_stage2(void) {
     klogf(LOG_STATUS, "Page tree switched successfully\n");
 
-    rbtree_init();
-
     power_management_init();
     interrupt_controller_init();
     timer_init();
@@ -59,6 +57,7 @@ void _start(void) {
     isa_early_init();
     exceptions_init();
     pma_init();
+    rbtree_init();
 
     kernel_info.vmspace = create_virtual_memory_space();
     SWITCH_PAGE_TREE(kernel_info.vmspace->cr3);
