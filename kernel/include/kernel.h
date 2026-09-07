@@ -21,6 +21,7 @@ typedef struct {
 
     /* vmem stuff */
     uint64_t cr3;
+    Cache *rbtree_cache;
 
     /* ACPI & APIC stuff */
 #if defined(__x86_64__)

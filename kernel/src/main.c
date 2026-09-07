@@ -13,7 +13,16 @@
 
 KernelInfo kernel_info = {0};
 
+void __assert_fail(const char *assertion, const char *file, uint32_t line, const char *fn) {
+    if (kernel_info.smp_enabled) halt_all_processors();
+
+    klogf(LOG_ERROR, "Assertion failed at %s:%u in %s: %s\n", file, line, fn, assertion);
+    FREEZE_DEVICE();
+}
+
 void __stack_chk_fail(void) {
+    if (kernel_info.smp_enabled) halt_all_processors();
+
     print_string("Stack smashing detected\n");
     FREEZE_DEVICE();
 }
