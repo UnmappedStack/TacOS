@@ -1,3 +1,5 @@
+// TODO: this is not thread safe, make it so
+
 #include <assert.h>
 #include <kernel.h>
 #include <slab.h>
@@ -226,6 +228,7 @@ int rbtree_remove_node_complex(Tree *tree, Node *node) {
     assert(parent);
     Direction dir = DIR_OF_CHILD_IN_PARENT(node);
 
+    slab_free(kernel_info.rbtree_cache, node);
     parent->children[dir] = NULL;
     goto start_balance;
     do {
@@ -304,7 +307,6 @@ case6:
     } while(0)
 
 // for simpler cases of removal. returns -1 on error and 0 on success.
-// TODO: memory leak, actually free children
 int rbtree_remove_node(Tree *tree, Node *node) {
     assert(tree && node);
 
@@ -328,10 +330,12 @@ int rbtree_remove_node(Tree *tree, Node *node) {
         node->val = child->val;
         COLOURED_POINTER_SET_TAG(node->parent_and_colour, BLACK);
        
+        slab_free(kernel_info.rbtree_cache, node->children[child_dir]);
         node->children[child_dir] = NULL;
         return 0;
     } else if (!POINTER_FROM_COLOURED_POINTER(node->parent_and_colour)) {
         // this node is the root value and has no children, just get rid of it
+        slab_free(kernel_info.rbtree_cache, tree->root);
         tree->root = NULL;
         return 0;
     } else if (TAG_FROM_COLOURED_POINTER(node->parent_and_colour) == RED) {
@@ -339,6 +343,7 @@ int rbtree_remove_node(Tree *tree, Node *node) {
         Node *parent = POINTER_FROM_COLOURED_POINTER(node->parent_and_colour);
         Direction dir = DIR_OF_CHILD_IN_PARENT(node);
 
+        slab_free(kernel_info.rbtree_cache, parent->children[dir]);
         parent->children[dir] = NULL;
         return 0;
     } else {
