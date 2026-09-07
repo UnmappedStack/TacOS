@@ -18,3 +18,4 @@ typedef struct {
 } VMSpace;
 
 VMSpace *create_virtual_memory_space(void);
+VMRegion *vmregion_create(VMSpace *vmspace, uintptr_t vaddr_start, uint16_t size_pages);

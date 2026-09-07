@@ -23,6 +23,22 @@ VMRegion *vmregion_create(VMSpace *vmspace,
     return region;
 }
 
+/* maps a single page in physical memory as its own region in the vmm.
+ *
+ * I'm not sure if I should have another version which can take like a list of
+ * separate physical pages to map? afterwards I'll also need a way to allocate
+ * virtual pages, tie it to physical pages, and create a region from that etc
+ * but this should do for now */
+void vmm_map_page(VMSpace *vmspace, uintptr_t vaddr, uintptr_t paddr, uint64_t flags) {
+    // map into (theoretically) architecture specific page tree structure...
+    map_page((uint64_t*)(vmspace->cr3 + kernel_info.hhdm), // vaddr of page tree
+            vaddr, paddr, flags);
+
+    // ...then just add it to the VMRegion tracker
+    vmregion_create(vmspace, vaddr, /* size_pages */ 1);
+
+}
+
 VMSpace *create_virtual_memory_space(void) {
     if (!kernel_info.vmspace_cache) {
         kernel_info.vmspace_cache = cache_create(sizeof(VMSpace));
