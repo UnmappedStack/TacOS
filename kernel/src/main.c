@@ -1,4 +1,5 @@
 #include <serial.h>
+#include <rbtree.h>
 #include <smp.h>
 #include <scheduler.h>
 #include <scheduler.h>
@@ -29,6 +30,8 @@ void __stack_chk_fail(void) {
 
 void boot_stage2(void) {
     klogf(LOG_STATUS, "Page tree switched successfully\n");
+
+    rbtree_init();
 
     power_management_init();
     interrupt_controller_init();

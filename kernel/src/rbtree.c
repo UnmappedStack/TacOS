@@ -102,13 +102,9 @@ Node *rbtree_search(Tree *tree, uint64_t key) {
 Node *rbtree_search_err(Tree *tree, uint64_t key) {
     Node *ret = rbtree_search(tree, key);
 
-    if (!ret) goto noexist;
+    if (!ret) return NULL; // couldn't find it
     Direction dir = check_node_direction(ret, key);
-    if (dir != THIS) {
-noexist:
-        klogf(LOG_ERROR, "couldn't find key %zu\n", key);
-        return NULL;
-    }
+    if (dir != THIS) return NULL; // couldn't find it
 
     return ret;
 }
@@ -363,7 +359,27 @@ int rbtree_remove(Tree *tree, uint64_t key) {
     return rbtree_remove_node(tree, node);
 }
 
+#define DO_BALANCE true
+#define INSERT(rbtree, key) (DO_BALANCE ? rbtree_insert_balanced(rbtree, key) : rbtree_insert(rbtree, key, NULL, NULL))
+#define NUM_NUMS 10
 void rbtree_init(void) {
     kernel_info.rbtree_cache = cache_create(sizeof(Node));
     if (!kernel_info.rbtree_cache) kpanic("failed to create rbtree cache");
+
+    // basic testing (these might be removed later idk it doesnt really matter)
+    // insert some numbers then delete half of them
+    Tree rbtree = {0};
+    for (size_t i = 0; i < NUM_NUMS; i++) {
+        assert(!INSERT(&rbtree, i));
+        if (i < 5) continue;
+        assert(!rbtree_remove(&rbtree, i));
+    }
+
+    // try find them
+    for (size_t i = 0; i < NUM_NUMS; i++) {
+        Node *n = rbtree_search_err(&rbtree, i);
+        if (!n) klogf(LOG_ERROR, "Failed to find node of key %u\n", i);
+        else    klogf(LOG_DEBUG, "Found node of key %u\n", i);
+    }
+
 }

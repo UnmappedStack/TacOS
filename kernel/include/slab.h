@@ -29,3 +29,4 @@ typedef struct {
 Cache *cache_create(uint64_t object_size);
 void *slab_alloc(Cache *cache);
 void slab_free(Cache *cache, void *object);
+void rbtree_init(void);
