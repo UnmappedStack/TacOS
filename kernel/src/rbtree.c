@@ -87,7 +87,7 @@ Node *rbtree_search(Tree *tree, uint64_t key) {
         switch (direction) {
         case RIGHT:
         case LEFT:
-            if (node->children[direction] == NULL)
+            if (node->children[direction] == NULL) 
                 return node; // if it doesnt exist return parent
             node = node->children[direction];
             continue;
@@ -111,26 +111,23 @@ Node *rbtree_search_err(Tree *tree, uint64_t key) {
     return ret;
 }
 
-int rbtree_insert_first_node(Tree *tree, uint64_t key, Node **inserted_node_buf) {
-    Node *node = (Node*) slab_alloc(kernel_info.rbtree_cache);
-    node->val    = key;
-    node->parent_and_colour = (Node*)MK_COLOURED_POINTER(NULL, BLACK);
-    memset(node->children, 0, sizeof(node->children));
+int rbtree_insert_first_node(Tree *tree, uint64_t key, Node *nodebuf) {
+    nodebuf->val = key;
+    nodebuf->parent_and_colour = (Node*)MK_COLOURED_POINTER(NULL, BLACK);
+    memset(nodebuf->children, 0, sizeof(nodebuf->children));
 
-    if (inserted_node_buf) *inserted_node_buf = node;
-
-    tree->root = node;
+    tree->root = nodebuf;
     return 0;
 }
 
 // return 0 on success, -1 on error. will not rebalance the tree.
 // both *_buf args can be NULL if you don't care about them, otherwise they
 // will point to the parent of the inserted node and the inserted node.
-int rbtree_insert_unbalanced(Tree *tree, uint64_t key, Node **parent_buf, Node **inserted_node_buf) {
+int rbtree_insert_unbalanced(Tree *tree, uint64_t key, Node **parent_buf, Node *nodebuf) {
 //    printf("Try insert key %zu...\n", key);
     if (!tree->root) {
         if (parent_buf) *parent_buf = NULL;
-        return rbtree_insert_first_node(tree, key, inserted_node_buf);
+        return rbtree_insert_first_node(tree, key, nodebuf);
     }
 
     Node *parent = rbtree_search(tree, key);
@@ -141,15 +138,13 @@ int rbtree_insert_unbalanced(Tree *tree, uint64_t key, Node **parent_buf, Node *
         return -1;
     }
 
-    Node *node = (Node*) slab_alloc(kernel_info.rbtree_cache);
-    node->val    = key;
-    node->parent_and_colour = (Node*)MK_COLOURED_POINTER(parent, RED);
-    memset(node->children, 0, sizeof(node->children));
+    nodebuf->val    = key;
+    nodebuf->parent_and_colour = (Node*)MK_COLOURED_POINTER(parent, RED);
+    memset(nodebuf->children, 0, sizeof(nodebuf->children));
 
     if (parent_buf) *parent_buf = parent;
-    if (inserted_node_buf) *inserted_node_buf = node;
 
-    parent->children[direction] = node;
+    parent->children[direction] = nodebuf;
     return 0;
 }
 
@@ -204,20 +199,21 @@ void rbtree_rebalance(Tree *tree, Node *parent, Node *node) {
     } while((parent = POINTER_FROM_COLOURED_POINTER(node->parent_and_colour)));
 }
 
-// ret inserted node on success, NULL on error. inserts then ensures the tree is balanced.
-Node *rbtree_insert(Tree *tree, uint64_t key) {
-    Node *parent, *node;
-    if (rbtree_insert_unbalanced(tree, key, &parent, &node) < 0) {
+// ret inserted node on success (literally nodebuf), NULL on error. inserts then ensures the tree is balanced.
+Node *rbtree_insert(Tree *tree, Node *nodebuf, uint64_t key) {
+    Node *parent;
+    if (rbtree_insert_unbalanced(tree, key, &parent, nodebuf) < 0) {
         klogf(LOG_ERROR, "Failed insertion of key %zu\n", key);
         return NULL;
     }
    
     /* we don't wanna rebalance if it was the root node (aka the first node)
      * we just inserted */
+    kprintf("nodebuf=%x\n", nodebuf);
     if (parent)
-        rbtree_rebalance(tree, parent, node);
+        rbtree_rebalance(tree, parent, nodebuf);
 
-    return node;
+    return nodebuf;
 }
 
 // balanced removal of a specific node from a tree where the node is black, non-root, and a leaf
@@ -307,8 +303,9 @@ case6:
         y = temp; \
     } while(0)
 
-// for simpler cases of removal. returns -1 on error and 0 on success.
-int rbtree_remove_node(Tree *tree, Node *node) {
+// returns -1 on error and 0 on success. if you want to delete by key youll
+// have to search for it first.
+int rbtree_remove(Tree *tree, Node *node) {
     assert(tree && node);
 
     if (node->children[LEFT] && node->children[RIGHT]) {
@@ -321,7 +318,7 @@ int rbtree_remove_node(Tree *tree, Node *node) {
         SWAP(uint64_t, node->val, successor->val);
 
         assert(successor != node);
-        rbtree_remove_node(tree, successor);
+        rbtree_remove(tree, successor);
         return 0;
     } else if (node->children[LEFT] || node->children[RIGHT]) {
         // only one child
@@ -356,15 +353,6 @@ int rbtree_remove_node(Tree *tree, Node *node) {
     return -1;
 }
 
-int rbtree_remove(Tree *tree, uint64_t key) {
-    Node *node = rbtree_search_err(tree, key);
-    if (!node) {
-        klogf(LOG_ERROR, "key %zu cannot be existed because it does not exist\n", key);
-        return -1;
-    }
-    return rbtree_remove_node(tree, node);
-}
-
 #define NUM_NUMS 10
 void rbtree_init(void) {
     kernel_info.rbtree_cache = cache_create(sizeof(Node));
@@ -374,9 +362,10 @@ void rbtree_init(void) {
     // insert some numbers then delete half of them
     Tree rbtree = {0};
     for (size_t i = 0; i < NUM_NUMS; i++) {
-        assert(rbtree_insert(&rbtree, i));
+        Node *node = slab_alloc(kernel_info.rbtree_cache);
+        assert(rbtree_insert(&rbtree, node, i));
         if (i < 5) continue;
-        assert(!rbtree_remove(&rbtree, i));
+        assert(!rbtree_remove(&rbtree, node));
     }
 
     // try find them

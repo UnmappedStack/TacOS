@@ -4,6 +4,7 @@
 
 // I tried to keep this smol
 typedef struct {
+    Node rbtree_node;
     uintptr_t vaddr_start;
     uint16_t size_pages; // we'd probably never have over 0x10000 pages right?
 } VMRegion;

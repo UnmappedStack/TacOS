@@ -15,7 +15,9 @@ VMRegion *vmregion_create(VMSpace *vmspace,
         .size_pages  = size_pages,
     };
 
-    Node *rbtree_node = rbtree_insert(&vmspace->regions, vaddr_start);
+    Node *rbtree_node = rbtree_insert(&vmspace->regions, 
+                                      &region->rbtree_node,
+                                      vaddr_start);
     if (!rbtree_node) return NULL;
 
     rbtree_node->data = region;
