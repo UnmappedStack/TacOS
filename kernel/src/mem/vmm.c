@@ -20,8 +20,6 @@ VMRegion *vmregion_create(VMSpace *vmspace,
                                       vaddr_start);
     if (!rbtree_node) return NULL;
 
-    rbtree_node->data = region;
-
     return region;
 }
 

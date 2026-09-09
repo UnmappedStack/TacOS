@@ -6,8 +6,6 @@ struct Node {
     Node *parent_and_colour;
     uint64_t val;
     Node *children[2];
-
-    void *data;
 };
 
 typedef struct {
