@@ -1,5 +1,6 @@
 #pragma once
 #include <stdint.h>
+#include <vmem.h>
 #include <rbtree.h>
 
 // I tried to keep this smol
@@ -16,6 +17,8 @@ typedef struct {
                     * (usually pml4 or potentially pml5) */
 
     Tree regions;  // allocated virtual memory regions in an rbtree
+
+    VMemArena arena; // for virtual memory allocation
 } VMSpace;
 
 VMSpace *create_virtual_memory_space(void);

@@ -32,3 +32,5 @@ static inline void llist_remove(LList *element) {
 #define list_insert(list, element) llist_insert(list, element)
 #define list_remove(element) llist_remove(element)
 #define list_empty(list) ((list)->next == list)
+
+#define LList(type) LList

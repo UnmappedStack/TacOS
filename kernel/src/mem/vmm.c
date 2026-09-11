@@ -2,8 +2,11 @@
 // isa agnostic) and region tracking
 #include <vmm.h>
 #include <paging.h>
+#include <mm.h>
 #include <isa/cpu.h>
 #include <kernel.h>
+
+#define ALLOCATABLE_BASE 0x4000 // vaddr of base address vmem can allocate from
 
 // return NULL on error, new VMRegion on success
 VMRegion *vmregion_create(VMSpace *vmspace,
@@ -59,6 +62,16 @@ VMSpace *create_virtual_memory_space(void) {
     //       - the kernel binary
     //       - direct physical memory mappings via hhdm
     // TODO: maybe consider if these should be tracked as well?
+
+    size_t allocatable_area_size = kernel_info.hhdm/PAGE_BYTES-1 - ALLOCATABLE_BASE/PAGE_BYTES;
+    vmem_arena_init(&vmspace->arena,
+            PAGE_BYTES, /* quantum size */
+            8           /* num orders */
+    );
+    vmem_add(&vmspace->arena,
+             ALLOCATABLE_BASE/PAGE_BYTES, /* base (pages) */
+             allocatable_area_size        /* length (pages) */
+    );
 
     return vmspace;
 }

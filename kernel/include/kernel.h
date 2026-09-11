@@ -26,6 +26,8 @@ typedef struct {
     Cache *rbtree_cache;
     Cache *vmregion_cache;
     Cache *vmspace_cache;
+    Cache *vmem_orders_cache;
+    Cache *vmem_regions_cache;
 
     /* ACPI & APIC stuff */
 #if defined(__x86_64__)

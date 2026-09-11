@@ -1,4 +1,5 @@
 #include <serial.h>
+#include <vmem.h>
 #include <rbtree.h>
 #include <vmm.h>
 #include <smp.h>
@@ -58,6 +59,7 @@ void _start(void) {
     exceptions_init();
     pma_init();
     rbtree_init();
+    vmem_init();
 
     kernel_info.vmspace = create_virtual_memory_space();
     SWITCH_PAGE_TREE(kernel_info.vmspace->cr3);
