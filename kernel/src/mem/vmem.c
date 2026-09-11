@@ -15,6 +15,7 @@
  * region from vmem_arena_init, rather you have to separately add regions. */
 
 #include <vmem.h>
+#include <kprintf.h>
 #include <util.h>
 #include <kernel.h>
 
@@ -55,7 +56,8 @@ bool vmem_add(VMemArena *arena, uintptr_t region_base, size_t region_size) {
         VMemOrder *this_order = CONTAINER_OF(list, VMemOrder, list);
         VMemOrder *order_up   = CONTAINER_OF(list->next, VMemOrder, list); // the order double the size of this one
         
-        if (region_size >= this_order->region_sz && region_size <= order_up->region_sz) {
+        if ((list->next == &arena->orders && region_size >= this_order->region_sz) ||
+            (region_size >= this_order->region_sz && region_size <= order_up->region_sz)) {
             // its the right size for this region, insert it
             VMemRegion *region = slab_alloc(kernel_info.vmem_regions_cache);
             region->base = region_base, region->size = region_size;
@@ -66,7 +68,9 @@ bool vmem_add(VMemArena *arena, uintptr_t region_base, size_t region_size) {
         }
     }
 
-    // no memory found, return error
+    // it doesn't fit in any section, return error (i think this should be
+    // unreachable technically?)
+    klogf(LOG_ERROR, "vmem_add can't fill any section\n");
     spinlock_release(&arena->lock);
     return false;
 }

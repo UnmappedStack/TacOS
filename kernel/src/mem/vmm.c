@@ -68,10 +68,12 @@ VMSpace *create_virtual_memory_space(void) {
             PAGE_BYTES, /* quantum size */
             8           /* num orders */
     );
-    vmem_add(&vmspace->arena,
+    if (!vmem_add(&vmspace->arena,
              ALLOCATABLE_BASE/PAGE_BYTES, /* base (pages) */
              allocatable_area_size        /* length (pages) */
-    );
+    )) {
+        kpanic("vmm: failed to add memory region to vmspace's vmem arena");
+    }
 
     return vmspace;
 }
