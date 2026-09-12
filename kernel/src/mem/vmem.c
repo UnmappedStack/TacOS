@@ -14,6 +14,11 @@
  * paper, particularly in terms of api. for example you can't init the first
  * region from vmem_arena_init, rather you have to separately add regions. */
 
+/* TODO:
+ *  - qcaches
+ *  - fixed address reserving
+ *  - vm_sleep? */
+
 #include <vmem.h>
 #include <string.h>
 #include <slab.h>
@@ -26,9 +31,7 @@ void vmem_init(void) {
     kernel_info.vmem_regions_cache = cache_create(sizeof(VMemRegion));
 }
 
-/* TODO: also take stuff for qcaches, sleep vs nosleep (we
- * currently assume nosleep)
- * we don't acquire the arena's lock, we assume that it should just not be used
+/* we don't acquire the arena's lock, we assume that it should just not be used
  * by anything else yet.
  * arena_cache expects a cache to allocate the VMemArena on, and will assume
  * the number of orders from the cache's object size. */

@@ -83,12 +83,5 @@ VMSpace *create_virtual_memory_space(void) {
         kpanic("vmm: failed to add memory region to vmspace's vmem arena");
     }
 
-    for (int i = 0; i < 10; i++) {
-        void *ptr = vmem_alloc(vmspace->arena, 1 /* size in pages */, VMEM_INSTANTFIT);
-        if (!ptr) break;
-        klogf(LOG_DEBUG, "got %x from vmem_alloc\n", ptr);
-        vmem_free(vmspace->arena, ptr);
-    }
-
     return vmspace;
 }
