@@ -32,13 +32,19 @@ void vmem_init(void) {
  * by anything else yet.
  * arena_cache expects a cache to allocate the VMemArena on, and will assume
  * the number of orders from the cache's object size. */
-VMemArena *vmem_arena_init(size_t quantum, Cache *arena_cache) {
+VMemArena *vmem_arena_init(size_t quantum, Cache *arena_cache,
+                           void *(*import_alloc_fn)(VMemArena*, size_t sz, VMemAllocType),
+                           void  (*import_free_fn )(VMemArena*, void *resource),
+                           VMemArena *import_source) {
     assert(arena_cache->object_size >= sizeof(VMemArena) + sizeof(VMemOrder)*1);
     assert(!((arena_cache->object_size - sizeof(VMemArena)) % sizeof(VMemOrder)));
 
     VMemArena *arena = slab_alloc(arena_cache);
     memset(arena, 0, sizeof(VMemArena));
     arena->quantum_size = quantum;
+    arena->import_alloc_fn = import_alloc_fn;
+    arena->import_free_fn  = import_free_fn;
+    arena->import_source   = import_source;
 
     arena->num_orders = (arena_cache->object_size - sizeof(VMemArena)) / sizeof(VMemOrder);
     if (arena->num_orders > 64) arena->num_orders = 64;
@@ -53,6 +59,7 @@ VMemArena *vmem_arena_init(size_t quantum, Cache *arena_cache) {
         order->region_sz = region_sz;
         region_sz *= 2;
     }
+
 
     return arena;
 }
@@ -172,7 +179,7 @@ void *split_and_ret(VMemArena *arena, VMemRegion *source_region, VMemOrder *sour
 int get_first_nonempty_list_after_list_n(VMemArena *arena, uint64_t n) {
     uint64_t orders_bitmap_after_this_order = arena->orders_bitmap >> n;
     if (!orders_bitmap_after_this_order) {
-        klogf(LOG_ERROR, "vmem: no available memory\n");
+        klogf(LOG_WARN, "vmem: no available memory in this list\n");
         return -1;
     }
     size_t get_from_id = count_leading_zeroes(orders_bitmap_after_this_order) + n;
@@ -183,7 +190,16 @@ int get_first_nonempty_list_after_list_n(VMemArena *arena, uint64_t n) {
 void vmem_free(VMemArena *arena, void *resource) {
     spinlock_acquire(&arena->lock);
     Node *tag_node = rbtree_search(&arena->cached_region_tags, ((size_t)resource) / arena->quantum_size);
-    assert(tag_node && "free invalid vmem resource");
+    if (!tag_node) {
+        // try use the import free fn in case it was allocated with an import...
+        if (arena->import_free_fn) {
+            spinlock_release(&arena->lock);
+            return arena->import_free_fn(arena, resource);
+        }
+        // ... otherwise just fail
+        kpanic("vmem: free invalid resource");
+    }
+
     VMemRegion *region = CONTAINER_OF(tag_node, VMemRegion, rbtree_cache_node);
 
     VMemOrder *insert_into = find_order_by_size(arena, region->size);
@@ -208,13 +224,16 @@ void *vmem_alloc(VMemArena *arena, size_t size, VMemAllocType flag) {
     switch (flag) {
     case VMEM_BESTFIT:
         get_from_id = get_first_nonempty_list_after_list_n(arena, this_order->order);
-        assert(get_from_id >= 0);
+        if (get_from_id < 0) goto nomem;
         VMemOrder *get_from = &arena->orders[(size_t)get_from_id];
 
         VMemRegion *region = find_bestfit_in_order(get_from, size);
         if (!region) {
-            klogf(LOG_ERROR, "vmem: no fitting region in freelists for VMEM_BESTFIT (oom)\n");
+nomem:
             spinlock_release(&arena->lock);
+            if (arena->import_alloc_fn)
+                return arena->import_alloc_fn(arena, size, flag);
+            klogf(LOG_ERROR, "vmem: no fitting region in freelists for VMEM_BESTFIT (oom)\n");
             return NULL;
         }
 

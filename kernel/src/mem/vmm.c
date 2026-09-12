@@ -72,7 +72,9 @@ VMSpace *create_virtual_memory_space(void) {
     size_t allocatable_area_size = kernel_info.hhdm/PAGE_BYTES-1 - ALLOCATABLE_BASE/PAGE_BYTES;
     vmspace->arena = vmem_arena_init(
             PAGE_BYTES, /* quantum size */
-            kernel_info.vmspace_alloc_cache
+            kernel_info.vmspace_alloc_cache,
+            NULL /* import alloc */, NULL /* inmport free */,
+            NULL /* import arena */
     );
     if (!vmem_add(vmspace->arena,
              4,                    /* base (pages) */

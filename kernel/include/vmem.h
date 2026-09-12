@@ -33,17 +33,25 @@ typedef struct {
     LList(VMemRegionEntry) regions;
 } VMemOrder;
 
-typedef struct {
+typedef struct VMemArena VMemArena;
+struct VMemArena {
     Spinlock lock;
     uint16_t quantum_size;
     Tree(VMemRegion) cached_region_tags;
 
+    void *(*import_alloc_fn)(VMemArena*, size_t sz, VMemAllocType);
+    void  (*import_free_fn )(VMemArena*, void *resource);
+    VMemArena *import_source;
+
     uint8_t num_orders; // max 63 so 1 byte is fine
     uint64_t orders_bitmap;
     VMemOrder orders[0];
-} VMemArena;
+};
 
-VMemArena *vmem_arena_init(size_t quantum, Cache *vmem_arena);
+VMemArena *vmem_arena_init(size_t quantum, Cache *arena_cache,
+                           void *(*import_alloc_fn)(VMemArena*, size_t sz, VMemAllocType),
+                           void  (*import_free_fn )(VMemArena*, void *resource),
+                           VMemArena *import_source);
 bool vmem_add(VMemArena *arena, uintptr_t region_base, size_t region_size);
 void *vmem_alloc(VMemArena *arena, size_t size, VMemAllocType flag);
 void vmem_free(VMemArena *arena, void *resource);
