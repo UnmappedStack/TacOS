@@ -124,7 +124,7 @@ int rbtree_insert_first_node(Tree *tree, uint64_t key, Node *nodebuf) {
 // both *_buf args can be NULL if you don't care about them, otherwise they
 // will point to the parent of the inserted node and the inserted node.
 int rbtree_insert_unbalanced(Tree *tree, uint64_t key, Node **parent_buf, Node *nodebuf) {
-//    printf("Try insert key %zu...\n", key);
+//    printf("Try insert key %u...\n", key);
     if (!tree->root) {
         if (parent_buf) *parent_buf = NULL;
         return rbtree_insert_first_node(tree, key, nodebuf);
@@ -134,7 +134,7 @@ int rbtree_insert_unbalanced(Tree *tree, uint64_t key, Node **parent_buf, Node *
 
     Direction direction = check_node_direction(parent, key);
     if (direction == THIS) {
-        klogf(LOG_ERROR, "A node with key %zu already exists in the red/black tree\n", key);
+        klogf(LOG_ERROR, "A node with key %u already exists in the red/black tree\n", key);
         return -1;
     }
 
@@ -203,13 +203,12 @@ void rbtree_rebalance(Tree *tree, Node *parent, Node *node) {
 Node *rbtree_insert(Tree *tree, Node *nodebuf, uint64_t key) {
     Node *parent;
     if (rbtree_insert_unbalanced(tree, key, &parent, nodebuf) < 0) {
-        klogf(LOG_ERROR, "Failed insertion of key %zu\n", key);
+        klogf(LOG_ERROR, "Failed insertion of key %u\n", key);
         return NULL;
     }
    
     /* we don't wanna rebalance if it was the root node (aka the first node)
      * we just inserted */
-    kprintf("nodebuf=%x\n", nodebuf);
     if (parent)
         rbtree_rebalance(tree, parent, nodebuf);
 

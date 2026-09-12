@@ -108,36 +108,67 @@ VMemRegion *find_bestfit_in_order(VMemOrder *order, size_t size) {
     return best_fit_region;
 }
 
+/* takes a VMemRegion, splits off a chunk of size `size`, returns its base, then adds the other
+ * part of the region back to the arena. */
+void *split_and_ret(VMemArena *arena, VMemRegion *source_region, size_t size) {
+    if (source_region->size != size) {
+        VMemRegion *new_region = slab_alloc(kernel_info.vmem_regions_cache);
+        assert(new_region);
+        new_region->base = source_region->base + size;
+        new_region->size = source_region->size - size;
+
+        VMemOrder *insert_into = find_order_by_size(arena, new_region->size);
+        llist_insert(&insert_into->regions, &new_region->list);
+    }
+
+    void *ret = (void*) (source_region->base * arena->quantum_size);
+    rbtree_insert(&arena->cached_region_tags,
+                  &source_region->rbtree_cache_node,
+                  source_region->base);
+
+    llist_remove(&source_region->list);
+    return ret;
+}
+
 // returns a region in base units, that is, NOT in units of the quantum
 void *vmem_alloc(VMemArena *arena, size_t size, VMemAllocType flag) {
     assert(size);
-
+    
+    spinlock_acquire(&arena->lock);
     VMemOrder *this_order = find_order_by_size(arena, size);
     assert(this_order);
 
     uint64_t orders_bitmap_after_this_order = arena->orders_bitmap >> this_order->order;
     if (!orders_bitmap_after_this_order) {
         klogf(LOG_ERROR, "vmem: no available memory\n");
+        spinlock_release(&arena->lock);
+        return NULL;
     }
-    size_t insert_into_id = count_leading_zeroes(orders_bitmap_after_this_order) + this_order->order;
-    VMemOrder *insert_into = &arena->orders[insert_into_id];
+    size_t get_from_id = count_leading_zeroes(orders_bitmap_after_this_order) + this_order->order;
+    VMemOrder *get_from = &arena->orders[get_from_id];
 
     switch (flag) {
     case VMEM_BESTFIT:
-        VMemRegion *region = find_bestfit_in_order(insert_into, size);
+        VMemRegion *region = find_bestfit_in_order(get_from, size);
         if (!region) {
             // TODO: start searching the next regions as a fallback
             klogf(LOG_ERROR, "vmem: no fitting region in freelist n for VMEM_BESTFIT\n");
             return NULL;
         }
-        return (void*) (region->base * arena->quantum_size);
+
+        void *ret = split_and_ret(arena, region, size);
+        spinlock_release(&arena->lock);
+        return ret;
     case VMEM_INSTANTFIT:
         klogf(LOG_ERROR, "TODO: VMEM_INSTANTFIT");
+        spinlock_release(&arena->lock);
         return NULL;
     case VMEM_NEXTFIT:
         klogf(LOG_ERROR, "TODO: VMEM_NEXTFIT");
+        spinlock_release(&arena->lock);
         return NULL;
     }
     klogf(LOG_ERROR, "unknown vmem_alloc flag\n");
+    spinlock_release(&arena->lock);
     return NULL;
 }

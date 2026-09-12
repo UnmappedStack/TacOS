@@ -15,3 +15,5 @@ typedef struct {
 int rbtree_remove(Tree *tree, Node *node);
 Node *rbtree_insert(Tree *tree, Node *nodebuf, uint64_t key);
 Node *rbtree_search(Tree *tree, uint64_t key);
+
+#define Tree(type) Tree

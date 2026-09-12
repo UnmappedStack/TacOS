@@ -1,5 +1,6 @@
 #pragma once
 #include <slab.h>
+#include <rbtree.h>
 #include <list.h>
 #include <lock.h>
 
@@ -13,7 +14,8 @@ typedef enum {
 // TODO: this needs to be in a second llist in order of address
 typedef struct {
     LList list; // for chain of VmemRegions this is in, owned by a VMemOrder
-    
+    Node rbtree_cache_node; 
+
     /* both in units of quantum, eg if it is for virtual memory allocation
      * then base would be the vpn not the address, and size would be the number
      * of page frames */
@@ -33,6 +35,7 @@ typedef struct {
 typedef struct {
     Spinlock lock;
     uint16_t quantum_size;
+    Tree(VMemRegion) cached_region_tags;
 
     size_t num_orders;
     uint64_t orders_bitmap;
