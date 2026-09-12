@@ -221,7 +221,6 @@ void *vmem_alloc(VMemArena *arena, size_t size, VMemAllocType flag) {
         VMemOrder *order_next = &arena->orders[(size_t)get_from_id];
 
         VMemRegion *first_region = CONTAINER_OF(order_next->regions.next, VMemRegion, list);
-        llist_remove(&first_region->list);
 
         ret = split_and_ret(arena, first_region, order_next, size);
         spinlock_release(&arena->lock);
