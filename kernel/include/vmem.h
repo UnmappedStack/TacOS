@@ -46,4 +46,5 @@ typedef struct {
 VMemArena *vmem_arena_init(size_t quantum, Cache *vmem_arena);
 bool vmem_add(VMemArena *arena, uintptr_t region_base, size_t region_size);
 void *vmem_alloc(VMemArena *arena, size_t size, VMemAllocType flag);
+void vmem_free(VMemArena *arena, void *resource);
 void vmem_init(void);

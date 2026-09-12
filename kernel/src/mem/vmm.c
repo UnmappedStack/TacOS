@@ -75,7 +75,7 @@ VMSpace *create_virtual_memory_space(void) {
             kernel_info.vmspace_alloc_cache
     );
     if (!vmem_add(vmspace->arena,
-             PAGE_BYTES * 4,       /* base (pages) */
+             4,                    /* base (pages) */
              allocatable_area_size /* length (pages) */
     )) {
         kpanic("vmm: failed to add memory region to vmspace's vmem arena");
@@ -85,8 +85,8 @@ VMSpace *create_virtual_memory_space(void) {
         void *ptr = vmem_alloc(vmspace->arena, 1 /* size in pages */, VMEM_INSTANTFIT);
         if (!ptr) break;
         klogf(LOG_DEBUG, "got %x from vmem_alloc\n", ptr);
+        vmem_free(vmspace->arena, ptr);
     }
-    FREEZE_DEVICE();
 
     return vmspace;
 }

@@ -224,7 +224,6 @@ int rbtree_remove_node_complex(Tree *tree, Node *node) {
     assert(parent);
     Direction dir = DIR_OF_CHILD_IN_PARENT(node);
 
-    slab_free(kernel_info.rbtree_cache, node);
     parent->children[dir] = NULL;
     goto start_balance;
     do {
@@ -327,12 +326,10 @@ int rbtree_remove(Tree *tree, Node *node) {
         node->val = child->val;
         COLOURED_POINTER_SET_TAG(node->parent_and_colour, BLACK);
        
-        slab_free(kernel_info.rbtree_cache, node->children[child_dir]);
         node->children[child_dir] = NULL;
         return 0;
     } else if (!POINTER_FROM_COLOURED_POINTER(node->parent_and_colour)) {
         // this node is the root value and has no children, just get rid of it
-        slab_free(kernel_info.rbtree_cache, tree->root);
         tree->root = NULL;
         return 0;
     } else if (TAG_FROM_COLOURED_POINTER(node->parent_and_colour) == RED) {
@@ -340,7 +337,6 @@ int rbtree_remove(Tree *tree, Node *node) {
         Node *parent = POINTER_FROM_COLOURED_POINTER(node->parent_and_colour);
         Direction dir = DIR_OF_CHILD_IN_PARENT(node);
 
-        slab_free(kernel_info.rbtree_cache, parent->children[dir]);
         parent->children[dir] = NULL;
         return 0;
     } else {
@@ -356,21 +352,4 @@ int rbtree_remove(Tree *tree, Node *node) {
 void rbtree_init(void) {
     kernel_info.rbtree_cache = cache_create(sizeof(Node));
     if (!kernel_info.rbtree_cache) kpanic("failed to create rbtree cache");
-
-    // basic testing (these might be removed later idk it doesnt really matter)
-    // insert some numbers then delete half of them
-    Tree rbtree = {0};
-    for (size_t i = 0; i < NUM_NUMS; i++) {
-        Node *node = slab_alloc(kernel_info.rbtree_cache);
-        assert(rbtree_insert(&rbtree, node, i));
-        if (i < 5) continue;
-        assert(!rbtree_remove(&rbtree, node));
-    }
-
-    // try find them
-    for (size_t i = 0; i < NUM_NUMS; i++) {
-        Node *n = rbtree_search_err(&rbtree, i);
-        if (!n) klogf(LOG_ERROR, "Failed to find node of key %u\n", i);
-        else    klogf(LOG_DEBUG, "Found node of key %u\n", i);
-    }
 }

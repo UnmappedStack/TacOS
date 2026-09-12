@@ -152,6 +152,8 @@ void *split_and_ret(VMemArena *arena, VMemRegion *source_region, VMemOrder *sour
         VMemOrder *insert_into = find_order_by_size(arena, new_region->size);
         llist_insert(&insert_into->regions, &new_region->list);
         arena->orders_bitmap |= 1ULL << insert_into->order;
+
+        source_region->size -= new_region->size;
     }
 
     void *ret = (void*) (source_region->base * arena->quantum_size);
@@ -176,6 +178,21 @@ int get_first_nonempty_list_after_list_n(VMemArena *arena, uint64_t n) {
     size_t get_from_id = count_leading_zeroes(orders_bitmap_after_this_order) + n;
     assert(!list_empty(&arena->orders[get_from_id].regions));
     return get_from_id;
+}
+
+void vmem_free(VMemArena *arena, void *resource) {
+    spinlock_acquire(&arena->lock);
+    Node *tag_node = rbtree_search(&arena->cached_region_tags, ((size_t)resource) / arena->quantum_size);
+    assert(tag_node && "free invalid vmem resource");
+    VMemRegion *region = CONTAINER_OF(tag_node, VMemRegion, rbtree_cache_node);
+
+    VMemOrder *insert_into = find_order_by_size(arena, region->size);
+    llist_insert(&insert_into->regions, &region->list);
+    arena->orders_bitmap |= 1ULL << insert_into->order;
+
+    rbtree_remove(&arena->cached_region_tags, tag_node);
+    
+    spinlock_release(&arena->lock);
 }
 
 // returns a region in base units, that is, NOT in units of the quantum
