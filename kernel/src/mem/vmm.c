@@ -82,7 +82,7 @@ VMSpace *create_virtual_memory_space(void) {
     }
 
     for (int i = 0; i < 10; i++) {
-        void *ptr = vmem_alloc(vmspace->arena, allocatable_area_size /* size in pages */, VMEM_BESTFIT);
+        void *ptr = vmem_alloc(vmspace->arena, allocatable_area_size/4 /* size in pages */, VMEM_BESTFIT);
         klogf(LOG_DEBUG, "got %x from vmem_alloc\n", ptr);
     }
     FREEZE_DEVICE();

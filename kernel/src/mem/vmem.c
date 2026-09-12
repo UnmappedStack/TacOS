@@ -153,6 +153,7 @@ void *vmem_alloc(VMemArena *arena, size_t size, VMemAllocType flag) {
         if (!region) {
             // TODO: start searching the next regions as a fallback
             klogf(LOG_ERROR, "vmem: no fitting region in freelist n for VMEM_BESTFIT\n");
+            spinlock_release(&arena->lock);
             return NULL;
         }
 
