@@ -147,20 +147,6 @@ Thread *create_thread(SchedClass sched_class, int nice, uint8_t flags) {
     return thread;
 }
 
-int count_leading_zeroes(uint64_t x) {
-    if (!x) kpanic("count_leading_zeroes given 0");
-#ifdef __x86_64__
-    return __builtin_ctzll(x);
-#endif
-    // this is much slower than __builtin_ctzll
-    int ret = 0;
-    for (size_t i = 0; i < 64; i++) {
-        if (x & (1ULL << i)) return ret;
-        ret++;
-    }
-    return -1; //theoretically unreachable
-}
-
 /* Assumes there is something in the calendar queue, caller is responsible for
  * if there is not. Caller is also responsible for locking the queue.
  * Selects the next bucket which a thread should be taken from in a processor's

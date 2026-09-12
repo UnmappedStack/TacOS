@@ -62,7 +62,7 @@ void pma_init(void) {
         list_insert(&kernel_info.pmm_nodes, &node->list);
     }
     klogf(LOG_DEBUG, "+====================+====================+========================+\n");
-    klogf(LOG_DEBUG, "PMA init OK\n");
+    klogf(LOG_STATUS, "PMA init OK\n");
 }
 
 Spinlock pma_lock = {0};

@@ -1,5 +1,6 @@
 #include <string.h>
 #include <mm.h>
+#include <isa/cpu.h>
 
 void *memcpy(void *dest, const void *src, size_t n) {
     // rep movsb is faster for large buffers if its x86...
@@ -120,4 +121,19 @@ uint64_t strlen(const char *str) {
     uint64_t ret = 0;
     for (; *str; str++) ret++;
     return ret;
+}
+
+// idk if its stupid to have this in string.c instead of a generic utils.c but wtv
+int count_leading_zeroes(uint64_t x) {
+    if (!x) kpanic("count_leading_zeroes given 0");
+#ifdef __x86_64__
+    return __builtin_ctzll(x);
+#endif
+    // this is much slower than __builtin_ctzll
+    int ret = 0;
+    for (size_t i = 0; i < 64; i++) {
+        if (x & (1ULL << i)) return ret;
+        ret++;
+    }
+    return -1; //theoretically unreachable
 }

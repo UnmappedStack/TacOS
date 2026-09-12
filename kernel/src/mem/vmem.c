@@ -71,6 +71,7 @@ bool vmem_add(VMemArena *arena, uintptr_t region_base, size_t region_size) {
             VMemRegion *region = slab_alloc(kernel_info.vmem_regions_cache);
             region->base = region_base, region->size = region_size;
             llist_insert(&this_order->regions, &region->list);
+            arena->orders_bitmap |= 1 << i;
 
             spinlock_release(&arena->lock)
             return true;
@@ -114,9 +115,16 @@ void *vmem_alloc(VMemArena *arena, size_t size, VMemAllocType flag) {
     VMemOrder *this_order = find_order_by_size(arena, size);
     assert(this_order);
 
+    uint64_t orders_bitmap_after_this_order = arena->orders_bitmap >> this_order->order;
+    if (!orders_bitmap_after_this_order) {
+        klogf(LOG_ERROR, "vmem: no available memory\n");
+    }
+    size_t insert_into_id = count_leading_zeroes(orders_bitmap_after_this_order) + this_order->order;
+    VMemOrder *insert_into = &arena->orders[insert_into_id];
+
     switch (flag) {
     case VMEM_BESTFIT:
-        VMemRegion *region = find_bestfit_in_order(this_order, size);
+        VMemRegion *region = find_bestfit_in_order(insert_into, size);
         if (!region) {
             // TODO: start searching the next regions as a fallback
             klogf(LOG_ERROR, "vmem: no fitting region in freelist n for VMEM_BESTFIT\n");

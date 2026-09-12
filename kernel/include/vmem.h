@@ -33,7 +33,9 @@ typedef struct {
 typedef struct {
     Spinlock lock;
     uint16_t quantum_size;
+
     size_t num_orders;
+    uint64_t orders_bitmap;
     VMemOrder orders[0];
 } VMemArena;
 
