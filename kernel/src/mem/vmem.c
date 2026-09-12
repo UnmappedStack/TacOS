@@ -225,14 +225,17 @@ void *vmem_alloc(VMemArena *arena, size_t size, VMemAllocType flag) {
         if (this_order->order + 1 >= arena->num_orders) {
             // instant fit won't work in this case as there *is* no next list.
             // fall back to best fit.
-            klogf(LOG_WARN, "vmem: fell back to best fit rather than instant fit\n");
+            klogf(LOG_WARN, "vmem: fell back to best fit rather than instant fit (case 1)\n");
             spinlock_release(&arena->lock);
             return vmem_alloc(arena, size, VMEM_BESTFIT);
         }
         get_from_id = get_first_nonempty_list_after_list_n(arena, this_order->order + 1);
         if (get_from_id < 0) {
+            // due to some edge case we also fall back to best fit where nothing is found
+            // with instant fit
+            klogf(LOG_WARN, "vmem: fell back to best fit rather than instant fit (case 2)\n");
             spinlock_release(&arena->lock);
-            return NULL;
+            return vmem_alloc(arena, size, VMEM_BESTFIT);
         }
 
         VMemOrder *order_next = &arena->orders[(size_t)get_from_id];
