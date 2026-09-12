@@ -15,6 +15,7 @@
  * region from vmem_arena_init, rather you have to separately add regions. */
 
 #include <vmem.h>
+#include <assert.h>
 #include <kprintf.h>
 #include <util.h>
 #include <kernel.h>
@@ -73,4 +74,54 @@ bool vmem_add(VMemArena *arena, uintptr_t region_base, size_t region_size) {
     klogf(LOG_ERROR, "vmem_add can't fill any section\n");
     spinlock_release(&arena->lock);
     return false;
+}
+
+VMemOrder *find_order_by_size(VMemArena *arena, size_t size) {
+    llist_iter(&arena->orders, list) {
+        VMemOrder *this_order = CONTAINER_OF(list, VMemOrder, list);
+        if ((size >= this_order->region_sz && size < this_order->region_sz * 2)
+                || (list->next == &arena->orders) /* last one */) {
+            return this_order;
+        }
+    }
+    return NULL;
+}
+
+VMemRegion *find_bestfit_in_order(VMemOrder *order, size_t size) {
+    VMemRegion *best_fit_region = NULL;
+    llist_iter(&order->regions, list) {
+        VMemRegion *region = CONTAINER_OF(list, VMemRegion, list);
+        if (region->size < size) continue;
+        if (!best_fit_region || region->size < best_fit_region->size) {
+            best_fit_region = region;
+        }
+    }
+    return best_fit_region;
+}
+
+// returns a region in base units, that is, NOT in units of the quantum
+void *vmem_alloc(VMemArena *arena, size_t size, VMemAllocType flag) {
+    assert(size);
+
+    VMemOrder *this_order = find_order_by_size(arena, size);
+    assert(this_order);
+
+    switch (flag) {
+    case VMEM_BESTFIT:
+        VMemRegion *region = find_bestfit_in_order(this_order, size);
+        if (!region) {
+            // TODO: start searching the next regions as a fallback
+            klogf(LOG_ERROR, "vmem: no fitting region in freelist n for VMEM_BESTFIT\n");
+            return NULL;
+        }
+        return (void*) (region->base * arena->quantum_size);
+    case VMEM_INSTANTFIT:
+        klogf(LOG_ERROR, "TODO: VMEM_INSTANTFIT");
+        return NULL;
+    case VMEM_NEXTFIT:
+        klogf(LOG_ERROR, "TODO: VMEM_NEXTFIT");
+        return NULL;
+    }
+    klogf(LOG_ERROR, "unknown vmem_alloc flag\n");
+    return NULL;
 }

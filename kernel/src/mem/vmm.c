@@ -1,6 +1,7 @@
 // mostly higher level interface virtual memory stuff (which is fully
 // isa agnostic) and region tracking
 #include <vmm.h>
+#include <kprintf.h>
 #include <paging.h>
 #include <mm.h>
 #include <isa/cpu.h>
@@ -74,6 +75,10 @@ VMSpace *create_virtual_memory_space(void) {
     )) {
         kpanic("vmm: failed to add memory region to vmspace's vmem arena");
     }
+
+    void *ptr = vmem_alloc(&vmspace->arena, allocatable_area_size-1, VMEM_BESTFIT);
+    klogf(LOG_DEBUG, "got %x from vmem_alloc\n", ptr);
+    FREEZE_DEVICE();
 
     return vmspace;
 }

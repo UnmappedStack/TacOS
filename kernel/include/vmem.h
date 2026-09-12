@@ -2,8 +2,12 @@
 #include <list.h>
 #include <lock.h>
 
-// base size of allocations
-#define VMEM_QUANTUM PAGE_SIZE
+typedef enum {
+    VMEM_BESTFIT,    /* search for the smallest segment on list n that satisfies it */
+    VMEM_INSTANTFIT, /* do the first segment on list n+1 */
+    VMEM_NEXTFIT     /* we don't bother with this yet but its just the region
+                      * immediately after the last */
+} VMemAllocType;
 
 // TODO: this needs to be in a second llist in order of address
 typedef struct {
@@ -33,4 +37,5 @@ typedef struct {
 
 void vmem_arena_init(VMemArena *arena, size_t quantum, size_t num_orders);
 bool vmem_add(VMemArena *arena, uintptr_t region_base, size_t region_size);
+void *vmem_alloc(VMemArena *arena, size_t size, VMemAllocType flag);
 void vmem_init(void);
