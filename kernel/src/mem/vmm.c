@@ -70,19 +70,20 @@ VMSpace *create_virtual_memory_space(void) {
     // TODO: maybe consider if these should be tracked as well?
 
     size_t allocatable_area_size = kernel_info.hhdm/PAGE_BYTES-1 - ALLOCATABLE_BASE/PAGE_BYTES;
+    (void) allocatable_area_size;
     vmspace->arena = vmem_arena_init(
             PAGE_BYTES, /* quantum size */
             kernel_info.vmspace_alloc_cache
     );
     if (!vmem_add(vmspace->arena,
-             ALLOCATABLE_BASE/PAGE_BYTES, /* base (pages) */
-             allocatable_area_size        /* length (pages) */
+             PAGE_BYTES, /* base (pages) */
+             1/* length (pages) */
     )) {
         kpanic("vmm: failed to add memory region to vmspace's vmem arena");
     }
 
     for (int i = 0; i < 10; i++) {
-        void *ptr = vmem_alloc(vmspace->arena, allocatable_area_size/4 /* size in pages */, VMEM_BESTFIT);
+        void *ptr = vmem_alloc(vmspace->arena, 1 /* size in pages */, VMEM_INSTANTFIT);
         if (!ptr) break;
         klogf(LOG_DEBUG, "got %x from vmem_alloc\n", ptr);
     }

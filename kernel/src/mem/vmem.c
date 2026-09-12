@@ -162,43 +162,64 @@ void *split_and_ret(VMemArena *arena, VMemRegion *source_region, size_t size) {
     return ret;
 }
 
+// holy long name wtf. at least its descriptive i guess lol
+int get_first_nonempty_list_after_list_n(VMemArena *arena, uint64_t n) {
+    uint64_t orders_bitmap_after_this_order = arena->orders_bitmap >> n;
+    if (!orders_bitmap_after_this_order) {
+        klogf(LOG_ERROR, "vmem: no available memory\n");
+        return -1;
+    }
+    size_t get_from_id = count_leading_zeroes(orders_bitmap_after_this_order) + n;
+    return get_from_id;
+}
+
 // returns a region in base units, that is, NOT in units of the quantum
 void *vmem_alloc(VMemArena *arena, size_t size, VMemAllocType flag) {
+    int get_from_id;
+    void *ret;
     assert(size);
     
     spinlock_acquire(&arena->lock);
     VMemOrder *this_order = find_order_by_size(arena, size);
     assert(this_order);
 
-    uint64_t orders_bitmap_after_this_order = arena->orders_bitmap >> this_order->order;
-    if (!orders_bitmap_after_this_order) {
-        klogf(LOG_ERROR, "vmem: no available memory\n");
-        spinlock_release(&arena->lock);
-        return NULL;
-    }
-    size_t get_from_id = count_leading_zeroes(orders_bitmap_after_this_order) + this_order->order;
-    VMemOrder *get_from = &arena->orders[get_from_id];
-
     switch (flag) {
     case VMEM_BESTFIT:
+        get_from_id = get_first_nonempty_list_after_list_n(arena, this_order->order);
+        if (get_from_id < 0) {
+            spinlock_release(&arena->lock);
+            return NULL;
+        }
+        VMemOrder *get_from = &arena->orders[(size_t)get_from_id];
+
         VMemRegion *region = find_bestfit_in_order(get_from, size);
         if (!region) {
-            // TODO: start searching the next regions as a fallback
             klogf(LOG_ERROR, "vmem: no fitting region in freelist n for VMEM_BESTFIT\n");
             spinlock_release(&arena->lock);
             return NULL;
         }
 
-        void *ret = split_and_ret(arena, region, size);
+        ret = split_and_ret(arena, region, size);
         spinlock_release(&arena->lock);
         return ret;
     case VMEM_INSTANTFIT:
-//        VMemRegion *region = CONTAINER_OF(&get_from->regions.next, VMemRegion, list);
-//        llist_remove(&region->list);
-        klogf(LOG_ERROR, "TODO: VMEM_INSTANTFIT\n");
+        if (this_order->order + 1 >= arena->num_orders) {
+            // instant fit won't work in this case as there *is* no next list.
+            // fall back to best fit.
+            klogf(LOG_WARN, "vmem: fell back to best fit rather than instant fit\n");
+            spinlock_release(&arena->lock);
+            return vmem_alloc(arena, size, VMEM_BESTFIT);
+        }
+        get_from_id = get_first_nonempty_list_after_list_n(arena, this_order->order + 1);
+        assert(get_from_id >= 0);
+        VMemOrder *order_next = &arena->orders[(size_t)get_from_id];
+
+        VMemRegion *first_region = CONTAINER_OF(&order_next->regions.next, VMemRegion, list);
+        llist_remove(&first_region->list);
+
+        ret = split_and_ret(arena, first_region, size);
         spinlock_release(&arena->lock);
-        return NULL;
-//        return split_and_ret(arena, region, ;
+        return ret;
     case VMEM_NEXTFIT:
         klogf(LOG_ERROR, "TODO: VMEM_NEXTFIT\n");
         spinlock_release(&arena->lock);
