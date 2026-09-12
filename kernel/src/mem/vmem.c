@@ -69,7 +69,7 @@ bool vmem_add_sized(VMemArena *arena, uintptr_t region_base, size_t region_size)
         if ((i+1 == arena->num_orders && region_size >= this_order->region_sz) ||
             (region_size >= this_order->region_sz && region_size <= order_up->region_sz)) {
 
-            klogf(LOG_DEBUG, "add to order %u (region size = %x)\n", i, region_size);
+            klogf(LOG_DEBUG, "add to order %u (region size = %x, base=%x)\n", i, region_size, region_base);
             // its the right size for this region, insert it
             VMemRegion *region = slab_alloc(kernel_info.vmem_regions_cache);
             memset(region, 0, sizeof(VMemRegion));
@@ -142,7 +142,7 @@ VMemRegion *find_bestfit_in_order(VMemOrder *order, size_t size) {
 
 /* takes a VMemRegion, splits off a chunk of size `size`, returns its base, then adds the other
  * part of the region back to the arena. */
-void *split_and_ret(VMemArena *arena, VMemRegion *source_region, size_t size) {
+void *split_and_ret(VMemArena *arena, VMemRegion *source_region, VMemOrder *source_order, size_t size) {
     if (source_region->size != size) {
         VMemRegion *new_region = slab_alloc(kernel_info.vmem_regions_cache);
         assert(new_region);
@@ -151,6 +151,7 @@ void *split_and_ret(VMemArena *arena, VMemRegion *source_region, size_t size) {
 
         VMemOrder *insert_into = find_order_by_size(arena, new_region->size);
         llist_insert(&insert_into->regions, &new_region->list);
+        arena->orders_bitmap |= 1ULL << insert_into->order;
     }
 
     void *ret = (void*) (source_region->base * arena->quantum_size);
@@ -159,6 +160,9 @@ void *split_and_ret(VMemArena *arena, VMemRegion *source_region, size_t size) {
                   source_region->base);
 
     llist_remove(&source_region->list);
+    if (list_empty(&source_order->regions)) {
+        arena->orders_bitmap &= ~(1ULL << source_order->order);
+    }
     return ret;
 }
 
@@ -170,6 +174,7 @@ int get_first_nonempty_list_after_list_n(VMemArena *arena, uint64_t n) {
         return -1;
     }
     size_t get_from_id = count_leading_zeroes(orders_bitmap_after_this_order) + n;
+    assert(!list_empty(&arena->orders[get_from_id].regions));
     return get_from_id;
 }
 
@@ -186,20 +191,17 @@ void *vmem_alloc(VMemArena *arena, size_t size, VMemAllocType flag) {
     switch (flag) {
     case VMEM_BESTFIT:
         get_from_id = get_first_nonempty_list_after_list_n(arena, this_order->order);
-        if (get_from_id < 0) {
-            spinlock_release(&arena->lock);
-            return NULL;
-        }
+        assert(get_from_id >= 0);
         VMemOrder *get_from = &arena->orders[(size_t)get_from_id];
 
         VMemRegion *region = find_bestfit_in_order(get_from, size);
         if (!region) {
-            klogf(LOG_ERROR, "vmem: no fitting region in freelist n for VMEM_BESTFIT\n");
+            klogf(LOG_ERROR, "vmem: no fitting region in freelists for VMEM_BESTFIT (oom)\n");
             spinlock_release(&arena->lock);
             return NULL;
         }
 
-        ret = split_and_ret(arena, region, size);
+        ret = split_and_ret(arena, region, get_from, size);
         spinlock_release(&arena->lock);
         return ret;
     case VMEM_INSTANTFIT:
@@ -211,13 +213,17 @@ void *vmem_alloc(VMemArena *arena, size_t size, VMemAllocType flag) {
             return vmem_alloc(arena, size, VMEM_BESTFIT);
         }
         get_from_id = get_first_nonempty_list_after_list_n(arena, this_order->order + 1);
-        assert(get_from_id >= 0);
+        if (get_from_id < 0) {
+            spinlock_release(&arena->lock);
+            return NULL;
+        }
+
         VMemOrder *order_next = &arena->orders[(size_t)get_from_id];
 
-        VMemRegion *first_region = CONTAINER_OF(&order_next->regions.next, VMemRegion, list);
+        VMemRegion *first_region = CONTAINER_OF(order_next->regions.next, VMemRegion, list);
         llist_remove(&first_region->list);
 
-        ret = split_and_ret(arena, first_region, size);
+        ret = split_and_ret(arena, first_region, order_next, size);
         spinlock_release(&arena->lock);
         return ret;
     case VMEM_NEXTFIT:
