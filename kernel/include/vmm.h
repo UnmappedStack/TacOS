@@ -3,7 +3,7 @@
 #include <vmem.h>
 #include <rbtree.h>
 
-#define VM_ALLOC_NUM_ORDERS 8
+#define VM_ALLOC_NUM_ORDERS 64
 
 // I tried to keep this smol
 typedef struct {

@@ -37,7 +37,7 @@ typedef struct {
     uint16_t quantum_size;
     Tree(VMemRegion) cached_region_tags;
 
-    size_t num_orders;
+    uint8_t num_orders; // max 63 so 1 byte is fine
     uint64_t orders_bitmap;
     VMemOrder orders[0];
 } VMemArena;

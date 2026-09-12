@@ -36,10 +36,12 @@ VMemArena *vmem_arena_init(size_t quantum, Cache *arena_cache) {
     assert(arena_cache->object_size >= sizeof(VMemArena) + sizeof(VMemOrder)*1);
     assert(!((arena_cache->object_size - sizeof(VMemArena)) % sizeof(VMemOrder)));
 
-    VMemArena *arena    = slab_alloc(arena_cache);
+    VMemArena *arena = slab_alloc(arena_cache);
     memset(arena, 0, sizeof(VMemArena));
     arena->quantum_size = quantum;
-    arena->num_orders   = (arena_cache->object_size - sizeof(VMemArena)) / sizeof(VMemOrder);
+
+    arena->num_orders = (arena_cache->object_size - sizeof(VMemArena)) / sizeof(VMemOrder);
+    if (arena->num_orders > 64) arena->num_orders = 64;
 
     size_t region_sz = 1;
     for (size_t i = 0; i < arena->num_orders; i++) {
@@ -55,10 +57,9 @@ VMemArena *vmem_arena_init(size_t quantum, Cache *arena_cache) {
     return arena;
 }
 
-// adds a range to an arena so that stuff from that range can be allocated.
-// both region_base and region_size refer to the new region being added and
-// are in units of arena->quantum_size. returns true on success and false on error.
-bool vmem_add(VMemArena *arena, uintptr_t region_base, size_t region_size) {
+// unlike vmem_add(), it MUST be of a size that already fits in a specific region
+// (that is, it can at max be 2^n-1 where n is the number of freelists)
+bool vmem_add_sized(VMemArena *arena, uintptr_t region_base, size_t region_size) {
     spinlock_acquire(&arena->lock);
 
     for (size_t i = arena->num_orders-1; i >= 0; i--) {
@@ -67,11 +68,14 @@ bool vmem_add(VMemArena *arena, uintptr_t region_base, size_t region_size) {
         
         if ((i+1 == arena->num_orders && region_size >= this_order->region_sz) ||
             (region_size >= this_order->region_sz && region_size <= order_up->region_sz)) {
+
+            klogf(LOG_DEBUG, "add to order %u (region size = %x)\n", i, region_size);
             // its the right size for this region, insert it
             VMemRegion *region = slab_alloc(kernel_info.vmem_regions_cache);
+            memset(region, 0, sizeof(VMemRegion));
             region->base = region_base, region->size = region_size;
             llist_insert(&this_order->regions, &region->list);
-            arena->orders_bitmap |= 1 << i;
+            arena->orders_bitmap |= 1ULL << i;
 
             spinlock_release(&arena->lock)
             return true;
@@ -83,6 +87,34 @@ bool vmem_add(VMemArena *arena, uintptr_t region_base, size_t region_size) {
     klogf(LOG_ERROR, "vmem_add can't fill any section\n");
     spinlock_release(&arena->lock);
     return false;
+}
+
+// should this be somewhere else outside vmem? yeah maybe but i dont care until i
+// actually need it somewhere else (TODO)
+static inline size_t pow(size_t base, size_t exp) {
+    size_t ret = 1;
+    for (size_t i = 0; i < exp; i++) {
+        ret *= base;
+    }
+    return ret;
+}
+
+// adds a range to an arena so that stuff from that range can be allocated.
+// both region_base and region_size refer to the new region being added and
+// are in units of arena->quantum_size. returns true on success and false on error.
+bool vmem_add(VMemArena *arena, uintptr_t region_base, size_t region_size) {
+    uintptr_t base = region_base;
+    size_t size_left = region_size;
+    size_t max_size = pow(2, arena->num_orders-1);
+    assert(max_size);
+    while (size_left) {
+        size_t size_to_add = (size_left > max_size) ? max_size : size_left;
+        if (!vmem_add_sized(arena, base, size_to_add)) return false;
+
+        base += size_to_add;
+        size_left -= size_to_add;
+    }
+    return true;
 }
 
 VMemOrder *find_order_by_size(VMemArena *arena, size_t size) {
@@ -161,11 +193,14 @@ void *vmem_alloc(VMemArena *arena, size_t size, VMemAllocType flag) {
         spinlock_release(&arena->lock);
         return ret;
     case VMEM_INSTANTFIT:
-        klogf(LOG_ERROR, "TODO: VMEM_INSTANTFIT");
+//        VMemRegion *region = CONTAINER_OF(&get_from->regions.next, VMemRegion, list);
+//        llist_remove(&region->list);
+        klogf(LOG_ERROR, "TODO: VMEM_INSTANTFIT\n");
         spinlock_release(&arena->lock);
         return NULL;
+//        return split_and_ret(arena, region, ;
     case VMEM_NEXTFIT:
-        klogf(LOG_ERROR, "TODO: VMEM_NEXTFIT");
+        klogf(LOG_ERROR, "TODO: VMEM_NEXTFIT\n");
         spinlock_release(&arena->lock);
         return NULL;
     }
