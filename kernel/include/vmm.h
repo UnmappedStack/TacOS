@@ -3,6 +3,8 @@
 #include <vmem.h>
 #include <rbtree.h>
 
+#define VM_ALLOC_NUM_ORDERS 8
+
 // I tried to keep this smol
 typedef struct {
     Node rbtree_node;
@@ -18,7 +20,7 @@ typedef struct {
 
     Tree regions;  // allocated virtual memory regions in an rbtree
 
-    VMemArena arena; // for virtual memory allocation
+    VMemArena *arena; // for virtual memory allocation
 } VMSpace;
 
 VMSpace *create_virtual_memory_space(void);

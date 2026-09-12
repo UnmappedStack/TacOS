@@ -15,28 +15,35 @@
  * region from vmem_arena_init, rather you have to separately add regions. */
 
 #include <vmem.h>
+#include <string.h>
+#include <slab.h>
 #include <assert.h>
 #include <kprintf.h>
 #include <util.h>
 #include <kernel.h>
 
 void vmem_init(void) {
-    kernel_info.vmem_orders_cache  = cache_create(sizeof(VMemOrder));
     kernel_info.vmem_regions_cache = cache_create(sizeof(VMemRegion));
 }
 
 /* TODO: also take stuff for importing, qcaches, and allow sleep vs nosleep (we
  * currently assume nosleep)
  * we don't acquire the arena's lock, we assume that it should just not be used
- * by anything else yet. */
-void vmem_arena_init(VMemArena *arena, size_t quantum, size_t num_orders) {
-    arena->quantum_size = quantum;
+ * by anything else yet.
+ * arena_cache expects a cache to allocate the VMemArena on, and will assume
+ * the number of orders from the cache's object size. */
+VMemArena *vmem_arena_init(size_t quantum, Cache *arena_cache) {
+    assert(arena_cache->object_size >= sizeof(VMemArena) + sizeof(VMemOrder)*1);
+    assert(!((arena_cache->object_size - sizeof(VMemArena)) % sizeof(VMemOrder)));
 
-    llist_init(&arena->orders);
+    VMemArena *arena    = slab_alloc(arena_cache);
+    memset(arena, 0, sizeof(VMemArena));
+    arena->quantum_size = quantum;
+    arena->num_orders   = (arena_cache->object_size - sizeof(VMemArena)) / sizeof(VMemOrder);
+
     size_t region_sz = 1;
-    for (size_t i = 0; i < num_orders; i++) {
-        VMemOrder *order = slab_alloc(kernel_info.vmem_orders_cache);
-        list_insert(&arena->orders, &order->list);
+    for (size_t i = 0; i < arena->num_orders; i++) {
+        VMemOrder *order = &arena->orders[i];
 
         order->order = i;
         llist_init(&order->regions);
@@ -44,6 +51,8 @@ void vmem_arena_init(VMemArena *arena, size_t quantum, size_t num_orders) {
         order->region_sz = region_sz;
         region_sz *= 2;
     }
+
+    return arena;
 }
 
 // adds a range to an arena so that stuff from that range can be allocated.
@@ -52,12 +61,11 @@ void vmem_arena_init(VMemArena *arena, size_t quantum, size_t num_orders) {
 bool vmem_add(VMemArena *arena, uintptr_t region_base, size_t region_size) {
     spinlock_acquire(&arena->lock);
 
-    for (LList *list = arena->orders.prev;
-         list != &arena->orders; list = list->prev) {
-        VMemOrder *this_order = CONTAINER_OF(list, VMemOrder, list);
-        VMemOrder *order_up   = CONTAINER_OF(list->next, VMemOrder, list); // the order double the size of this one
+    for (size_t i = arena->num_orders-1; i >= 0; i--) {
+        VMemOrder *this_order = &arena->orders[i];
+        VMemOrder *order_up   = &arena->orders[i+1]; // the order double the size of this one
         
-        if ((list->next == &arena->orders && region_size >= this_order->region_sz) ||
+        if ((i+1 == arena->num_orders && region_size >= this_order->region_sz) ||
             (region_size >= this_order->region_sz && region_size <= order_up->region_sz)) {
             // its the right size for this region, insert it
             VMemRegion *region = slab_alloc(kernel_info.vmem_regions_cache);
@@ -77,10 +85,10 @@ bool vmem_add(VMemArena *arena, uintptr_t region_base, size_t region_size) {
 }
 
 VMemOrder *find_order_by_size(VMemArena *arena, size_t size) {
-    llist_iter(&arena->orders, list) {
-        VMemOrder *this_order = CONTAINER_OF(list, VMemOrder, list);
+    for (size_t i = 0; i < arena->num_orders; i++) {
+        VMemOrder *this_order = &arena->orders[i];
         if ((size >= this_order->region_sz && size < this_order->region_sz * 2)
-                || (list->next == &arena->orders) /* last one */) {
+                || (i+1 == arena->num_orders) /* last one */) {
             return this_order;
         }
     }

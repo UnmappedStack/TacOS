@@ -53,6 +53,11 @@ VMSpace *create_virtual_memory_space(void) {
         kernel_info.vmregion_cache = cache_create(sizeof(VMRegion));
         if (!kernel_info.vmregion_cache) kpanic("failed to create VMRegion cache");
     }
+    
+    if (!kernel_info.vmspace_alloc_cache) {
+        kernel_info.vmspace_alloc_cache = cache_create(sizeof(VMemArena) + sizeof(VMemOrder) * VM_ALLOC_NUM_ORDERS);
+        if (!kernel_info.vmspace_alloc_cache) kpanic("failed to create VMSpace alloc cache");
+    }
 
     VMSpace *vmspace = slab_alloc(kernel_info.vmspace_cache);
 
@@ -65,18 +70,18 @@ VMSpace *create_virtual_memory_space(void) {
     // TODO: maybe consider if these should be tracked as well?
 
     size_t allocatable_area_size = kernel_info.hhdm/PAGE_BYTES-1 - ALLOCATABLE_BASE/PAGE_BYTES;
-    vmem_arena_init(&vmspace->arena,
+    vmspace->arena = vmem_arena_init(
             PAGE_BYTES, /* quantum size */
-            8           /* num orders */
+            kernel_info.vmspace_alloc_cache
     );
-    if (!vmem_add(&vmspace->arena,
+    if (!vmem_add(vmspace->arena,
              ALLOCATABLE_BASE/PAGE_BYTES, /* base (pages) */
              allocatable_area_size        /* length (pages) */
     )) {
         kpanic("vmm: failed to add memory region to vmspace's vmem arena");
     }
 
-    void *ptr = vmem_alloc(&vmspace->arena, allocatable_area_size-1, VMEM_BESTFIT);
+    void *ptr = vmem_alloc(vmspace->arena, 2 /* size in pages */, VMEM_BESTFIT);
     klogf(LOG_DEBUG, "got %x from vmem_alloc\n", ptr);
     FREEZE_DEVICE();
 

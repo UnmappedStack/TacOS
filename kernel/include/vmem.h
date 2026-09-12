@@ -1,4 +1,5 @@
 #pragma once
+#include <slab.h>
 #include <list.h>
 #include <lock.h>
 
@@ -32,10 +33,11 @@ typedef struct {
 typedef struct {
     Spinlock lock;
     uint16_t quantum_size;
-    LList(VMemOrder) orders;
+    size_t num_orders;
+    VMemOrder orders[0];
 } VMemArena;
 
-void vmem_arena_init(VMemArena *arena, size_t quantum, size_t num_orders);
+VMemArena *vmem_arena_init(size_t quantum, Cache *vmem_arena);
 bool vmem_add(VMemArena *arena, uintptr_t region_base, size_t region_size);
 void *vmem_alloc(VMemArena *arena, size_t size, VMemAllocType flag);
 void vmem_init(void);
