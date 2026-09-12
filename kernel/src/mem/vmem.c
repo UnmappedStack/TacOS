@@ -26,7 +26,7 @@ void vmem_init(void) {
     kernel_info.vmem_regions_cache = cache_create(sizeof(VMemRegion));
 }
 
-/* TODO: also take stuff for importing, qcaches, and allow sleep vs nosleep (we
+/* TODO: also take stuff for qcaches, sleep vs nosleep (we
  * currently assume nosleep)
  * we don't acquire the arena's lock, we assume that it should just not be used
  * by anything else yet.
