@@ -62,7 +62,7 @@ VMemArena *vmem_arena_init(size_t quantum, Cache *arena_cache) {
 bool vmem_add_sized(VMemArena *arena, uintptr_t region_base, size_t region_size) {
     spinlock_acquire(&arena->lock);
 
-    for (size_t i = arena->num_orders-1; i >= 0; i--) {
+    for (int i = (int)arena->num_orders-1; i >= 0; i--) {
         VMemOrder *this_order = &arena->orders[i];
         VMemOrder *order_up   = &arena->orders[i+1]; // the order double the size of this one
         

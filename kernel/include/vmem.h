@@ -1,5 +1,6 @@
 #pragma once
 #include <slab.h>
+#include <stddef.h>
 #include <rbtree.h>
 #include <list.h>
 #include <lock.h>
