@@ -112,11 +112,6 @@ void map_all_memory_into_vspace(uint64_t *pml4) {
     }
 }
 
-// allocates in vmem a new stack and maps it into the virtual address space
-void create_stack_for_vspace(uint64_t *pml4) {
-    alloc_consecutive_phys_pages(pml4, KERNEL_STACK_BOTTOM, KERNEL_STACK_PAGES, PAGE_PRESENT | PAGE_WRITE);
-}
-
 // Creates a new address space and maps essential memory into it
 uintptr_t create_address_space(void) {
     uintptr_t pml4_paddr = pma_palloc();
@@ -125,7 +120,6 @@ uintptr_t create_address_space(void) {
 
     map_all_memory_into_vspace(pml4);
     map_kernel_into_vspace(pml4);
-    create_stack_for_vspace(pml4);
    
     return pml4_paddr;
 }
