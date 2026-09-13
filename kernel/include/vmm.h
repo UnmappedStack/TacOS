@@ -25,3 +25,4 @@ typedef struct {
 
 VMSpace *create_virtual_memory_space(void);
 VMRegion *vmregion_create(VMSpace *vmspace, uintptr_t vaddr_start, uint16_t size_pages);
+void *vmm_valloc_backed(VMSpace *vmspace, size_t num_pages, uint64_t flags);

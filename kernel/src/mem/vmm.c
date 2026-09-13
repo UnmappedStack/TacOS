@@ -2,6 +2,7 @@
 // isa agnostic) and region tracking
 #include <vmm.h>
 #include <kprintf.h>
+#include <pma.h>
 #include <paging.h>
 #include <mm.h>
 #include <isa/cpu.h>
@@ -41,6 +42,23 @@ void vmm_map_page(VMSpace *vmspace, uintptr_t vaddr, uintptr_t paddr, uint64_t f
     // ...then just add it to the VMRegion tracker
     vmregion_create(vmspace, vaddr, /* size_pages */ 1);
 
+}
+
+void *vmm_valloc_backed(VMSpace *vmspace, size_t num_pages, uint64_t flags) {
+    void *vaddr = vmem_alloc(vmspace->arena, num_pages, flags);
+    if (!vaddr) return NULL;
+
+    for (size_t i = 0; i < num_pages; i++) {
+        uintptr_t paddr = pma_palloc();
+        map_page((uint64_t*)(vmspace->cr3 + kernel_info.hhdm), /* pml4 */
+                 (uintptr_t) vaddr + i * PAGE_BYTES,           /* vaddr */
+                 paddr,
+                 flags);
+    }
+
+    vmregion_create(vmspace, (uintptr_t) vaddr, num_pages);
+
+    return vaddr;
 }
 
 VMSpace *create_virtual_memory_space(void) {
