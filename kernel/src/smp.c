@@ -1,7 +1,3 @@
-/* TODO: allocate an indexable array of CPU structs for easy accessability
- * from the other processors, necessary for stuff like load balancing. Might need
- * a non-slab heap for this, pooling or something. */
-
 #include <pma.h>
 #include <string.h>
 #include <isa/cpu.h>
@@ -33,17 +29,9 @@ static uint64_t num_aps_initialised = 0;
 static Spinlock init_lock = {0};
 /* after the stack has been changed */
 void ap_stage2(void) {
-    CPU *cpu = current_processor();
-    // this mapping should probably just be part of init_local_interrupt_controller
-    // so that its not needing a yuck macro, TODO
 #if defined(__x86_64__)
-    map_page((uint64_t *)(cpu->cr3 + kernel_info.hhdm),
-              (uint64_t)kernel_info.lapic_addr,
-              (uint64_t)kernel_info.lapic_addr - kernel_info.hhdm,
-              PAGE_PRESENT | PAGE_WRITE);
+    // this should be moved elsewhere to avoid arch specific code here, TODO
     init_local_interrupt_controller(kernel_info.lapic_addr);
-#elif defined(__riscv)
-    (void) cpu;
 #endif
     timer_local_init();
 
@@ -65,10 +53,9 @@ void ap_stage2(void) {
 void ap_entry(struct limine_mp_info *this_cpu) {
     DISABLE_INTERRUPTS();
     isa_early_init();
+    SWITCH_PAGE_TREE(kernel_info.vmspace->cr3);
     CPU *cpu = cpu_info_init(get_limine_cpu_id(this_cpu));
     cpu->id  = get_limine_cpu_id(this_cpu);
-    cpu->cr3 = create_address_space();
-    SWITCH_PAGE_TREE(cpu->cr3);
     ap_stage2();
 }
 
@@ -76,10 +63,10 @@ void ap_entry(struct limine_mp_info *this_cpu) {
 void smp_init(void) {
     klogf(LOG_STATUS, "Initialising APs...\n");
     size_t num_cores = smp_request.response->cpu_count;
-    /* TODO: this gives one page max, only allowing for PAGE_BYTES/sizeof(CPU) processors max.
-     * Make it expandable once there's a VMA. */
-    if ((size_t)num_cores >= PAGE_BYTES/sizeof(CPU)) kpanic("too many processors (FIXME)");
-    kernel_info.processors = (CPU*)pma_valloc();
+    size_t num_pages = PAGE_ALIGN_UP(num_cores * sizeof(CPU)) / PAGE_BYTES;
+    kernel_info.processors = (CPU*)vmm_valloc_backed(kernel_info.vmspace, num_pages,
+                                                            PAGE_PRESENT | PAGE_WRITE);
+    if (!kernel_info.processors) kpanic("failed to allocate backed vmem for kernel_info.processors");
     cpu_info_init(kernel_info.bp_id)->id = kernel_info.bp_id; // it needs to also set up the cpu local struct for the bp here
     for (size_t i = 0; i < num_cores; i++) {
         struct limine_mp_info *cpu = smp_request.response->cpus[i];

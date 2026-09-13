@@ -45,6 +45,7 @@ void test_isr(void*) {
     if (thread != NULL)
         kprintf("%s%u\e[0m,", colours[cpu->id % 5], thread->tid);
 
+    ENABLE_INTERRUPTS();
     end_of_interrupt();
 }
 

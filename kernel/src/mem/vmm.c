@@ -1,6 +1,8 @@
 // mostly higher level interface virtual memory stuff (which is fully
 // isa agnostic) and region tracking
 #include <vmm.h>
+#include <list.h>
+#include <util.h>
 #include <kprintf.h>
 #include <pma.h>
 #include <paging.h>
@@ -19,6 +21,7 @@ VMRegion *vmregion_create(VMSpace *vmspace,
         .vaddr_start = vaddr_start,
         .size_pages  = size_pages,
     };
+    llist_init(&region->phys_regions);
 
     Node *rbtree_node = rbtree_insert(&vmspace->regions, 
                                       &region->rbtree_node,
@@ -26,6 +29,13 @@ VMRegion *vmregion_create(VMSpace *vmspace,
     if (!rbtree_node) return NULL;
 
     return region;
+}
+
+void vmregion_add_phys_region(VMRegion *region, uintptr_t phys_base, size_t num_pages) {
+    VMPhysRegion *p_region = slab_alloc(kernel_info.vm_phys_region_cache);
+    p_region->paddr     = phys_base;
+    p_region->num_pages = num_pages;
+    llist_insert(&region->phys_regions, &p_region->list);
 }
 
 /* maps a single page in physical memory as its own region in the vmm.
@@ -44,19 +54,37 @@ void vmm_map_page(VMSpace *vmspace, uintptr_t vaddr, uintptr_t paddr, uint64_t f
 
 }
 
+// remaps a region from one address space into the other (same underlying physical memory).
+// returns false on error
+bool vmm_remap(VMSpace *dest, VMSpace *source, void *vaddr) {
+    Node *region_node = rbtree_search(&source->regions, (uint64_t)vaddr);
+    if (!region_node) return false;
+    VMRegion *region = CONTAINER_OF(region_node, VMRegion, rbtree_node);
+
+    VMRegion *new_region = vmregion_create(dest, region->vaddr_start, region->size_pages);
+
+    llist_iter(&region->phys_regions, list) {
+        VMPhysRegion *phys_region = CONTAINER_OF(list, VMPhysRegion, list);
+        vmregion_add_phys_region(new_region, phys_region->paddr, phys_region->num_pages);
+    }
+
+    return true;
+}
+
+// TODO: we can easily vmem_free the allocated virtual memory, but we need to
+// be able to also free the tracked physical regions its mapped to
 void *vmm_valloc_backed(VMSpace *vmspace, size_t num_pages, uint64_t flags) {
-    void *vaddr = vmem_alloc(vmspace->arena, num_pages, flags);
+    void *vaddr = vmem_alloc(vmspace->arena, num_pages, VMEM_INSTANTFIT);
     if (!vaddr) return NULL;
+
+    vmregion_create(vmspace, (uintptr_t) vaddr, num_pages);
 
     for (size_t i = 0; i < num_pages; i++) {
         uintptr_t paddr = pma_palloc();
         map_page((uint64_t*)(vmspace->cr3 + kernel_info.hhdm), /* pml4 */
                  (uintptr_t) vaddr + i * PAGE_BYTES,           /* vaddr */
-                 paddr,
-                 flags);
+                 paddr, flags);
     }
-
-    vmregion_create(vmspace, (uintptr_t) vaddr, num_pages);
 
     return vaddr;
 }
@@ -76,6 +104,11 @@ VMSpace *create_virtual_memory_space(void) {
         kernel_info.vmspace_alloc_cache = cache_create(sizeof(VMemArena) + sizeof(VMemOrder) * VM_ALLOC_NUM_ORDERS);
         if (!kernel_info.vmspace_alloc_cache) kpanic("failed to create VMSpace alloc cache");
     }
+    
+    if (!kernel_info.vm_phys_region_cache) {
+        kernel_info.vm_phys_region_cache = cache_create(sizeof(VMPhysRegion));
+        if (!kernel_info.vm_phys_region_cache) kpanic("failed to create VMPhysRegion alloc cache");
+    }
 
     VMSpace *vmspace = slab_alloc(kernel_info.vmspace_cache);
 
@@ -91,7 +124,7 @@ VMSpace *create_virtual_memory_space(void) {
     vmspace->arena = vmem_arena_init(
             PAGE_BYTES, /* quantum size */
             kernel_info.vmspace_alloc_cache,
-            NULL /* import alloc */, NULL /* inmport free */,
+            NULL /* import alloc */, NULL /* import free */,
             NULL /* import arena */
     );
     if (!vmem_add(vmspace->arena,
