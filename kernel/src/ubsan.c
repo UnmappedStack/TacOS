@@ -7,8 +7,9 @@
 #include <stdint.h>
 #include <kprintf.h>
 #include <isa/cpu.h>
+#include <assert.h>
 
-#define TINYUBSAN_TRAP() kpanic("UBSan (see error above)")
+#define TINYUBSAN_TRAP() assert(false)
 #define TINYUBSAN_PRINT(...) klogf(LOG_ERROR, __VA_ARGS__)
 
 struct tu_source_location {

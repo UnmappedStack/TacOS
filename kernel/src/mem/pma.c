@@ -6,6 +6,7 @@
 #include <isa/cpu.h>
 #include <kernel.h>
 #include <string.h>
+#include <assert.h>
 #include <util.h>
 #include <lock.h>
 #include <pma.h>
@@ -32,8 +33,8 @@ const char *types_stringified[] = {
 
 void pma_init(void) {
     kernel_info.memmap = memmap_request.response;
-    struct limine_memmap_entry **entries = memmap_request.response->entries;
-    size_t num_entries = memmap_request.response->entry_count;
+    struct limine_memmap_entry **entries = kernel_info.memmap->entries;
+    size_t num_entries = kernel_info.memmap->entry_count;
 
     kernel_info.hhdm = hhdm_request.response->offset;
 
@@ -46,7 +47,7 @@ void pma_init(void) {
         uint64_t base   = entries[i]->base;
         uint64_t length = entries[i]->length;
         uint64_t type   = entries[i]->type;
-        uint64_t size_pages = length / PAGE_BYTES;
+        uint64_t size_pages = PAGE_ALIGN_DOWN(length) / PAGE_BYTES;
 
         static char buf[20] = "0x";
         uint64_to_hex_string(length, buf+2);
@@ -56,10 +57,12 @@ void pma_init(void) {
         spaces[num_spaces] = 0;
 
         klogf(LOG_DEBUG, "| %x | %s | %s%s |\n", base, buf, types_stringified[type], spaces);
-        if (type != LIMINE_MEMMAP_USABLE) continue;
+        if (type != LIMINE_MEMMAP_USABLE || !length) continue;
         PMMNode *node = (PMMNode*) (base + kernel_info.hhdm);
         node->size_pages = size_pages;
         list_insert(&kernel_info.pmm_nodes, &node->list);
+
+        kernel_info.end_of_hhdm_paddr = base + length;
     }
     klogf(LOG_DEBUG, "+====================+====================+========================+\n");
     klogf(LOG_STATUS, "PMA init OK\n");
@@ -75,12 +78,13 @@ uintptr_t pma_palloc(void) {
     PMMNode *node = CONTAINER_OF(kernel_info.pmm_nodes.next, PMMNode, list);
     list_remove(&node->list);
 
-    if (node->size_pages > PAGE_BYTES) {
+    if (node->size_pages > 1) {
         PMMNode *new_node = (PMMNode*) ((uintptr_t)node + PAGE_BYTES);
         new_node->size_pages = node->size_pages - 1;
-        if (new_node->size_pages)
-            list_insert(&kernel_info.pmm_nodes, &new_node->list);
+        assert(new_node->size_pages);
+        list_insert(&kernel_info.pmm_nodes, &new_node->list);
     }
+
     spinlock_release(&pma_lock);
 
     return (uintptr_t)node - kernel_info.hhdm;

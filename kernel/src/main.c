@@ -1,4 +1,5 @@
 #include <serial.h>
+#include <pfndb.h>
 #include <vmem.h>
 #include <rbtree.h>
 #include <vmm.h>
@@ -31,7 +32,7 @@ void __stack_chk_fail(void) {
 }
 
 void boot_stage2(void) {
-    klogf(LOG_STATUS, "Page tree switched successfully\n");
+    klogf(LOG_STATUS, "Page structures set up successfully\n");
 
     power_management_init();
     interrupt_controller_init();
@@ -63,6 +64,7 @@ void _start(void) {
 
     kernel_info.vmspace = create_virtual_memory_space();
     SWITCH_PAGE_TREE(kernel_info.vmspace->cr3);
+    pfndb_init();
 
     boot_stage2();
 }

@@ -20,6 +20,7 @@ typedef struct {
     LList pmm_nodes;
     uintptr_t hhdm;
     struct limine_memmap_response *memmap;
+    uintptr_t end_of_hhdm_paddr;
 
     /* vmem stuff */
     VMSpace *vmspace; // this will later be per-process
