@@ -27,6 +27,8 @@ void acpi_init(void) {
     klogf(LOG_STATUS, "ACPI init OK\n");
 }
 
+// we do unaligned casts which are technically considered ub by ubsan but are necessary
+__attribute__((no_sanitize("undefined")))
 void *find_MADT(XSDT *root_xsdt) {
     bool xsdt = (kernel_info.rsdp_table->revision) ? true : false; // false if rsdt instead
     uint64_t num_entries = (root_xsdt->header.length - sizeof(root_xsdt->header)) / ((xsdt)?8:4);
