@@ -1,6 +1,6 @@
 #pragma once
+#include <pfndb.h>
 #include <smp.h>
-#include <vmm.h>
 #include <vmm.h>
 #include <tty.h>
 #include <slab.h>
@@ -21,6 +21,7 @@ typedef struct {
     uintptr_t hhdm;
     struct limine_memmap_response *memmap;
     uintptr_t end_of_hhdm_paddr;
+    PhysPage *pfndb;
 
     /* vmem stuff */
     VMSpace *vmspace; // this will later be per-process

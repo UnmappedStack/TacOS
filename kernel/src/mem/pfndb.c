@@ -74,5 +74,6 @@ void pfndb_init(void) {
         klogf(LOG_STATUS, "PFNDB done up to %x\n", end);
     }
 
+    kernel_info.pfndb = (PhysPage*) pfndb_start;
     klogf(LOG_STATUS, "PFNDB initialised\n");
 }
