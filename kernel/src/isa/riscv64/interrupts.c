@@ -1,4 +1,5 @@
 #include <isa/cpu.h>
+#include <smp.h>
 #include <stddef.h>
 #include <kernel.h>
 #include <stdint.h>
@@ -79,10 +80,7 @@ void interrupt_handler(InterruptStackFrame *frame) {
         ENABLE_INTERRUPTS();
         break;
     case INTERRUPT_IPI:
-        // this will later have a proper ipi system, but for now we just halt
-        // and assume its because of a panic
-        kprintf("Halt CPU%u\n", get_current_cpu_info()->id);
-        FREEZE_DEVICE();
+        ipi_handler();
         break;
     default:
         kprintf("Unexpected interrupt %u\n", cause);

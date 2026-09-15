@@ -50,9 +50,9 @@ void test_isr(void*) {
 }
 
 __attribute__((interrupt))
-void halt_isr(void*) {
-    klogf(LOG_ERROR, "Halt CPU%u\n", current_processor()->id);
-    FREEZE_DEVICE();
+void ipi_isr(void*) {
+    ipi_handler();
+    end_of_interrupt();
 }
 
 void idt_init(void) {
@@ -64,8 +64,8 @@ void idt_init(void) {
     // lapic timer interrupt
     kernel_info.idt[40] = idt_descriptor((uint64_t) test_isr, 8, 0x8E);
     
-    // halt interrupt
-    kernel_info.idt[41] = idt_descriptor((uint64_t) halt_isr, 8, 0x8E);
+    // ipi interrupt
+    kernel_info.idt[41] = idt_descriptor((uint64_t) ipi_isr, 8, 0x8E);
 }
 
 extern void divide_exception(void);

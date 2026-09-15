@@ -32,7 +32,7 @@ extern volatile struct limine_riscv_bsp_hartid_request bsp_id_request;
     #define init_local_interrupt_controller(mmio_addr) init_local_apic(mmio_addr)
     #define get_limine_cpu_id(cpu) (cpu->lapic_id) // TODO: move this to bootloader specific stuff
     // (41 is defined as a halt interrupt, TODO maybe make it a macro) + move this to another file
-    #define halt_all_processors() \
+    #define ipi_all() \
         do { \
             send_ipi(kernel_info.lapic_addr, 41, IPI_DELIVERY_FIXED | \
                                                  IPI_DESTINATION_PHYSICAL | \
@@ -69,10 +69,10 @@ extern volatile struct limine_riscv_bsp_hartid_request bsp_id_request;
     #define init_local_interrupt_controller(mmio_addr) {}
     #define IO_WAIT() FREEZE_DEVICE()
     #define get_limine_cpu_id(cpu) (cpu->hartid) // TODO: move this to bootloader specific stuff
-    #define halt_all_processors() sbi_ipi_all()
+    #define ipi_all() sbi_ipi_all()
     #define outb(port, b) \
         do { \
-            (void)b; \
+            (void) port, (void)b; \
             FREEZE_DEVICE(); \
         } while (0)
     #define inb(port) (0)

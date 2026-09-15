@@ -1,4 +1,5 @@
 #include <lock.h>
+#include <kprintf.h>
 #include <isa/cpu.h>
 #include <stdbool.h>
 #include <assert.h>
@@ -6,6 +7,7 @@
 /* takes a pointer to a processor global MCSSpinlock and initialises it */
 void mcs_lock_init(MCSSpinlock *lock) {
 	lock->next = NULL;
+    lock->locked = false;
 }
 
 /* takes a global lock `lock` and a processor/thread local `local_lock` then enters
@@ -23,7 +25,7 @@ void mcs_spinlock_acquire(MCSSpinlock *lock, MCSSpinlock *local_lock) {
 
 	// load the new local lock into the global lock's next and get the original
 	// local lock we are now waiting on to finish first
-	MCSSpinlock *waiting_on;
+	MCSSpinlock *waiting_on = NULL;
 	__atomic_exchange(&lock->next, &local_lock, &waiting_on, __ATOMIC_SEQ_CST);
 
 	if (waiting_on) {

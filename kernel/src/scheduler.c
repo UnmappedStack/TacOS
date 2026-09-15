@@ -1,5 +1,6 @@
 #include <scheduler.h>
 #include <smp.h>
+#include <assert.h>
 #include <limine.h>
 #include <util.h>
 #include <string.h>
@@ -229,6 +230,7 @@ Thread *migrate_push(void) {
  *  (3) if there's nothing to run, do a PULL load balance operation */
 Thread *thread_select(void) {
     ProcessorQueue *current_queue = current_processor_queue();
+    assert(current_queue);
     dumblock_acquire(&current_queue->lock);
 
     // find the first bucket which is not empty (or at least try)

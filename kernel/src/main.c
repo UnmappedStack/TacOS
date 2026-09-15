@@ -1,4 +1,5 @@
 #include <serial.h>
+#include <assert.h>
 #include <pfndb.h>
 #include <vmem.h>
 #include <rbtree.h>
@@ -38,6 +39,7 @@ void boot_stage2(void) {
     interrupt_controller_init();
     timer_init();
     smp_init();
+
     global_scheduler_init();
     processor_scheduler_init();
 
