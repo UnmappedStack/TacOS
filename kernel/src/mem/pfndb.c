@@ -48,7 +48,6 @@ void pfndb_init(void) {
 
         uintptr_t base   = entries[i]->base;
         uint64_t  length = entries[i]->length;
-        uint64_t  end    = base + length;
         if (length == 0) continue;
 
         uint64_t pfn_start = base / PAGE_BYTES;
@@ -71,7 +70,6 @@ void pfndb_init(void) {
         }
 
         assert(allocated_mem < length);
-        klogf(LOG_STATUS, "PFNDB done up to %x\n", end);
     }
 
     kernel_info.pfndb = (PhysPage*) pfndb_start;

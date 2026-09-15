@@ -41,7 +41,6 @@ void dtb_init(void) {
 
     DTBHeader *dtb = dtb_response->dtb_ptr;
     if (endian_swap(dtb->magic) != DTB_HEADER_MAGIC) kpanic("invalid dtb magic");
-    klogf(LOG_DEBUG, "[DTB] version: %u\n", endian_swap(dtb->version));
 
     char *strings = (char*) ((uintptr_t)dtb + endian_swap(dtb->strings_offset));
     (void) strings;
@@ -94,6 +93,8 @@ void dtb_init(void) {
         }
     }
 
+#ifdef DTB_SHOW_TREE
     kprintf("\n");
+#endif
     klogf(LOG_STATUS, "DTB init OK\n");
 }
