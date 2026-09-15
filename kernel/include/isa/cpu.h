@@ -38,7 +38,15 @@ extern volatile struct limine_riscv_bsp_hartid_request bsp_id_request;
                                                  IPI_DESTINATION_PHYSICAL | \
                                                  IPI_LEVEL_DEASSERT | \
                                                  IPI_TRIGGER_EDGE | \
-                                                 IPI_DEST_SHORTHAND_ALL_EXCEPT_SELF); \
+                                                 IPI_DEST_SHORTHAND_ALL_EXCEPT_SELF, 0); \
+        } while(0)
+    #define ipi_to_cpux(cpu) \
+        do { \
+            send_ipi(kernel_info.lapic_addr, 41, IPI_DELIVERY_FIXED | \
+                                                 IPI_DESTINATION_PHYSICAL | \
+                                                 IPI_LEVEL_DEASSERT | \
+                                                 IPI_TRIGGER_EDGE | \
+                                                 IPI_DEST_SHORTHAND_NONE, cpu); \
         } while(0)
     #define PAUSE() __builtin_ia32_pause()
 #elif defined(__riscv)

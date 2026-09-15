@@ -36,10 +36,13 @@
 #define IPI_LEVEL_ASSERT                    0b1   << 14
 #define IPI_TRIGGER_EDGE                    0b0   << 15
 #define IPI_TRIGGER_LEVEL                   0b1   << 15
+
 #define IPI_DEST_SHORTHAND_NONE             0b00  << 18
 #define IPI_DEST_SHORTHAND_SELF             0b01  << 18
 #define IPI_DEST_SHORTHAND_ALL_EXCEPT_SELF  0b10  << 18
 #define IPI_DEST_SHORTHAND_ALL_INCLUDE_SELF 0b11  << 18
+
+#define IPI_DEST_SHIFT 24
 
 // define MADT table entry types
 typedef struct {
@@ -118,4 +121,4 @@ void lock_lapic_timer(void);
 void unlock_lapic_timer(void);
 uint64_t get_current_processor(void);
 void write_lapic(uintptr_t lapic_addr, uint64_t reg_offset, uint32_t val);
-void send_ipi(uintptr_t lapic_addr, uint8_t vector, uint32_t flags);
+void send_ipi(uintptr_t lapic_addr, uint8_t vector, uint32_t flags, uint8_t dest);

@@ -31,8 +31,8 @@ void write_ioapic(void *ioapic_addr, uint32_t reg, uint32_t value) {
     ioapic[4] = value;
 }
 
-void send_ipi(uintptr_t lapic_addr, uint8_t vector, uint32_t flags) {
-    write_lapic(lapic_addr, LAPIC_INTERRUPT_COMMAND_REGISTER + 0x8, current_processor()->id << 24);
+void send_ipi(uintptr_t lapic_addr, uint8_t vector, uint32_t flags, uint8_t dest) {
+    write_lapic(lapic_addr, LAPIC_INTERRUPT_COMMAND_REGISTER + 0x10, (uint64_t)dest << IPI_DEST_SHIFT);
     write_lapic(lapic_addr, LAPIC_INTERRUPT_COMMAND_REGISTER, vector | flags);
 }
 
