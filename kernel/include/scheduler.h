@@ -57,7 +57,7 @@ typedef struct {
     int num_threads;
 
     uint64_t total_ticks;
-    Spinlock lock; // should only be locked for load balancing, *not* thread selection
+    DumbLock lock; // should only be locked for load balancing, *not* thread selection
 } ProcessorQueue;
 static_assert(NUM_BUCKETS <= 64, "bitmap too small for number of threads");
 

@@ -75,11 +75,11 @@ static char *exceptions[] = {
 
 /* if msg is null then it'll use whatever it finds from frame->type (mostly for exceptions),
    but if its set then it'll use it as the error message (for manual calls) */
-Spinlock panic_lock = {0};
+DumbLock panic_lock = {0};
 void panic_handler(const char *msg, IDTEFrame frame) {
     DISABLE_INTERRUPTS();
     klogf(LOG_ERROR, " === KERNEL PANIC ENTERED === \n\n");
-    spinlock_acquire(&panic_lock); // never released
+    dumblock_acquire(&panic_lock); // never released
 
     if (kernel_info.smp_enabled) halt_all_processors();
 

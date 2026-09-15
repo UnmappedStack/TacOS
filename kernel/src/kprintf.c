@@ -28,9 +28,10 @@ void print_string(const char *s) {
 //
 // It supports %c, %s, %x pretty much the same as on posix, except %u is a bit different, as it formats 64 bit unsigned integers instead
 // of unsigned smaller data sizes. It then just writes it to serial output.
-Spinlock kprintf_lock = {0};
+MCSSpinlock kprintf_lock = {0};
 void kprintf(const char *fmt, ...) {
-    spinlock_acquire(&kprintf_lock);
+    MCSSpinlock local_kprintf_lock;
+    mcs_spinlock_acquire(&kprintf_lock, &local_kprintf_lock);
     va_list args;
     va_start(args, fmt);
     for (; *fmt; fmt++) {
@@ -73,6 +74,6 @@ void kprintf(const char *fmt, ...) {
             default: break;
         }
     }
-    spinlock_release(&kprintf_lock);
+    mcs_spinlock_release(&kprintf_lock, &local_kprintf_lock);
     va_end(args);
 }

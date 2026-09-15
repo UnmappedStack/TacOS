@@ -94,7 +94,7 @@ void recalculate_queue_priorities(ProcessorQueue *queue) {
 
 /* !! This requires the thread to already be set up with nice etc, but it calculates initial priority itself !! */
 Thread *add_thread_to_processor(Thread *thread, ProcessorQueue *queue) {
-    spinlock_acquire(&queue->lock);
+    dumblock_acquire(&queue->lock);
     if (thread->nice < queue->least_nice_thread || queue->least_nice_thread < 0)
         queue->least_nice_thread = thread->nice;
     if (thread->nice > queue->nicest_thread)
@@ -128,7 +128,7 @@ Thread *add_thread_to_processor(Thread *thread, ProcessorQueue *queue) {
             queue->num_threads > kernel_info.schedulers.most_loaded_processor->num_threads)
         kernel_info.schedulers.most_loaded_processor = queue;
 
-    spinlock_release(&queue->lock);
+    dumblock_release(&queue->lock);
     return thread;
 }
 
@@ -171,7 +171,7 @@ CalendarBucket *select_bucket_from_calendar(ProcessorQueue *current_queue, int *
 Thread *move_thread_between_queues(ProcessorQueue *steal_from, ProcessorQueue *give_to) {
     if (steal_from->num_threads == 1 || steal_from->num_threads == give_to->num_threads) return NULL;
     
-    spinlock_acquire(&steal_from->lock);
+    dumblock_acquire(&steal_from->lock);
     if (!steal_from->bucket_bitmap) goto cleanup;
 
     int next_available;
@@ -185,7 +185,7 @@ Thread *move_thread_between_queues(ProcessorQueue *steal_from, ProcessorQueue *g
          * non-affinitive one is to reduce lock time and be quick, we'll just check again
          * on the next migration. */
 cleanup:
-        spinlock_release(&steal_from->lock);
+        dumblock_release(&steal_from->lock);
         return NULL;
     }
 
@@ -196,7 +196,7 @@ cleanup:
     }
     steal_from->num_threads--;
 
-    spinlock_release(&steal_from->lock);
+    dumblock_release(&steal_from->lock);
     return add_thread_to_processor(thread, give_to);
 }
 
@@ -229,7 +229,7 @@ Thread *migrate_push(void) {
  *  (3) if there's nothing to run, do a PULL load balance operation */
 Thread *thread_select(void) {
     ProcessorQueue *current_queue = current_processor_queue();
-    spinlock_acquire(&current_queue->lock);
+    dumblock_acquire(&current_queue->lock);
 
     // find the first bucket which is not empty (or at least try)
     if (current_queue->bucket_bitmap) {
@@ -252,7 +252,7 @@ Thread *thread_select(void) {
         Thread *thread = CONTAINER_OF(thread_list, Thread, bucket_list);
         calendar_queue_reinsert_thread(current_queue, thread);
 
-        spinlock_release(&current_queue->lock);
+        dumblock_release(&current_queue->lock);
         return thread;
     }
 
@@ -263,11 +263,11 @@ Thread *thread_select(void) {
         list_insert(&current_queue->idle_threads, thread_list);
         Thread *thread = CONTAINER_OF(thread_list, Thread, class_list);
 
-        spinlock_release(&current_queue->lock);
+        dumblock_release(&current_queue->lock);
         return thread;
     }
 
-    spinlock_release(&current_queue->lock);
+    dumblock_release(&current_queue->lock);
     return migrate_pull(current_queue);
 }
 

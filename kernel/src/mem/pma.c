@@ -68,13 +68,15 @@ void pma_init(void) {
     klogf(LOG_STATUS, "PMA init OK\n");
 }
 
-Spinlock pma_lock = {0};
+MCSSpinlock pma_lock = {0};
 // allocate one physical page
 uintptr_t pma_palloc(void) {
     if (list_empty(&kernel_info.pmm_nodes))
         kpanic("Out of Memory");
 
-    spinlock_acquire(&pma_lock);
+    MCSSpinlock local_pma_lock;
+    mcs_spinlock_acquire(&pma_lock, &local_pma_lock);
+
     PMMNode *node = CONTAINER_OF(kernel_info.pmm_nodes.next, PMMNode, list);
     list_remove(&node->list);
 
@@ -85,7 +87,7 @@ uintptr_t pma_palloc(void) {
         list_insert(&kernel_info.pmm_nodes, &new_node->list);
     }
 
-    spinlock_release(&pma_lock);
+    mcs_spinlock_release(&pma_lock, &local_pma_lock);
 
     return (uintptr_t)node - kernel_info.hhdm;
 }
@@ -96,10 +98,11 @@ uintptr_t pma_palloc(void) {
 void pma_pfree(uintptr_t ptr) {
     PMMNode *node = (PMMNode*) (ptr + kernel_info.hhdm);
     
-    spinlock_acquire(&pma_lock);
+    MCSSpinlock local_pma_lock;
+    mcs_spinlock_acquire(&pma_lock, &local_pma_lock);
     node->size_pages = 1;
     list_insert(&kernel_info.pmm_nodes, &node->list);
-    spinlock_release(&pma_lock);
+    mcs_spinlock_release(&pma_lock, &local_pma_lock);
 }
 
 // allocate one physical page, returning a virtual address

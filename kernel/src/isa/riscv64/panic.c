@@ -37,11 +37,11 @@ struct StackFrame {
 #define REGISTER_RETURN_ADDRESS 1
 #define REGISTER_FRAME_POINTER  8
 
-Spinlock panic_lock = {0};
+DumbLock panic_lock = {0};
 void panic_handler(const char *msg, InterruptStackFrame *frame) {
     DISABLE_INTERRUPTS();
     klogf(LOG_ERROR, "\e[0m === KERNEL PANIC ENTERED === \n\n");
-    spinlock_acquire(&panic_lock); // never released
+    dumblock_acquire(&panic_lock); // never released
 
     if (kernel_info.smp_enabled) halt_all_processors();
 

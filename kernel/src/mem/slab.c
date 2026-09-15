@@ -46,7 +46,7 @@ Slab *cache_grow(Cache *cache) {
 
 // allocates an object
 void *slab_alloc(Cache *cache) {
-    spinlock_acquire(&cache->lock);
+    dumblock_acquire(&cache->lock);
 
     /* first, find a slab to use (or create one if
      * there's none with free objects) */
@@ -74,7 +74,7 @@ void *slab_alloc(Cache *cache) {
         list_insert(&cache->filled, &slab->list);
     } else kpanic("unreachable");
 
-    spinlock_release(&cache->lock);
+    dumblock_release(&cache->lock);
     return object;
 }
 
@@ -99,7 +99,7 @@ Slab *is_object_on_slab_list(LList *list, void *object) {
 
 // frees an object on a slab
 void slab_free(Cache *cache, void *object) {
-    spinlock_acquire(&cache->lock);
+    dumblock_acquire(&cache->lock);
 
     // find the slab that the object is on, checking partial and full
     Slab *slab;
@@ -124,7 +124,7 @@ void slab_free(Cache *cache, void *object) {
         list_insert(&cache->free, &slab->list);
     }
     
-    spinlock_release(&cache->lock);
+    dumblock_release(&cache->lock);
 }
 
 void cache_free(Cache *cache) {

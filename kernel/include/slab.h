@@ -14,7 +14,7 @@ typedef struct {
     uint64_t object_size;
     uint64_t objects_per_slab;
 
-    Spinlock lock;
+    DumbLock lock;
 } Cache;
 
 typedef struct {

@@ -26,7 +26,7 @@ CPU *cpu_info_init(uint64_t id) {
 }
 
 static uint64_t num_aps_initialised = 0;
-static Spinlock init_lock = {0};
+static MCSSpinlock init_lock = {0};
 /* after the stack has been changed */
 void ap_stage2(void) {
 #if defined(__x86_64__)
@@ -41,9 +41,10 @@ void ap_stage2(void) {
     // maybe it'd be better to just make processor_scheduler_init()
     // thread-safe... the granularity could be wayyy better (TODO, but its a
     // microoptimisation anyways tbh since this isnt a hotpath)
-    spinlock_acquire(&init_lock);
+    MCSSpinlock local_init_lock;
+    mcs_spinlock_acquire(&init_lock, &local_init_lock);
     processor_scheduler_init();
-    spinlock_release(&init_lock);
+    mcs_spinlock_release(&init_lock, &local_init_lock);
 
     ENABLE_INTERRUPTS();
     for (;;);

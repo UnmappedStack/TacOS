@@ -70,7 +70,7 @@ VMemArena *vmem_arena_init(size_t quantum, Cache *arena_cache,
 // unlike vmem_add(), it MUST be of a size that already fits in a specific region
 // (that is, it can at max be 2^n-1 where n is the number of freelists)
 bool vmem_add_sized(VMemArena *arena, uintptr_t region_base, size_t region_size) {
-    spinlock_acquire(&arena->lock);
+    dumblock_acquire(&arena->lock);
 
     for (int i = (int)arena->num_orders-1; i >= 0; i--) {
         VMemOrder *this_order = &arena->orders[i];
@@ -87,7 +87,7 @@ bool vmem_add_sized(VMemArena *arena, uintptr_t region_base, size_t region_size)
             llist_insert(&this_order->regions, &region->list);
             arena->orders_bitmap |= 1ULL << i;
 
-            spinlock_release(&arena->lock)
+            dumblock_release(&arena->lock)
             return true;
         }
     }
@@ -95,7 +95,7 @@ bool vmem_add_sized(VMemArena *arena, uintptr_t region_base, size_t region_size)
     // it doesn't fit in any section, return error (i think this should be
     // unreachable technically?)
     klogf(LOG_ERROR, "vmem_add can't fill any section\n");
-    spinlock_release(&arena->lock);
+    dumblock_release(&arena->lock);
     return false;
 }
 
@@ -191,12 +191,12 @@ int get_first_nonempty_list_after_list_n(VMemArena *arena, uint64_t n) {
 }
 
 void vmem_free(VMemArena *arena, void *resource) {
-    spinlock_acquire(&arena->lock);
+    dumblock_acquire(&arena->lock);
     Node *tag_node = rbtree_search(&arena->cached_region_tags, ((size_t)resource) / arena->quantum_size);
     if (!tag_node) {
         // try use the import free fn in case it was allocated with an import...
         if (arena->import_free_fn) {
-            spinlock_release(&arena->lock);
+            dumblock_release(&arena->lock);
             return arena->import_free_fn(arena, resource);
         }
         // ... otherwise just fail
@@ -211,7 +211,7 @@ void vmem_free(VMemArena *arena, void *resource) {
 
     rbtree_remove(&arena->cached_region_tags, tag_node);
     
-    spinlock_release(&arena->lock);
+    dumblock_release(&arena->lock);
 }
 
 // returns a region in base units, that is, NOT in units of the quantum
@@ -220,7 +220,7 @@ void *vmem_alloc(VMemArena *arena, size_t size, VMemAllocType flag) {
     void *ret;
     assert(size);
     
-    spinlock_acquire(&arena->lock);
+    dumblock_acquire(&arena->lock);
     VMemOrder *this_order = find_order_by_size(arena, size);
     assert(this_order);
 
@@ -233,7 +233,7 @@ void *vmem_alloc(VMemArena *arena, size_t size, VMemAllocType flag) {
         VMemRegion *region = find_bestfit_in_order(get_from, size);
         if (!region) {
 nomem:
-            spinlock_release(&arena->lock);
+            dumblock_release(&arena->lock);
             if (arena->import_alloc_fn)
                 return arena->import_alloc_fn(arena, size, flag);
             klogf(LOG_ERROR, "vmem: no fitting region in freelists for VMEM_BESTFIT (oom)\n");
@@ -241,14 +241,14 @@ nomem:
         }
 
         ret = split_and_ret(arena, region, get_from, size);
-        spinlock_release(&arena->lock);
+        dumblock_release(&arena->lock);
         return ret;
     case VMEM_INSTANTFIT:
         if (this_order->order + 1 >= arena->num_orders) {
             // instant fit won't work in this case as there *is* no next list.
             // fall back to best fit.
             klogf(LOG_WARN, "vmem: fell back to best fit rather than instant fit (case 1)\n");
-            spinlock_release(&arena->lock);
+            dumblock_release(&arena->lock);
             return vmem_alloc(arena, size, VMEM_BESTFIT);
         }
         get_from_id = get_first_nonempty_list_after_list_n(arena, this_order->order + 1);
@@ -256,7 +256,7 @@ nomem:
             // due to some edge case we also fall back to best fit where nothing is found
             // with instant fit
             klogf(LOG_WARN, "vmem: fell back to best fit rather than instant fit (case 2)\n");
-            spinlock_release(&arena->lock);
+            dumblock_release(&arena->lock);
             return vmem_alloc(arena, size, VMEM_BESTFIT);
         }
 
@@ -265,14 +265,14 @@ nomem:
         VMemRegion *first_region = CONTAINER_OF(order_next->regions.next, VMemRegion, list);
 
         ret = split_and_ret(arena, first_region, order_next, size);
-        spinlock_release(&arena->lock);
+        dumblock_release(&arena->lock);
         return ret;
     case VMEM_NEXTFIT:
         klogf(LOG_ERROR, "TODO: VMEM_NEXTFIT\n");
-        spinlock_release(&arena->lock);
+        dumblock_release(&arena->lock);
         return NULL;
     }
     klogf(LOG_ERROR, "unknown vmem_alloc flag\n");
-    spinlock_release(&arena->lock);
+    dumblock_release(&arena->lock);
     return NULL;
 }

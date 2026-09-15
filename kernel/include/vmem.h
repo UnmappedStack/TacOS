@@ -35,7 +35,7 @@ typedef struct {
 
 typedef struct VMemArena VMemArena;
 struct VMemArena {
-    Spinlock lock;
+    DumbLock lock;
     uint16_t quantum_size;
     Tree(VMemRegion) cached_region_tags;
 
