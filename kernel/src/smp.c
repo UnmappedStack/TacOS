@@ -29,10 +29,7 @@ static uint64_t num_aps_initialised = 0;
 static MCSSpinlock init_lock = {0};
 /* after the stack has been changed */
 void ap_stage2(void) {
-#if defined(__x86_64__)
-    // this should be moved elsewhere to avoid arch specific code here, TODO
     init_local_interrupt_controller(kernel_info.lapic_addr);
-#endif
     timer_local_init();
 
     num_aps_initialised++;
