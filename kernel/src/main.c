@@ -18,7 +18,12 @@
 
 KernelInfo kernel_info = {0};
 
+// this technically isn't even isa specific, just compiler bs.
+#if defined(__x86_64__)
 void __assert_fail(const char *assertion, const char *file, uint32_t line, const char *fn) {
+#elif defined(__riscv)
+void __assert_fail(const char *assertion, const char *file, int line, const char *fn) {
+#endif
     if (kernel_info.smp_enabled) halt_all_processors();
 
     klogf(LOG_ERROR, "Assertion failed at %s:%u in %s: %s\n", file, line, fn, assertion);
