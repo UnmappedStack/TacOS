@@ -78,6 +78,7 @@ extern volatile struct limine_riscv_bsp_hartid_request bsp_id_request;
     #define IO_WAIT() FREEZE_DEVICE()
     #define get_limine_cpu_id(cpu) (cpu->hartid) // TODO: move this to bootloader specific stuff
     #define ipi_all() sbi_ipi_all()
+    #define ipi_to_cpux(cpu) sbi_ipi_cpux(cpu)
     #define outb(port, b) \
         do { \
             (void) port, (void)b; \

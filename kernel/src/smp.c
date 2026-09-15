@@ -56,30 +56,35 @@ void ipi_handler(void) {
     mcs_spinlock_release(&queue->lock, &ipi_local_lock);
 }
 
-/* TODO: send to specific processors instead of all of them */
-void ipi_send(IPIMessage message) {
+void add_to_processor_ipi_queue(uint8_t cpu, IPIMessage message) {
     MCSSpinlock local_lock = {0};
 
-    for (size_t cpu = 0; cpu < kernel_info.num_cores; cpu++) {
-        IPIQueue *queue = &kernel_info.processors[cpu].ipi_queue;
-        /* to be honest this could probably be done locklessly but I don't think
-         * it matters that much hopefully. might be worth considering in the
-         * future. */
-        mcs_spinlock_acquire(&queue->lock, &local_lock);
+    IPIQueue *queue = &kernel_info.processors[cpu].ipi_queue;
+    /* to be honest this could probably be done locklessly but I don't think
+     * it matters that much hopefully. might be worth considering in the
+     * future. */
+    mcs_spinlock_acquire(&queue->lock, &local_lock);
 
-        memcpy(&queue->messages[queue->upto], &message, sizeof(IPIMessage));
-        if (queue->upto >= MAX_IPI_MESSAGES) queue->upto = 0;
+    memcpy(&queue->messages[queue->upto], &message, sizeof(IPIMessage));
+    if (queue->upto >= MAX_IPI_MESSAGES) queue->upto = 0;
 
-        mcs_spinlock_release(&queue->lock, &local_lock);
+    mcs_spinlock_release(&queue->lock, &local_lock);
+}
+
+void ipi_send(int cpu, IPIMessage message) {
+    if (cpu == CPU_ALL) {
+        for (size_t i = 0; i < kernel_info.num_cores; i++) {
+            add_to_processor_ipi_queue(i, message);
+        }
+        ipi_all();
+    } else {
+        add_to_processor_ipi_queue(cpu, message);
+        ipi_to_cpux(cpu);
     }
-
-    // actually send it (this needs to later be able to go to a specific cpu,
-    // not just all of them)
-    ipi_all();
 }
 
 void halt_all_processors(void) {
-    ipi_send((IPIMessage) {
+    ipi_send(CPU_ALL, (IPIMessage) {
         .type = IPI_HALT,
     });
 }

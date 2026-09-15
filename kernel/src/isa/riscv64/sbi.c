@@ -41,11 +41,11 @@ void sbi_write_char(char c) {
     sbi_send_legacy1(1, c);
 }
 
+#define SBI_LEGACY_IPI 0x735049
 void sbi_ipi_all(void) {
-    sbi_send2(0x735049, 0, 0, -1);
+    sbi_send2(SBI_LEGACY_IPI, 0, 0, -1 /* ignore hart_mask and send to all hard ids */);
+}
 
-    // give a bit of time for the ipi to be handled before continuing. I guess
-    // technically this is a race condition but it doesn't really matter that much here.
-    // anyways TODO fix this
-    for (int i = 0; i < 10000; i++) PAUSE();
+void sbi_ipi_cpux(size_t hartid) {
+    sbi_send2(SBI_LEGACY_IPI, 0, 1, hartid /* start from hard id 0 */);
 }

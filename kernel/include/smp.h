@@ -5,6 +5,8 @@
 // (TODO: move to x86-64 specific stuff, this is not isa agnostic)
 #define GSBASE 0xC0000101
 
+#define CPU_ALL (-1)
+
 typedef enum {
     IPI_NONE, // ignore, like a nop
     IPI_HALT,
@@ -37,6 +39,6 @@ typedef struct {
 
 void smp_init(void);
 CPU *current_processor(void);
-void ipi_send(IPIMessage message);
+void ipi_send(int cpu, IPIMessage message);
 void ipi_handler(void);
 void halt_all_processors(void);

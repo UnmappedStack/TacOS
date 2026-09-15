@@ -5,6 +5,7 @@
 #define CSR_REG_SIE      "0x104"
 #define CSR_REG_STVEC    "0x105"
 #define CSR_REG_SSCRATCH "0x140"
+#define CSR_REG_SIP      "0x144"
 #define CSR_REG_STIMECMP "0x14D"
 
 #define STIE 0x20

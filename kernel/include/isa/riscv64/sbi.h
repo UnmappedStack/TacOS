@@ -7,3 +7,4 @@ typedef struct {
 
 void sbi_write_char(char c);
 void sbi_ipi_all(void);
+void sbi_ipi_cpux(size_t hartid);

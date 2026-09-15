@@ -81,6 +81,7 @@ void interrupt_handler(InterruptStackFrame *frame) {
         break;
     case INTERRUPT_IPI:
         ipi_handler();
+        csr_write(CSR_REG_SIP, 0);
         break;
     default:
         kprintf("Unexpected interrupt %u\n", cause);
