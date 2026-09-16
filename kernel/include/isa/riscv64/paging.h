@@ -4,7 +4,9 @@
 #define PAGE_LEVELS 4ULL
 
 #define SWITCH_PAGE_TREE(cr3) switch_page_tree(cr3);
+#define READ_PAGE_TREE(dest) read_page_tree(&dest);
 #define SWITCH_STACK(stack_top) __asm__ volatile("li x2, %0" :: "i"(stack_top));
+#define INVALIDATE_ADDR(addr) __asm__ volatile("sfence.vma %0" :: "r"(addr));
 
 #define PAGE_WRITE   0b000100
 #define PAGE_USER    0b100000

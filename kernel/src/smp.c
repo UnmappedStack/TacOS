@@ -34,7 +34,6 @@ bool handle_single_ipi(IPIMessage *message) {
         FREEZE_DEVICE();
         return false;
     case IPI_TLB_FLUSH:
-        DISABLE_INTERRUPTS();
         uintptr_t address = PAGE_ALIGN_DOWN(message->data[0]);
         size_t num_pages  = message->data[1];
         assert(cpu->num_queued_shootdown_pages >= num_pages);
@@ -47,16 +46,15 @@ bool handle_single_ipi(IPIMessage *message) {
             SWITCH_PAGE_TREE(cr3);
             cpu->num_queued_shootdown_pages = 0;
            
-            ENABLE_INTERRUPTS();
             return true;
         }
+        DISABLE_INTERRUPTS();
         // just invalidate pages as needed, there aren't that many
         for (size_t i = 0; i < num_pages; i++) {
             INVALIDATE_ADDR(address + i * PAGE_BYTES);
         }
         cpu->num_queued_shootdown_pages -= num_pages;
 
-        ENABLE_INTERRUPTS();
         return false;
     case IPI_NONE:
         return false;

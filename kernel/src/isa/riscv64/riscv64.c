@@ -9,6 +9,13 @@ void switch_page_tree(uintptr_t cr3) {
     csr_write("satp", satp);
 }
 
+#define PPN_MASK 0x3fffff
+void read_page_tree(uintptr_t *dest) {
+    __asm__ volatile("sfence.vma");
+    uint64_t satp = csr_read("satp");
+    *dest = (satp & PPN_MASK) * PAGE_BYTES;
+}
+
 CPU *get_current_cpu_info(void) {
    CPU *ret = (CPU*) csr_read(CSR_REG_SSCRATCH);
    if (!ret) kpanic("sscratch not set yet");

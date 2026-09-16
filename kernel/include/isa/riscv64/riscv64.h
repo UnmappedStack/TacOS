@@ -17,5 +17,6 @@
     } while (0)
 
 void switch_page_tree(uintptr_t cr3);
+void read_page_tree(uintptr_t *dest);
 CPU *get_current_cpu_info(void);
 void set_current_cpu_info(CPU *cpu_info);
