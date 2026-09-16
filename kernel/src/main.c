@@ -51,7 +51,9 @@ void boot_stage2(void) {
     add_thread_to_current_processor(create_thread(SCHED_TIMESHARE, 10, 0));
     add_thread_to_current_processor(create_thread(SCHED_TIMESHARE, 15, 0));
     add_thread_to_current_processor(create_thread(SCHED_TIMESHARE, 20, 0));
-    
+
+    tlb_shootdown(1, (uintptr_t) &boot_stage2, 20);
+
     ENABLE_INTERRUPTS();
     for (;;);
 

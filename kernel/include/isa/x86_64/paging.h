@@ -9,9 +9,15 @@
 #define SWITCH_PAGE_TREE(TREE_ADDRESS) \
     __asm__ volatile("movq %0, %%cr3" : : "r"(TREE_ADDRESS))
 
+#define READ_PAGE_TREE(read_into) \
+    __asm__ volatile("movq %%cr3, %0" : "=r"(read_into));
+
 #define SWITCH_STACK(STACK_TOP) \
     __asm__ volatile("movq %0, %%rsp;" \
                      "movq $0, %%rbp" : : "r"(STACK_TOP));
+
+#define INVALIDATE_ADDR(addr) \
+    __asm__ volatile("invlpg (%0)" : : "r"(addr) : "memory");
 
 #define PAGE_TABLE_ENTRY(paddr, flags) (flags | paddr)
 

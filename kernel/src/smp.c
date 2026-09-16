@@ -19,18 +19,49 @@ static volatile struct limine_mp_request smp_request = {
 volatile struct limine_riscv_bsp_hartid_request bsp_id_request = {
     .id = LIMINE_RISCV_BSP_HARTID_REQUEST, .revision = 1};
 
-void handle_single_ipi(IPIMessage *message) {
+/* returns true only if we want to tell the handler of the whole IPI queue
+ * to ignore the rest of IPI_TLB_FLUSH ipis on the queue (used 
+ * for TLB flush optimisations) */
+bool handle_single_ipi(IPIMessage *message) {
     CPU *cpu = get_current_cpu_info();
     switch (message->type) {
     case IPI_HALT:
         klogf(LOG_ERROR, "Halt CPU%u\n", cpu->id);
         FREEZE_DEVICE();
-        return;
+        return false;
+    case IPI_TLB_FLUSH:
+        DISABLE_INTERRUPTS();
+        uintptr_t address = PAGE_ALIGN_DOWN(message->data[0]);
+        size_t num_pages  = message->data[1];
+        assert(cpu->num_queued_shootdown_pages >= num_pages);
+
+        klogf(LOG_DEBUG, "TLB flush on CPU%u at %x for %u pages\n", cpu->id, address, num_pages);
+        if (cpu->num_queued_shootdown_pages >= CR3_RELOAD_THRESHOLD) {
+            // there's a lot of pages to invalidate, just replace the whole cr3
+            // and ignore the rest of any tlb flush requests.
+            uint64_t cr3;
+            READ_PAGE_TREE(cr3);
+            SWITCH_PAGE_TREE(cr3);
+            cpu->num_queued_shootdown_pages = 0;
+           
+            klogf(LOG_DEBUG, "      -> Big flush, replace cr3\n", cpu->id, address, num_pages);
+            ENABLE_INTERRUPTS();
+            return true;
+        }
+        klogf(LOG_DEBUG, "      -> Small flush, invlpg\n", cpu->id, address, num_pages);
+        // just invalidate pages as needed, there aren't that many
+        for (size_t i = 0; i < num_pages; i++) {
+            INVALIDATE_ADDR(address + i * PAGE_BYTES);
+        }
+        cpu->num_queued_shootdown_pages -= num_pages;
+
+        ENABLE_INTERRUPTS();
+        return false;
     case IPI_NONE:
-        return;
+        return false;
     default:
-        klogf(LOG_WARN, "unhandled ipi");
-        return;
+        klogf(LOG_WARN, "unhandled ipi\n");
+        return false;
     }
 }
 
@@ -43,13 +74,18 @@ void ipi_handler(void) {
     MCSSpinlock ipi_local_lock;
     mcs_spinlock_acquire(&queue->lock, &ipi_local_lock);
 
+    bool skip_tlb_flush_ipis = false;
     LList *msg_list = NULL;
     while ((msg_list=llist_pop(&queue->messages))) {
         IPIMessage *message = CONTAINER_OF(msg_list, IPIMessage, list);
+        if (message->type == IPI_TLB_FLUSH && skip_tlb_flush_ipis) continue;
 
-        handle_single_ipi(message);
-        if (message->countdown)
-            (*message->countdown)--;
+        // if it returns true then it is requesting for TLB flushes to be
+        // ignored for the rest of the queue
+        if (handle_single_ipi(message))
+            skip_tlb_flush_ipis = true;
+
+        __atomic_sub_fetch(message->countdown, 1, __ATOMIC_RELAXED);
     }
 
     mcs_spinlock_release(&queue->lock, &ipi_local_lock);
@@ -77,10 +113,13 @@ void ipi_send(int cpu, IPIMessage message, bool sync) {
     size_t *countdown = (sync) ? &countdown_val : NULL;
 
     if (cpu == CPU_ALL) {
-        if (sync)
-            *countdown = kernel_info.num_cores;
+        if (sync) {
+            *countdown = kernel_info.num_cores - 1; // minus bsp
+        }
 
+        CPU *this_cpu = get_current_cpu_info();
         for (size_t i = 0; i < kernel_info.num_cores; i++) {
+            if (i == this_cpu->id) continue;
             add_to_processor_ipi_queue(i, message, countdown);
         }
 
@@ -92,13 +131,28 @@ void ipi_send(int cpu, IPIMessage message, bool sync) {
         add_to_processor_ipi_queue(cpu, message, countdown);
         ipi_to_cpux(cpu);
     }
-    
-    while (message.countdown);
+  
+    while (__atomic_load_n(countdown, __ATOMIC_RELAXED));
 }
 
 void halt_all_processors(void) {
     ipi_send(CPU_ALL, (IPIMessage) {
         .type = IPI_HALT,
+    }, true /* synchronous */);
+}
+
+void tlb_shootdown(int cpu, uintptr_t base_addr, size_t num_pages) {
+    if (cpu == CPU_ALL) {
+        CPU *this_cpu = get_current_cpu_info();
+        for (size_t i = 0; i < kernel_info.num_cores; i++) {
+            if (i == this_cpu->id) continue;
+            kernel_info.processors[cpu].num_queued_shootdown_pages += num_pages;
+        }
+    } else kernel_info.processors[cpu].num_queued_shootdown_pages += num_pages;
+
+    ipi_send(cpu, (IPIMessage) {
+        .type = IPI_TLB_FLUSH,
+        .data = {base_addr, num_pages}
     }, true /* synchronous */);
 }
 
