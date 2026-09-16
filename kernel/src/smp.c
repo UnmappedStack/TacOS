@@ -27,6 +27,10 @@ bool handle_single_ipi(IPIMessage *message) {
     switch (message->type) {
     case IPI_HALT:
         klogf(LOG_ERROR, "Halt CPU%u\n", cpu->id);
+
+        // we halt so it'll never get to stuff after this to increment it in
+        // the main handler
+        __atomic_sub_fetch(message->countdown, 1, __ATOMIC_RELAXED);
         FREEZE_DEVICE();
         return false;
     case IPI_TLB_FLUSH:
@@ -35,7 +39,6 @@ bool handle_single_ipi(IPIMessage *message) {
         size_t num_pages  = message->data[1];
         assert(cpu->num_queued_shootdown_pages >= num_pages);
 
-        klogf(LOG_DEBUG, "TLB flush on CPU%u at %x for %u pages\n", cpu->id, address, num_pages);
         if (cpu->num_queued_shootdown_pages >= CR3_RELOAD_THRESHOLD) {
             // there's a lot of pages to invalidate, just replace the whole cr3
             // and ignore the rest of any tlb flush requests.
@@ -44,11 +47,9 @@ bool handle_single_ipi(IPIMessage *message) {
             SWITCH_PAGE_TREE(cr3);
             cpu->num_queued_shootdown_pages = 0;
            
-            klogf(LOG_DEBUG, "      -> Big flush, replace cr3\n", cpu->id, address, num_pages);
             ENABLE_INTERRUPTS();
             return true;
         }
-        klogf(LOG_DEBUG, "      -> Small flush, invlpg\n", cpu->id, address, num_pages);
         // just invalidate pages as needed, there aren't that many
         for (size_t i = 0; i < num_pages; i++) {
             INVALIDATE_ADDR(address + i * PAGE_BYTES);
@@ -146,7 +147,7 @@ void tlb_shootdown(int cpu, uintptr_t base_addr, size_t num_pages) {
         CPU *this_cpu = get_current_cpu_info();
         for (size_t i = 0; i < kernel_info.num_cores; i++) {
             if (i == this_cpu->id) continue;
-            kernel_info.processors[cpu].num_queued_shootdown_pages += num_pages;
+            kernel_info.processors[i].num_queued_shootdown_pages += num_pages;
         }
     } else kernel_info.processors[cpu].num_queued_shootdown_pages += num_pages;
 
