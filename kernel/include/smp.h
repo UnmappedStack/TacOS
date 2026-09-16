@@ -13,21 +13,17 @@ typedef enum {
 } IPIType;
 
 typedef struct {
+    /* an IPI sender doesn't need to set this, its just
+     * used internally */
+    LList list;
+
     IPIType type;
     uint64_t data;
 } IPIMessage;
 
-#define MAX_IPI_MESSAGES 32
 typedef struct {
     MCSSpinlock lock;
-
-    IPIMessage messages[MAX_IPI_MESSAGES];
-
-    /* new messages will be inserted at this index then the index will be
-     * incremented, kind of like a ringbuffer but there isn't a separate
-     * reader/writer. it'll loop back once its filled, but that hopefully
-     * shouldn't happen often at all. it'll always read from idx 0. */
-    size_t upto;
+    LList(IPIMessage) messages;
 } IPIQueue;
 
 /* All information and status stuff related to one CPU. */

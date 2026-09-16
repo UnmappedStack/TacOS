@@ -1,4 +1,5 @@
 #pragma once
+#include <stddef.h>
 
 typedef struct LList LList;
 struct LList {
@@ -26,6 +27,14 @@ static inline void llist_remove(LList *element) {
 
     prev->next = next;
     next->prev = prev;
+}
+
+// tries to pop first element from list and return it, or null if its empty
+static inline LList *llist_pop(LList *list) {
+    LList *ret = list->next;
+    if (ret == list) return NULL;
+    llist_remove(ret);
+    return ret;
 }
 
 #define list_init(list) llist_init(list)

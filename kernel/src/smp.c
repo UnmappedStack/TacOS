@@ -26,6 +26,8 @@ void handle_single_ipi(IPIMessage *message) {
         klogf(LOG_ERROR, "Halt CPU%u\n", cpu->id);
         FREEZE_DEVICE();
         return;
+    case IPI_NONE:
+        return;
     default:
         klogf(LOG_WARN, "unhandled ipi");
         return;
@@ -41,17 +43,12 @@ void ipi_handler(void) {
     MCSSpinlock ipi_local_lock;
     mcs_spinlock_acquire(&queue->lock, &ipi_local_lock);
 
-    for (size_t i = 0; i < MAX_IPI_MESSAGES; i++) {
-        IPIMessage *message = &queue->messages[i];
+    LList *msg_list = NULL;
+    while ((msg_list=llist_pop(&queue->messages))) {
+        IPIMessage *message = CONTAINER_OF(msg_list, IPIMessage, list);
 
-        if (message->type == IPI_NONE) continue;
-       
         handle_single_ipi(message);
-        message->type = IPI_NONE; // mark it as read
     }
-
-    // reset writing back to the start
-    queue->upto = 0;
 
     mcs_spinlock_release(&queue->lock, &ipi_local_lock);
 }
@@ -65,8 +62,9 @@ void add_to_processor_ipi_queue(uint8_t cpu, IPIMessage message) {
      * future. */
     mcs_spinlock_acquire(&queue->lock, &local_lock);
 
-    memcpy(&queue->messages[queue->upto], &message, sizeof(IPIMessage));
-    if (queue->upto >= MAX_IPI_MESSAGES) queue->upto = 0;
+    IPIMessage *insertable_message = slab_alloc(kernel_info.ipi_message_cache);
+    memcpy(insertable_message, &message, sizeof(IPIMessage));
+    llist_insert(&queue->messages, &insertable_message->list);
 
     mcs_spinlock_release(&queue->lock, &local_lock);
 }
@@ -93,6 +91,7 @@ void halt_all_processors(void) {
 CPU *cpu_info_init(uint64_t id) {
     CPU *cpu_info = &kernel_info.processors[id];
     memset(&cpu_info->ipi_queue, 0, sizeof(IPIQueue));
+    llist_init(&cpu_info->ipi_queue.messages);
     set_current_cpu_info(cpu_info);
     return cpu_info;
 }
@@ -132,6 +131,7 @@ void ap_entry(struct limine_mp_info *this_cpu) {
 /* starts application processors */
 void smp_init(void) {
     klogf(LOG_STATUS, "Initialising APs...\n");
+    kernel_info.ipi_message_cache = cache_create(sizeof(IPIMessage));
     kernel_info.num_cores = smp_request.response->cpu_count;
     size_t num_pages = PAGE_ALIGN_UP(kernel_info.num_cores * sizeof(CPU)) / PAGE_BYTES;
     kernel_info.processors = (CPU*)vmm_valloc_backed(kernel_info.vmspace, num_pages,

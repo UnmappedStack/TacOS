@@ -23,7 +23,7 @@ typedef struct {
     uintptr_t end_of_hhdm_paddr;
     PhysPage *pfndb;
 
-    /* vmem stuff */
+    /* vmem stuff. wow that's a lot of slab caches lol. */
     VMSpace *vmspace; // this will later be per-process
     Cache *rbtree_cache;
     Cache *vmregion_cache;
@@ -52,6 +52,7 @@ typedef struct {
 #endif
     GlobalSchedulerInfo schedulers;
     CPU *processors;
+    Cache *ipi_message_cache;
     uint64_t bp_id;
     size_t num_cores;
 

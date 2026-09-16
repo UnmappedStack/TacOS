@@ -81,7 +81,7 @@ void panic_handler(const char *msg, IDTEFrame frame) {
     klogf(LOG_ERROR, " === KERNEL PANIC ENTERED === \n\n");
     dumblock_acquire(&panic_lock); // never released
 
-//    if (kernel_info.smp_enabled) halt_all_processors();
+    if (kernel_info.smp_enabled) halt_all_processors();
 
     uint64_t cr3;
     __asm__ volatile("movq %%cr3, %0" : "=r"(cr3));
