@@ -13,9 +13,10 @@ typedef enum {
 } IPIType;
 
 typedef struct {
-    /* an IPI sender doesn't need to set this, its just
-     * used internally */
+    /* an IPI sender doesn't need to set these two,
+     * they're just used internally by the ipi system */
     LList list;
+    size_t *countdown;
 
     IPIType type;
     uint64_t data;
@@ -35,6 +36,6 @@ typedef struct {
 
 void smp_init(void);
 CPU *current_processor(void);
-void ipi_send(int cpu, IPIMessage message);
+void ipi_send(int cpu, IPIMessage message, bool sync);
 void ipi_handler(void);
 void halt_all_processors(void);

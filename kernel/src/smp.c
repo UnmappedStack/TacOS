@@ -48,12 +48,14 @@ void ipi_handler(void) {
         IPIMessage *message = CONTAINER_OF(msg_list, IPIMessage, list);
 
         handle_single_ipi(message);
+        if (message->countdown)
+            (*message->countdown)--;
     }
 
     mcs_spinlock_release(&queue->lock, &ipi_local_lock);
 }
 
-void add_to_processor_ipi_queue(uint8_t cpu, IPIMessage message) {
+void add_to_processor_ipi_queue(uint8_t cpu, IPIMessage message, size_t *countdown) {
     MCSSpinlock local_lock = {0};
 
     IPIQueue *queue = &kernel_info.processors[cpu].ipi_queue;
@@ -64,27 +66,40 @@ void add_to_processor_ipi_queue(uint8_t cpu, IPIMessage message) {
 
     IPIMessage *insertable_message = slab_alloc(kernel_info.ipi_message_cache);
     memcpy(insertable_message, &message, sizeof(IPIMessage));
+    insertable_message->countdown = countdown;
     llist_insert(&queue->messages, &insertable_message->list);
 
     mcs_spinlock_release(&queue->lock, &local_lock);
 }
 
-void ipi_send(int cpu, IPIMessage message) {
+void ipi_send(int cpu, IPIMessage message, bool sync) {
+    size_t countdown_val = 0;
+    size_t *countdown = (sync) ? &countdown_val : NULL;
+
     if (cpu == CPU_ALL) {
+        if (sync)
+            *countdown = kernel_info.num_cores;
+
         for (size_t i = 0; i < kernel_info.num_cores; i++) {
-            add_to_processor_ipi_queue(i, message);
+            add_to_processor_ipi_queue(i, message, countdown);
         }
+
         ipi_all();
     } else {
-        add_to_processor_ipi_queue(cpu, message);
+        if (sync)
+            *countdown = 1;
+
+        add_to_processor_ipi_queue(cpu, message, countdown);
         ipi_to_cpux(cpu);
     }
+    
+    while (message.countdown);
 }
 
 void halt_all_processors(void) {
     ipi_send(CPU_ALL, (IPIMessage) {
         .type = IPI_HALT,
-    });
+    }, true /* synchronous */);
 }
 
 /* create a CPU* struct for a local processor and store it in gsbase */
