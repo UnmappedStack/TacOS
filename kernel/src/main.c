@@ -48,9 +48,9 @@ void boot_stage2(void) {
     global_scheduler_init();
     processor_scheduler_init();
 
-    add_thread_to_current_processor(create_thread(SCHED_TIMESHARE, 10, 0));
-    add_thread_to_current_processor(create_thread(SCHED_TIMESHARE, 15, 0));
-    add_thread_to_current_processor(create_thread(SCHED_TIMESHARE, 20, 0));
+    add_thread_to_current_processor(create_thread(SCHED_KERNEL, 10, 0));
+    add_thread_to_current_processor(create_thread(SCHED_KERNEL, 15, 0));
+    add_thread_to_current_processor(create_thread(SCHED_KERNEL, 20, 0));
 
     ENABLE_INTERRUPTS();
     for (;;);

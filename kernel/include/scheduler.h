@@ -6,6 +6,7 @@
 #include <stddef.h>
 
 typedef enum {
+    SCHED_KERNEL,
     SCHED_REALTIME,
     SCHED_INTERACTIVE_TIMESHARE,
     SCHED_TIMESHARE,
@@ -43,10 +44,11 @@ typedef struct {
 typedef struct {
     LList list; // the other processor queues as a linked list
 
-    LList realtime_threads;
-    LList interactive_timeshare_threads;
-    LList timeshare_threads;
-    LList idle_threads;
+    LList(Thread) kernel_threads;
+    LList(Thread) realtime_threads;
+    LList(Thread) interactive_timeshare_threads;
+    LList(Thread) timeshare_threads;
+    LList(Thread) idle_threads;
 
     CalendarBucket calendar_queue[NUM_BUCKETS];
     uint64_t current_bucket;

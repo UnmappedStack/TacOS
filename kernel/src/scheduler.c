@@ -33,7 +33,6 @@
  * Where if score > threshold then the thread is considered interactive. When sleeptime + runtime hit 100, they
  * are both halved.
  *
- * A typical ULE scheduler would also have kernel threads, but at the moment these do not exist.
  * Processor affinity is also supported, where a thread can simply be flagged as affinitive so it will have
  * immunity from the load balancer.
  *
@@ -61,9 +60,10 @@ ProcessorQueue *current_processor_queue(void) {
 }
 
 static const int range_map[][3] = {
-    [SCHED_REALTIME] = {0, 63},
-    [SCHED_INTERACTIVE_TIMESHARE] = {64, 127},
-    [SCHED_TIMESHARE] = {128, 192},
+    [SCHED_KERNEL               ] = {0, 63},
+    [SCHED_REALTIME             ] = {64, 127},
+    [SCHED_INTERACTIVE_TIMESHARE] = {128, 191},
+    [SCHED_TIMESHARE            ] = {192, 256},
 };
 
 // pick a bucket of the calendar queue to insert it into, based on priority and class
@@ -104,7 +104,12 @@ Thread *add_thread_to_processor(Thread *thread, ProcessorQueue *queue) {
     if (thread->nice < queue->least_nice_thread)
         queue->least_nice_thread = thread->nice;
 
+    // TODO: this is kind of disgusting, there is definitely a nicer way to do this lmao
     switch (thread->s_class) {
+        case SCHED_KERNEL:
+            list_insert(&queue->kernel_threads, &thread->class_list);
+            calendar_queue_reinsert_thread(queue, thread);
+            break;
         case SCHED_REALTIME:
             list_insert(&queue->realtime_threads, &thread->class_list);
             calendar_queue_reinsert_thread(queue, thread);
@@ -284,6 +289,8 @@ void processor_scheduler_init(void) {
     new_queue->num_threads = 0;
     new_queue->total_ticks = 0;
 
+    // again this is kinda yuck, surely this can be done nicer (TODO)
+    list_init(&new_queue->kernel_threads);
     list_init(&new_queue->realtime_threads);
     list_init(&new_queue->interactive_timeshare_threads);
     list_init(&new_queue->timeshare_threads);
