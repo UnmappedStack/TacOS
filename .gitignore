@@ -11,3 +11,4 @@
 /kernel/nob.old
 /edk2-ovmf-bins
 /docs
+/kernel/expose_structs

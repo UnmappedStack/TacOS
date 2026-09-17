@@ -22,6 +22,7 @@ static Arena arena = {0}; // this maybe shouldn't be global but whatever
 
 // this kinda depends on your own toolchain stuff and should be adjusted.
 // TODO: allow this to be adjusted by cmdline arguments
+#define CC_HOST    "gcc"
 #define CC_X86_64  "clang"
 #define LD_X86_64  "ld"
 #define CC_RISCV64 "/usr/bin/rv64tools/riscv64-linux-cc"
@@ -227,6 +228,16 @@ int link_to_executable(Arch arch) {
     return 0;
 }
 
+int expose_structs(void) {
+    Cmd cmd = {0};
+    cmd_append(&cmd, CC_HOST, "-Iinclude", "-Werror",
+                         "expose_structs.c",
+                         "-o", "expose_structs");
+    if (!cmd_run(&cmd)) return -1;
+    cmd_append(&cmd, "./expose_structs");
+    if (!cmd_run(&cmd)) return -1;
+}
+
 int main(int argc, char **argv) {
     GO_REBUILD_URSELF(argc, argv);
     int e;
@@ -263,6 +274,9 @@ int main(int argc, char **argv) {
 
     if (!mkdir_if_not_exists(OBJDIR)) return -1;
     if (!mkdir_if_not_exists(BINDIR)) return -1;
+
+    printf("[Building & running struct exposer]\n");
+    if ((e=expose_structs()) < 0) return e;
 
     printf("[Collecting + building source files]\n");
     if ((e=search_and_build_dir("src", target_arch)) < 0) return e;

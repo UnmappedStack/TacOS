@@ -23,9 +23,9 @@ typedef enum {
 
 typedef struct {
     LList class_list;  /* linked list of other threads of this class
-                              * in the ProcessorQueue it belongs to */
+                        * in the ProcessorQueue it belongs to */
     LList bucket_list; /* linked list of other threads in this calendar
-                                queue bucket */
+                        * queue bucket */
 
     /* misc info */
     size_t tid;
