@@ -2,7 +2,7 @@
 // See /kernel/expose_structs.c to see all structs exposed.
 
 // struct Thread
-#define THREAD_CLASS_LIST_OFFSET 0
-#define THREAD_S_CLASS_OFFSET 48
-#define THREAD_PRIORITY_OFFSET 52
+#define THREAD_FLAGS_OFFSET 40
+#define THREAD_ENTRY_POINT_OFFSET 48
+#define THREAD_KERNEL_STACK_OFFSET 56
 // end struct Thread

@@ -14,8 +14,9 @@ typedef enum {
 } SchedClass;
 
 /* for the flags field of Thread */
-#define THREAD_FLAG_AFFINITIVE  0b01
-#define THREAD_FLAG_INTERACTIVE 0b10
+#define THREAD_FLAG_AFFINITIVE   0b001
+#define THREAD_FLAG_INTERACTIVE  0b010
+#define THREAD_FLAG_FIRST_SWITCH 0b100
 
 #define NUM_BUCKETS 64
 
@@ -28,8 +29,10 @@ typedef struct {
                         * queue bucket */
 
     /* misc info */
-    size_t tid;
+    size_t tid; // this might be gone later, just using objects.
     uint8_t flags;
+    void *entry_point;
+    uintptr_t kernel_stack;
 
     /* priority related stuff */
     int nice;
@@ -80,6 +83,7 @@ void global_scheduler_init(void);
 Thread *thread_select(void);
 void smp_init(void);
 Thread *add_thread_to_current_processor(Thread *thread);
-Thread *create_thread(SchedClass sched_class, int nice, uint8_t flags);
+Thread *create_thread(SchedClass sched_class, int nice, uint8_t flags, void *entry_point);
 Thread *migrate_push(void); // only push must be exposed in the header, as pull is called
                             // within the scheduler only
+void yield(void);

@@ -41,6 +41,8 @@ typedef struct {
     /* NOT the number of things in the queue to be shot down!
      * this is the sum total pages of all shootdown requests */
     size_t num_queued_shootdown_pages;
+
+    Thread *current_thread;
 } CPU;
 
 void smp_init(void);

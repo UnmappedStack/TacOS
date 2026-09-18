@@ -1,4 +1,5 @@
 #include <scheduler.h>
+#include <mm.h>
 #include <smp.h>
 #include <assert.h>
 #include <limine.h>
@@ -142,13 +143,21 @@ Thread *add_thread_to_current_processor(Thread *thread) {
     return add_thread_to_processor(thread, current_processor_queue());
 }
 
-Thread *create_thread(SchedClass sched_class, int nice, uint8_t flags) {
+Thread *create_thread(SchedClass sched_class, int nice, uint8_t flags, void *entry_point) {
     Thread *thread = slab_alloc(kernel_info.schedulers.thread_cache);
 
-    thread->flags = flags;
+    thread->flags = flags | THREAD_FLAG_FIRST_SWITCH;
     thread->nice = nice;
     thread->s_class = sched_class;
     thread->tid = kernel_info.schedulers.tid_upto++;
+    thread->entry_point = entry_point;
+
+#define KERNEL_STACK_PAGES 20
+    uintptr_t stack_bottom = (uintptr_t) vmm_valloc_backed(
+        kernel_info.vmspace, KERNEL_STACK_PAGES, PAGE_PRESENT | PAGE_WRITE
+    );
+    thread->kernel_stack = stack_bottom + KERNEL_STACK_PAGES * PAGE_BYTES - 16;
+    kprintf("stack bottom = %x, stack top = %x\n", stack_bottom, thread->kernel_stack);
 
     return thread;
 }
@@ -276,6 +285,17 @@ Thread *thread_select(void) {
 
     dumblock_release(&current_queue->lock);
     return migrate_pull(current_queue);
+}
+
+extern void context_switch(Thread *prev_thread, Thread *new_thread);
+void yield(void) {
+    DISABLE_INTERRUPTS();
+    Thread *current_thread = get_current_cpu_info()->current_thread;
+    Thread *next_thread    = thread_select();
+
+    if (!next_thread) return; // nothing to switch to
+
+    context_switch(current_thread, next_thread);
 }
 
 /* Initialises the scheduler on the current processor */

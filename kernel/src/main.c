@@ -37,6 +37,23 @@ void __stack_chk_fail(void) {
     FREEZE_DEVICE();
 }
 
+void test_thread_entry_point1(void) {
+    kprintf("yo lesgo we are in test thread 1!\n");
+    for (;;) {
+        kprintf("hi from thread 1\n");
+        yield();
+    }
+}
+
+void test_thread_entry_point2(void) {
+    DISABLE_INTERRUPTS();
+    for (;;) {
+        kprintf("hi from thread 2\n");
+        yield();
+    }
+}
+
+extern void context_switch(Thread *prev_thread, Thread *new_thread);
 void boot_stage2(void) {
     klogf(LOG_STATUS, "Page structures set up successfully\n");
 
@@ -48,9 +65,24 @@ void boot_stage2(void) {
     global_scheduler_init();
     processor_scheduler_init();
 
-    add_thread_to_current_processor(create_thread(SCHED_KERNEL, 10, 0));
-    add_thread_to_current_processor(create_thread(SCHED_KERNEL, 15, 0));
-    add_thread_to_current_processor(create_thread(SCHED_KERNEL, 20, 0));
+    add_thread_to_current_processor(
+         create_thread(
+             SCHED_KERNEL, /* sched class */
+             10,           /* nice */
+             0,            /* flags */
+             test_thread_entry_point1
+         )
+    );
+    add_thread_to_current_processor(
+         create_thread(
+             SCHED_KERNEL, /* sched class */
+             15,           /* nice */
+             0,            /* flags */
+             test_thread_entry_point2
+         )
+    );
+
+    yield();
 
     ENABLE_INTERRUPTS();
     for (;;);

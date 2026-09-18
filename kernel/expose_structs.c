@@ -1,7 +1,7 @@
 /* utility to expose C structs to assembly by automatically generating assembly files. */
 /* to add a new struct, create a copy of one of the EXPOSE_*_STRUCT macros and make
- * it copy each member. I'm not sure if there's a way to do this with less repetition
- * but I couldn't think of one. */
+ * it copy each member (MUST BE IN ORDER). I'm not sure if there's a way to do this
+ * with less repetition but I couldn't think of one. */
 
 #include <stdio.h>
 #include <assert.h>
@@ -55,9 +55,9 @@ int round_up(int num, int multiple) {
 #define EXPOSE_THREAD_STRUCT(file, type) \
     do { \
         fprintf(file, "// struct " #type "\n"); \
-        EXPOSE_STRUCT_MEMBER(file, type, class_list); \
-        EXPOSE_STRUCT_MEMBER(file, type, s_class); \
-        EXPOSE_STRUCT_MEMBER(file, type, priority); \
+        EXPOSE_STRUCT_MEMBER(file, type, flags); \
+        EXPOSE_STRUCT_MEMBER(file, type, entry_point); \
+        EXPOSE_STRUCT_MEMBER(file, type, kernel_stack); \
         fprintf(file, "// end struct " #type "\n"); \
     } while (0)
 
