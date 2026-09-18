@@ -12,7 +12,7 @@
 /* for stuff to expose (yeah yeah relative paths, whatever) */
 #include <scheduler.h>
 
-#define OUTPUT "src/exposed_structs.S"
+#define OUTPUT "include/exposed_structs.S"
 
 bool file_exists(char *fname) {
     return !access(fname, F_OK);
