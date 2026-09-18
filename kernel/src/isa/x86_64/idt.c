@@ -22,39 +22,12 @@ IDTGate idt_descriptor(uint64_t offset, uint16_t segment, uint8_t flags) {
 }
 
 __attribute__((interrupt))
-void test_isr(void*) {
-    DISABLE_INTERRUPTS();
-    CPU *cpu = current_processor();
-    if (kernel_info.schedulers.least_loaded_processor == NULL ||
-            cpu->scheduler->num_threads < kernel_info.schedulers.least_loaded_processor->num_threads)
-        kernel_info.schedulers.least_loaded_processor = cpu->scheduler;
-    Thread *thread;
-
-    // we only want to load balance on one processor, otherwise it'll be too often
-    if (cpu->id == kernel_info.bp_id) cpu->scheduler->total_ticks++;
-    if (cpu->id == kernel_info.bp_id && cpu->scheduler->total_ticks % 50 == 0)
-        thread = migrate_push();
-    else thread = thread_select();
-    const char *colours[] = {
-        "\e[0;31m", // R
-        "\e[0;32m", // G
-        "\e[0;33m", // Y
-        "\e[0;34m", // B
-        "\e[0;35m", // P
-    };
-    if (thread != NULL)
-        kprintf("%s%u\e[0m,", colours[cpu->id % 5], thread->tid);
-
-    ENABLE_INTERRUPTS();
-    end_of_interrupt();
-}
-
-__attribute__((interrupt))
 void ipi_isr(void*) {
     ipi_handler();
     end_of_interrupt();
 }
 
+extern void preempt(void); // from asm
 void idt_init(void) {
     IDTR idtr;
     idtr.offset = (uint64_t)kernel_info.idt;
@@ -62,7 +35,7 @@ void idt_init(void) {
     __asm__ volatile("lidt %0" : : "m"(idtr));
 
     // lapic timer interrupt
-    kernel_info.idt[40] = idt_descriptor((uint64_t) test_isr, 8, 0x8E);
+    kernel_info.idt[40] = idt_descriptor((uint64_t) preempt, 8, 0x8E);
     
     // ipi interrupt
     kernel_info.idt[41] = idt_descriptor((uint64_t) ipi_isr, 8, 0x8E);

@@ -182,7 +182,7 @@ void ap_stage2(void) {
     processor_scheduler_init();
     mcs_spinlock_release(&init_lock, &local_init_lock);
 
-    ENABLE_INTERRUPTS();
+//    ENABLE_INTERRUPTS();
     for (;;);
 }
 

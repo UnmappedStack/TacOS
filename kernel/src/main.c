@@ -38,17 +38,15 @@ void __stack_chk_fail(void) {
 }
 
 void test_thread_entry_point1(void) {
-    kprintf("yo lesgo we are in test thread 1!\n");
     for (;;) {
-        kprintf("hi from thread 1\n");
+        kprintf("1,");
         yield();
     }
 }
 
 void test_thread_entry_point2(void) {
-    DISABLE_INTERRUPTS();
     for (;;) {
-        kprintf("hi from thread 2\n");
+        kprintf("2,");
         yield();
     }
 }
@@ -81,8 +79,6 @@ void boot_stage2(void) {
              test_thread_entry_point2
          )
     );
-
-    yield();
 
     ENABLE_INTERRUPTS();
     for (;;);

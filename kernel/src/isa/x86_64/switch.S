@@ -4,6 +4,7 @@
 #define THREAD_FLAG_FIRST_SWITCH 0b100
 
 .global context_switch
+.global preempt
 
 .macro PUSH_ALL_REGS
     pushq %rax
@@ -57,6 +58,10 @@
 .endm // CLEAR_ALL_REGS
 
 .section .text
+
+/* just an isr stub to go to C's yield() */
+preempt:
+    jmp yield
 
 /* saves the context of the current thread and enters the context of the next
  * thread. can be called by either yield or the timer for preemption.
@@ -118,6 +123,8 @@ dont_save_rsp:
     // rip = entry point (already in r8)
     pushq %r8
 
+    call end_of_interrupt
+
     // don't wanna give threads access to the registers of the last thread lol
     CLEAR_ALL_REGS
 
@@ -132,8 +139,7 @@ dont_save_rsp:
     // we don't need the current_thread and next_thread that were saved
     addq $16, %rsp
 
+    call end_of_interrupt
+
     // return frame is already on the stack, iretq back to wherever we were
     iretq
-
-.section .data
-msg1: .asciz "prev thread: %x\nnext thread: %x\nRSP: %x\nEntry point: %x\nFlags: %x\n"

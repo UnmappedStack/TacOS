@@ -20,7 +20,8 @@ void mcs_lock_init(MCSSpinlock *lock) {
  * not is undefined. */
 void mcs_spinlock_acquire(MCSSpinlock *lock, MCSSpinlock *local_lock) {
 	assert(local_lock && lock);
-	
+
+    DISABLE_INTERRUPTS();
 	mcs_lock_init(local_lock);
 
 	// load the new local lock into the global lock's next and get the original
@@ -53,10 +54,12 @@ void mcs_spinlock_release(MCSSpinlock *global_lock, MCSSpinlock *local_lock) {
 	
 	if (!was_contended) {
 		__atomic_store_n(&global_lock->locked, false, __ATOMIC_SEQ_CST);
+        ENABLE_INTERRUPTS();
 		return;
 	}
 
 	// looks like someone else wants it, let's let them know they can have it now
 	while (!local_lock->next);
 	__atomic_store_n(&local_lock->next->locked, false, __ATOMIC_SEQ_CST);
+    ENABLE_INTERRUPTS();
 }
