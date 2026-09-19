@@ -169,11 +169,11 @@ static MCSSpinlock init_lock = {0};
 /* after the stack has been changed */
 void ap_stage2(void) {
     init_local_interrupt_controller(kernel_info.lapic_addr);
+    DISABLE_INTERRUPTS();
     timer_local_init();
 
     num_aps_initialised++;
     while (!kernel_info.schedulers.ready) PAUSE();
-
     // maybe it'd be better to just make processor_scheduler_init()
     // thread-safe... the granularity could be wayyy better (TODO, but its a
     // microoptimisation anyways tbh since this isnt a hotpath)
@@ -182,13 +182,13 @@ void ap_stage2(void) {
     processor_scheduler_init();
     mcs_spinlock_release(&init_lock, &local_init_lock);
 
-//    ENABLE_INTERRUPTS();
+    ENABLE_INTERRUPTS();
     for (;;);
 }
 
 // entry point for all application processors
 void ap_entry(struct limine_mp_info *this_cpu) {
-    DISABLE_INTERRUPTS();
+    FORCE_DISABLE_INTERRUPTS();
     isa_early_init();
     SWITCH_PAGE_TREE(kernel_info.vmspace->cr3);
     CPU *cpu = cpu_info_init(get_limine_cpu_id(this_cpu));

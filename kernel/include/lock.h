@@ -11,16 +11,6 @@
  *        memory, so use them for less finegrained stuff
  */
 
-/* dumb spinlocks */
-#define DumbLock atomic_flag
-#define dumblock_acquire(lock) \
-    while (atomic_flag_test_and_set(lock)) { \
-        PAUSE(); \
-    }
-
-#define dumblock_release(lock) \
-    atomic_flag_clear(lock);
-
 /* mcs spinlocks*/
 typedef struct MCSSpinlock MCSSpinlock;
 struct MCSSpinlock {
@@ -56,4 +46,20 @@ void mcs_spinlock_release(MCSSpinlock *global_lock, MCSSpinlock *local_lock);
             (*level)++; \
             FORCE_DISABLE_INTERRUPTS(); \
         } \
+    } while (0)
+
+/* dumb spinlocks */
+#define DumbLock atomic_flag
+#define dumblock_acquire(lock) \
+    do { \
+        DISABLE_INTERRUPTS(); \
+        while (atomic_flag_test_and_set(lock)) { \
+            PAUSE(); \
+        } \
+    } while (0)
+
+#define dumblock_release(lock) \
+    do { \
+        atomic_flag_clear(lock); \
+        ENABLE_INTERRUPTS(); \
     } while (0)

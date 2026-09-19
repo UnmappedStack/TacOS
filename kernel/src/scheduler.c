@@ -157,7 +157,6 @@ Thread *create_thread(SchedClass sched_class, int nice, uint8_t flags, void *ent
         kernel_info.vmspace, KERNEL_STACK_PAGES, PAGE_PRESENT | PAGE_WRITE
     );
     thread->kernel_stack = stack_bottom + KERNEL_STACK_PAGES * PAGE_BYTES - 16;
-    kprintf("stack bottom = %x, stack top = %x\n", stack_bottom, thread->kernel_stack);
 
     return thread;
 }
@@ -295,6 +294,7 @@ void yield(void) {
     Thread *next_thread    = thread_select();
     assert(current_thread);
     if (!next_thread || !(next_thread->flags & THREAD_FLAG_PRESENT)) {
+        FORCE_ENABLE_INTERRUPTS();
         end_of_interrupt();
         return; // nothing to switch to
     }
@@ -329,7 +329,7 @@ void processor_scheduler_init(void) {
 
     list_insert(&kernel_info.schedulers.processor_queues, &new_queue->list);
     processor->scheduler = new_queue;
-   
+  
     // initial thread, never switched to
     processor->current_thread = create_thread(
              SCHED_KERNEL, /* sched class */

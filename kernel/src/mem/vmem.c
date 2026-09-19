@@ -87,7 +87,7 @@ bool vmem_add_sized(VMemArena *arena, uintptr_t region_base, size_t region_size)
             llist_insert(&this_order->regions, &region->list);
             arena->orders_bitmap |= 1ULL << i;
 
-            dumblock_release(&arena->lock)
+            dumblock_release(&arena->lock);
             return true;
         }
     }
