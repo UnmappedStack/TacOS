@@ -289,12 +289,19 @@ Thread *thread_select(void) {
 
 extern void context_switch(Thread *prev_thread, Thread *new_thread);
 void yield(void) {
-    DISABLE_INTERRUPTS();
-    Thread *current_thread = get_current_cpu_info()->current_thread;
+    FORCE_DISABLE_INTERRUPTS();
+    CPU *this_cpu = get_current_cpu_info();
+    Thread *current_thread = this_cpu->current_thread;
     Thread *next_thread    = thread_select();
+    assert(current_thread);
+    if (!next_thread || !(next_thread->flags & THREAD_FLAG_PRESENT)) {
+        end_of_interrupt();
+        return; // nothing to switch to
+    }
+   
+    this_cpu->current_thread = next_thread;
 
-    if (!next_thread) return; // nothing to switch to
-
+    end_of_interrupt();
     context_switch(current_thread, next_thread);
 }
 
@@ -322,6 +329,14 @@ void processor_scheduler_init(void) {
 
     list_insert(&kernel_info.schedulers.processor_queues, &new_queue->list);
     processor->scheduler = new_queue;
+   
+    // initial thread, never switched to
+    processor->current_thread = create_thread(
+             SCHED_KERNEL, /* sched class */
+             20,           /* nice */
+             0,            /* flags (all that matters here is that its not present) */
+             NULL          /* entry point doesn't matter, will never switch here */
+    );
 }
 
 /* Initialises the scaffolding for scheduling needed for all processors */

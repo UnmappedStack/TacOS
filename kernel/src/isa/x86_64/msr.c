@@ -42,12 +42,9 @@ void wrmsr(uint32_t msr, uint64_t value) {
     );
 }
 
-/* accesses through gsbase for x86_64 */
+/* accesses through gsbase for x86_64, may return null if not set */
 CPU *get_current_cpu_info(void) {
     CPU *ret = (CPU*) rdmsr(GSBASE);
-    if (ret == NULL) {
-        kpanic("GSBase not set yet");
-    }
     return ret;
 }
 

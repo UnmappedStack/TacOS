@@ -14,9 +14,10 @@ typedef enum {
 } SchedClass;
 
 /* for the flags field of Thread */
-#define THREAD_FLAG_AFFINITIVE   0b001
-#define THREAD_FLAG_INTERACTIVE  0b010
-#define THREAD_FLAG_FIRST_SWITCH 0b100
+#define THREAD_FLAG_AFFINITIVE   0b0001
+#define THREAD_FLAG_INTERACTIVE  0b0010
+#define THREAD_FLAG_FIRST_SWITCH 0b0100
+#define THREAD_FLAG_PRESENT      0b1000
 
 #define NUM_BUCKETS 64
 
@@ -30,7 +31,7 @@ typedef struct {
 
     /* misc info */
     size_t tid; // this might be gone later, just using objects.
-    uint8_t flags;
+    uint64_t flags;
     void *entry_point;
     uintptr_t kernel_stack;
 

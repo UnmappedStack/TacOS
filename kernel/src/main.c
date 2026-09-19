@@ -38,17 +38,13 @@ void __stack_chk_fail(void) {
 }
 
 void test_thread_entry_point1(void) {
-    for (;;) {
-        kprintf("1,");
-        yield();
-    }
+    klogf(LOG_DEBUG, "FIRST IN THREAD 1\n");
+    for (;;);
 }
 
 void test_thread_entry_point2(void) {
-    for (;;) {
-        kprintf("2,");
-        yield();
-    }
+    klogf(LOG_DEBUG, "FIRST IN THREAD 2\n");
+    for (;;);
 }
 
 extern void context_switch(Thread *prev_thread, Thread *new_thread);
@@ -65,17 +61,17 @@ void boot_stage2(void) {
 
     add_thread_to_current_processor(
          create_thread(
-             SCHED_KERNEL, /* sched class */
-             10,           /* nice */
-             0,            /* flags */
+             SCHED_KERNEL,        /* sched class */
+             10,                  /* nice */
+             THREAD_FLAG_PRESENT, /* flags */
              test_thread_entry_point1
          )
     );
     add_thread_to_current_processor(
          create_thread(
-             SCHED_KERNEL, /* sched class */
-             15,           /* nice */
-             0,            /* flags */
+             SCHED_KERNEL,        /* sched class */
+             15,                  /* nice */
+             THREAD_FLAG_PRESENT, /* flags */
              test_thread_entry_point2
          )
     );

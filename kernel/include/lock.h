@@ -1,5 +1,7 @@
 #pragma once
 #include <stdatomic.h>
+#include <assert.h>
+#include <stddef.h>
 
 /* we keep two main types of non-scheduler-blocking locks here:
  *      - dumb spinlocks: just dumb unfair spinlocks, which are small in memory but
@@ -29,3 +31,29 @@ struct MCSSpinlock {
 void mcs_spinlock_acquire(MCSSpinlock *lock, MCSSpinlock *local_lock);
 void mcs_spinlock_init(MCSSpinlock *lock);
 void mcs_spinlock_release(MCSSpinlock *global_lock, MCSSpinlock *local_lock);
+
+#define ENABLE_INTERRUPTS() \
+    do { \
+        CPU *cpu = get_current_cpu_info(); \
+        if (!cpu) { \
+            FORCE_ENABLE_INTERRUPTS(); \
+        } else { \
+            size_t *level = &cpu->interrupt_disable_level; \
+            if (*level) { \
+                (*level)--; \
+            } \
+            if (!(*level)) FORCE_ENABLE_INTERRUPTS(); \
+        } \
+    } while (0)
+
+#define DISABLE_INTERRUPTS() \
+    do { \
+        CPU *cpu = get_current_cpu_info(); \
+        if (!cpu) { \
+            FORCE_DISABLE_INTERRUPTS(); \
+        } else { \
+            size_t *level = &cpu->interrupt_disable_level; \
+            (*level)++; \
+            FORCE_DISABLE_INTERRUPTS(); \
+        } \
+    } while (0)

@@ -84,17 +84,17 @@ context_switch:
     // the saved registers are 112 bytes (14 regs * 8 byte alignment)
     // so we can get back the current & next threads from before that
     movq 112(%rsp), %rdx // rdx = next thread, +8 bytes for rsi
-    movq 120(%rsp), %rsi // rsp = current thread, +16 bytes for rdi
+    movq 120(%rsp), %rsi // rsi = current thread, +16 bytes for rdi
     movq THREAD_KERNEL_STACK_OFFSET(%rdx), %rcx // rcx = rsp
     movq THREAD_ENTRY_POINT_OFFSET(%rdx), %r8   // r8  = entry point
     movq THREAD_FLAGS_OFFSET(%rdx), %r9         // r9  = flags
 
-    // if rsi (previous thread) is not null then save rsp
-    testq %rsi, %rsi
-    jz dont_save_rsp
+    // save rsp
     movq %rsp, THREAD_KERNEL_STACK_OFFSET(%rsi)
-dont_save_rsp:
 
+    // switch to next task's rsp
+    movq %rcx, %rsp
+    
     // if its the first run then it needs to construct a return frame,
     // otherwise we can just use the existing one
     andq $THREAD_FLAG_FIRST_SWITCH, %r9
@@ -109,7 +109,7 @@ dont_save_rsp:
     // thread_flags &= r11
     // (r9 already contains the flags)
     andq %r11, %r9
-    movq THREAD_FLAGS_OFFSET(%rdx), %r9
+    movq %r9, THREAD_FLAGS_OFFSET(%rdx)
 
     // create iretq frame
     // ss = 16 (segment selector 16 for kernel data, ring 0)
@@ -122,8 +122,6 @@ dont_save_rsp:
     pushq $8
     // rip = entry point (already in r8)
     pushq %r8
-
-    call end_of_interrupt
 
     // don't wanna give threads access to the registers of the last thread lol
     CLEAR_ALL_REGS
@@ -138,8 +136,6 @@ dont_save_rsp:
     
     // we don't need the current_thread and next_thread that were saved
     addq $16, %rsp
-
-    call end_of_interrupt
 
     // return frame is already on the stack, iretq back to wherever we were
     iretq

@@ -38,6 +38,9 @@ typedef struct {
     ProcessorQueue *scheduler;
     IPIQueue ipi_queue;
 
+    // 0 when interrupts are enabled, non zero when disabled.
+    size_t interrupt_disable_level;
+
     /* NOT the number of things in the queue to be shot down!
      * this is the sum total pages of all shootdown requests */
     size_t num_queued_shootdown_pages;
