@@ -226,7 +226,9 @@ Thread *migrate_pull(ProcessorQueue *current_queue) {
 }
 
 /* PUSH migration of the load balancer, run at a regular interval. Steals one thread
- * from the most loaded processor and gives it to the least loaded processor */
+ * from the most loaded processor and gives it to the least loaded processor.
+ * TODO: I used it before but temporarily stopped using it, actually use push migrations
+ * on a regular interval */
 Thread *migrate_push(void) {
     ProcessorQueue *steal_from = kernel_info.schedulers.most_loaded_processor;
     ProcessorQueue *give_to    = kernel_info.schedulers.least_loaded_processor;
