@@ -4,7 +4,6 @@
 // asmsyntax=asm
 
 #include <exposed_structs.S>
-#define THREAD_FLAG_FIRST_SWITCH 0b100
 
 .global context_switch
 .global end_of_interrupt

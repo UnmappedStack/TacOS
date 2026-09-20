@@ -16,10 +16,9 @@ void read_page_tree(uintptr_t *dest) {
     *dest = (satp & PPN_MASK) * PAGE_BYTES;
 }
 
+// may return 0 if not yet set
 CPU *get_current_cpu_info(void) {
-   CPU *ret = (CPU*) csr_read(CSR_REG_SSCRATCH);
-   if (!ret) kpanic("sscratch not set yet");
-   return ret;
+   return (CPU*) csr_read(CSR_REG_SSCRATCH);
 }
 
 void set_current_cpu_info(CPU *cpu_info) {

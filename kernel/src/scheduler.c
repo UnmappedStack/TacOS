@@ -303,6 +303,7 @@ extern void context_switch(Thread *prev_thread, Thread *new_thread);
 void yield(void) {
     FORCE_DISABLE_INTERRUPTS();
     CPU *this_cpu = get_current_cpu_info();
+    assert(this_cpu && "yield before aps initialised");
     Thread *current_thread = this_cpu->current_thread;
     Thread *next_thread    = thread_select();
     assert(current_thread);
@@ -313,7 +314,9 @@ void yield(void) {
    
     this_cpu->current_thread = next_thread;
 
+#ifndef __riscv
     context_switch(current_thread, next_thread);
+#endif
 }
 
 /* Initialises the scheduler on the current processor */

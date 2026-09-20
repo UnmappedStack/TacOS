@@ -64,6 +64,7 @@ extern volatile struct limine_riscv_bsp_hartid_request bsp_id_request;
     #define isa_early_init() \
         do { \
             interrupts_init(); \
+            set_current_cpu_info(NULL); \
             kernel_info.bp_id = bsp_id_request.response->bsp_hartid; \
         } while(0)
     #define timer_init() \

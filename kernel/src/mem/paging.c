@@ -24,7 +24,6 @@ extern uint64_t writable_end[];
 
 #define TABLE_FROM_VADDR(vaddr, tlevel) (((vaddr) >> (VOFF+9*(tlevel-1))) & 511)
 
-
 uint64_t *get_or_create_next_layer(uint64_t *parent_layer, uint64_t idx) {
     /* if the index of a page tree level needed does not already exist,
      * make it with full permissions, and allocate for the next level's table to
@@ -44,7 +43,10 @@ uint64_t *get_or_create_next_layer(uint64_t *parent_layer, uint64_t idx) {
 }
 
 void map_page(uint64_t *pml4vaddr, uintptr_t vaddr, uintptr_t paddr, uint64_t flags) {
+#if defined(__x86_64__)
+    //TODO: move this to arch specific stuff
     vaddr &= ~0xFFFF000000000000ULL; /* high bits must be cleared as they are used for other stuff */
+#endif
 
     uint64_t *current_layer_vaddr = pml4vaddr;
 #if defined(__riscv)

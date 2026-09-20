@@ -111,6 +111,7 @@ VMSpace *create_virtual_memory_space(void) {
     }
 
     VMSpace *vmspace = slab_alloc(kernel_info.vmspace_cache);
+    assert(vmspace);
 
     vmspace->regions = (Tree) {0};
     vmspace->cr3 = create_address_space(); // page mapping specifics.
