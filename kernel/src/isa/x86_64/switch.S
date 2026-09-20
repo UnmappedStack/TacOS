@@ -1,44 +1,53 @@
 // x86-64 context switching. this is quite a hotpath so keep this zoomy zoomy fast fast
 
+// neovim was being a dickhead so I had to add this lol:
+// asmsyntax=asm
+
 #include <exposed_structs.S>
 #define THREAD_FLAG_FIRST_SWITCH 0b100
 
 .global context_switch
 .global preempt
 
-.macro PUSH_ALL_REGS
-    pushq %rax
+.macro PUSH_SOME_REGS
+    pushq %rbp
     pushq %rbx
+    pushq %r12
+    pushq %r13
+    pushq %r14
+    pushq %r15
+.endm // PUSH_SOME_REGS
+
+.macro POP_SOME_REGS
+    popq %r15
+    popq %r14
+    popq %r13
+    popq %r12
+    popq %rbx
+    popq %rbp
+.endm // POP_SOME_REGS
+
+.macro PUSH_MOST_REGS
+    pushq %rax
     pushq %rcx
     pushq %rdx
     pushq %r9 
     pushq %r10
     pushq %r11
-    pushq %r12
-    pushq %r13
-    pushq %r14
-    pushq %r15
-    pushq %rbp
     pushq %rsi
     pushq %rdi
-.endm // PUSH_ALL_REGS
+.endm // PUSH_MOST_REGS
 
-.macro POP_ALL_REGS
+.macro POP_MOST_REGS
     popq %rdi
     popq %rsi
-    popq %rbp
-    popq %r15
-    popq %r14
-    popq %r13
-    popq %r12
     popq %r11
     popq %r10
     popq %r9 
     popq %rdx
     popq %rcx
-    popq %rbx
     popq %rax
-.endm // POP_ALL_REGS
+.endm // POP_MOST_REGS
 
 .macro CLEAR_ALL_REGS
     xorq %rdi, %rdi
@@ -59,9 +68,14 @@
 
 .section .text
 
-/* just an isr stub to go to C's yield() */
+/* just an isr stub to go to C's yield().
+ * TODO: this should do eoi instead of yield */
 preempt:
-    jmp yield
+    cli
+    PUSH_MOST_REGS
+    call yield
+    POP_MOST_REGS
+    ret
 
 /* saves the context of the current thread and enters the context of the next
  * thread. can be called by either yield or the timer for preemption.
@@ -71,7 +85,6 @@ preempt:
  *   -> rsi: next thread
  */ 
 context_switch:
-    // would be a race condition to have preemptions while switching
     cli
 
     // put current & next threads on the stack to use after
@@ -79,12 +92,13 @@ context_switch:
     pushq %rsi // next thread
 
     // save state
-    PUSH_ALL_REGS
+    PUSH_SOME_REGS
 
-    // the saved registers are 112 bytes (14 regs * 8 byte alignment)
+    // the saved registers are 48 bytes (6 regs * 8 byte alignment)
     // so we can get back the current & next threads from before that
-    movq 112(%rsp), %rdx // rdx = next thread, +8 bytes for rsi
-    movq 120(%rsp), %rsi // rsi = current thread, +16 bytes for rdi
+    movq 48(%rsp), %rdx // rdx = next thread, +0 bytes for rsi
+    movq 56(%rsp), %rsi // rsi = current thread, +8 bytes for rdi
+
     movq THREAD_KERNEL_STACK_OFFSET(%rdx), %rcx // rcx = rsp
     movq THREAD_ENTRY_POINT_OFFSET(%rdx), %r8   // r8  = entry point
     movq THREAD_FLAGS_OFFSET(%rdx), %r9         // r9  = flags
@@ -111,15 +125,6 @@ context_switch:
     andq %r11, %r9
     movq %r9, THREAD_FLAGS_OFFSET(%rdx)
 
-    // create iretq frame
-    // ss = 16 (segment selector 16 for kernel data, ring 0)
-    pushq $16
-    // rsp = rcx
-    pushq %rcx
-    // rflags (0x200 = interrupt enable)
-    pushq $0x200
-    // cs = 8 (segment selector 8 for kernel code, ring 0
-    pushq $8
     // rip = entry point (already in r8)
     pushq %r8
 
@@ -127,15 +132,15 @@ context_switch:
     CLEAR_ALL_REGS
 
     // finally enter the new context
-    iretq
+    ret 
 
 .previously_switched:
 
     // restore state
-    POP_ALL_REGS
+    POP_SOME_REGS
     
     // we don't need the current_thread and next_thread that were saved
     addq $16, %rsp
 
     // return frame is already on the stack, iretq back to wherever we were
-    iretq
+    ret
