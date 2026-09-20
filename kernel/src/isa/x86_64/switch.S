@@ -7,6 +7,7 @@
 #define THREAD_FLAG_FIRST_SWITCH 0b100
 
 .global context_switch
+.global end_of_interrupt
 .global preempt
 
 .macro PUSH_SOME_REGS
@@ -68,11 +69,10 @@
 
 .section .text
 
-/* just an isr stub to go to C's yield().
- * TODO: this should do eoi instead of yield */
 preempt:
     cli
     PUSH_MOST_REGS
+    call end_of_interrupt
     call yield
     POP_MOST_REGS
     ret

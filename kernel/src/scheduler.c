@@ -297,13 +297,11 @@ void yield(void) {
     assert(current_thread);
     if (!next_thread || !(next_thread->flags & THREAD_FLAG_PRESENT)) {
         FORCE_ENABLE_INTERRUPTS();
-        end_of_interrupt();
         return; // nothing to switch to
     }
    
     this_cpu->current_thread = next_thread;
 
-    end_of_interrupt();
     context_switch(current_thread, next_thread);
 }
 
