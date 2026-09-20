@@ -74,6 +74,10 @@ preempt:
     PUSH_MOST_REGS
     call end_of_interrupt
     call yield
+    // by the time we get here we're already on the next timeslice
+    // after context switching *back* here... usually. occasionally yield
+    // will not find a thread to switch to so we'll still be in the same
+    // timeslice.
     POP_MOST_REGS
     ret
 
@@ -87,60 +91,13 @@ preempt:
 context_switch:
     cli
 
-    // put current & next threads on the stack to use after
-    pushq %rdi // current thread
-    pushq %rsi // next thread
-
     // save state
     PUSH_SOME_REGS
 
-    // the saved registers are 48 bytes (6 regs * 8 byte alignment)
-    // so we can get back the current & next threads from before that
-    movq 48(%rsp), %rdx // rdx = next thread, +0 bytes for rsi
-    movq 56(%rsp), %rsi // rsi = current thread, +8 bytes for rdi
+    movq %rsp, THREAD_KERNEL_STACK_OFFSET(%rdi) // save rsp
+    movq THREAD_KERNEL_STACK_OFFSET(%rsi), %rsp // switch to next task's rsp
 
-    movq THREAD_KERNEL_STACK_OFFSET(%rdx), %rcx // rcx = rsp
-    movq THREAD_ENTRY_POINT_OFFSET(%rdx), %r8   // r8  = entry point
-    movq THREAD_FLAGS_OFFSET(%rdx), %r9         // r9  = flags
-
-    // save rsp
-    movq %rsp, THREAD_KERNEL_STACK_OFFSET(%rsi)
-
-    // switch to next task's rsp
-    movq %rcx, %rsp
+    POP_SOME_REGS // restore state
     
-    // if its the first run then it needs to construct a return frame,
-    // otherwise we can just use the existing one
-    andq $THREAD_FLAG_FIRST_SWITCH, %r9
-    jz .previously_switched
-
-.first_switch:
-    
-    // first clear the first switch flag
-    // r11 = ~THREAD_FLAG_FIRST_SWITCH
-    movq $THREAD_FLAG_FIRST_SWITCH, %r11
-    notq %r11
-    // thread_flags &= r11
-    // (r9 already contains the flags)
-    andq %r11, %r9
-    movq %r9, THREAD_FLAGS_OFFSET(%rdx)
-
-    // rip = entry point (already in r8)
-    pushq %r8
-
-    // don't wanna give threads access to the registers of the last thread lol
-    CLEAR_ALL_REGS
-
-    // finally enter the new context
-    ret 
-
-.previously_switched:
-
-    // restore state
-    POP_SOME_REGS
-    
-    // we don't need the current_thread and next_thread that were saved
-    addq $16, %rsp
-
-    // return frame is already on the stack, iretq back to wherever we were
+    // return frame is already on the stack, just return
     ret

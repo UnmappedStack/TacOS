@@ -62,6 +62,21 @@ void map_page(uint64_t *pml4vaddr, uintptr_t vaddr, uintptr_t paddr, uint64_t fl
     current_layer_vaddr[TABLE_FROM_VADDR(vaddr, 1)] = PAGE_TABLE_ENTRY(paddr, flags);
 }
 
+uintptr_t virt_to_phys(uint64_t *pml4vaddr, uintptr_t vaddr) {
+    vaddr &= ~0xFFFF000000000000ULL; /* high bits must be cleared as they are used for other stuff */
+    uint64_t *current_layer_vaddr = pml4vaddr;
+#if defined(__riscv)
+    vaddr /= PAGE_BYTES; // on riscv it needs the virtual frame number, not the address
+#endif
+    for (uint8_t pml_level = 4; pml_level > 1; pml_level--) {
+        uint64_t entry = current_layer_vaddr[TABLE_FROM_VADDR(vaddr, pml_level)];
+        if (!entry) return 0; // unmapped
+        current_layer_vaddr = (uint64_t*)((uintptr_t)PADDR_FROM_TABLE_ENTRY(entry) + kernel_info.hhdm);
+    }
+
+    return PADDR_FROM_TABLE_ENTRY(current_layer_vaddr[TABLE_FROM_VADDR(vaddr, 1)]);
+}
+
 // This could probably be faster, but I feel like this is the more readable implementation
 void map_consecutive_pages(uint64_t *pml4, uintptr_t vmem_start, uintptr_t paddr_start,
                            size_t num_pages, uint64_t flags) {

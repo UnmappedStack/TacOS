@@ -158,6 +158,17 @@ Thread *create_thread(SchedClass sched_class, int nice, uint8_t flags, void *ent
     );
     thread->kernel_stack = stack_bottom + KERNEL_STACK_PAGES * PAGE_BYTES - 16;
 
+    uint64_t *stack_ptr = (uint64_t*) thread->kernel_stack;
+    
+    // add a return address to the stack...
+    stack_ptr--;
+    thread->kernel_stack -= sizeof(uint64_t);
+    *stack_ptr = (uint64_t)entry_point;
+    // ... then add the 6 registers which should be cleared on the stack
+    stack_ptr -= 6;
+    thread->kernel_stack -= 6 * sizeof(uint64_t);
+    memset(stack_ptr, 0, 6 * sizeof(uint64_t));
+
     return thread;
 }
 
