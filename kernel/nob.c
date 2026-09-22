@@ -46,7 +46,8 @@ const char *cflags[] = {
     "-pipe",
     "-Iinclude",
     "-c",
-//    "-fsanitize=undefined",
+    "-fsanitize=undefined",
+    "-fno-sanitize=alignment"
 };
 
 const char *nasmflags[] = {

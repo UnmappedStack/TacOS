@@ -79,5 +79,3 @@
     ld x31, 248(sp)
     addi sp, sp, 256
 .endm // POP_ALL_REGS
-
-    j .

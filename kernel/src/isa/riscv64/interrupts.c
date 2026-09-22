@@ -45,7 +45,7 @@ void handle_exception(InterruptStackFrame *frame) {
         bool is_compressed = (*((uint16_t*)frame->return_addr) & 0b11) != 0b11;
         uint64_t instruction_size = (is_compressed) ? 2 : 4;
         frame->return_addr += instruction_size;
-        kprintf("   > %s, instruction increment %u\n\n",
+        klogf(LOG_WARN, "%s, instruction increment %u\n\n",
                 (is_compressed) ? "compressed" : "non-compressed", instruction_size);
         break;
     case EXCEPTION_ADDRESS_MISALIGNED:
@@ -62,7 +62,7 @@ void handle_exception(InterruptStackFrame *frame) {
         panic_handler(NULL, frame);
         break;
     default:
-        kprintf("   > unhandled interrupt %u, freeze this cpu (TODO handle this properly)\n", frame->cause);
+        klogf(LOG_ERROR, "unhandled interrupt %u, freeze this cpu (TODO handle this properly)\n", frame->cause);
         FREEZE_DEVICE();
     }
 }
@@ -75,8 +75,10 @@ void interrupt_handler(InterruptStackFrame *frame) {
     uint64_t cause = frame->cause & ~(1ULL << 63);
     switch (cause) {
     case INTERRUPT_TIMER:
-        handle_timer_interrupt();
-        timer_set_timeout(PREEMPTION_INTERVAL_MS);
+        if (get_current_cpu_info()->current_thread) {
+            yield();
+        }
+        timer_set_timeout(PREEMPTION_INTERVAL_MS * 10);
         ENABLE_INTERRUPTS();
         break;
     case INTERRUPT_IPI:
@@ -84,7 +86,7 @@ void interrupt_handler(InterruptStackFrame *frame) {
         csr_write(CSR_REG_SIP, 0);
         break;
     default:
-        kprintf("Unexpected interrupt %u\n", cause);
+        klogf(LOG_WARN, "Unexpected interrupt %u\n", cause);
         break;
     }
 }

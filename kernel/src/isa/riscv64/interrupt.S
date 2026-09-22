@@ -1,5 +1,7 @@
 .global prepare_for_interrupt
 
+.section .text
+
 // TODO: this wont work if an interrupt is called from userspace,
 // the stack needs to be switched to the kernel stack if it detects
 // that it came from userspace.

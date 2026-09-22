@@ -256,15 +256,14 @@ Thread *migrate_push(void) {
  *  (3) if there's nothing to run, do a PULL load balance operation */
 Thread *thread_select(void) {
     ProcessorQueue *current_queue = current_processor_queue();
-    assert(current_queue);
     dumblock_acquire(&current_queue->lock);
+    assert(current_queue);
 
     // find the first bucket which is not empty (or at least try)
     if (current_queue->bucket_bitmap) {
         /* we know there's *some* bucket avaliable.
          * note that we only want to get set bits after the current bucket, OR
          * in the next "year" of the calendar */
-
         int next_available;
         CalendarBucket *bucket = select_bucket_from_calendar(current_queue, &next_available);
         LList *thread_list = bucket->threads.next;
@@ -323,7 +322,7 @@ void processor_scheduler_init(void) {
     CPU *processor = current_processor();
     assert(processor);
     ProcessorQueue *new_queue = slab_alloc(kernel_info.schedulers.processor_queue_cache);
-    memset(new_queue->calendar_queue, 0, sizeof(CalendarBucket) * NUM_BUCKETS);
+    memset(new_queue, 0, sizeof(ProcessorQueue));
     new_queue->current_bucket = 0;
     new_queue->least_nice_thread = -1;
     new_queue->nicest_thread = -1;
@@ -357,7 +356,8 @@ void processor_scheduler_init(void) {
 void global_scheduler_init(void) {
     kernel_info.schedulers.processor_queue_cache = cache_create(sizeof(ProcessorQueue));
     kernel_info.schedulers.thread_cache = cache_create(sizeof(Thread));
-    kernel_info.schedulers.tid_upto = 0;
+    kernel_info.schedulers.tid_upto = 0; /* TODO: this could probably use the
+                                          * vmem allocator instead */
 
     list_init(&kernel_info.schedulers.processor_queues);
     kernel_info.schedulers.ready = true;
