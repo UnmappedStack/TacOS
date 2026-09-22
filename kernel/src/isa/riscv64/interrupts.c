@@ -75,7 +75,9 @@ void interrupt_handler(InterruptStackFrame *frame) {
     uint64_t cause = frame->cause & ~(1ULL << 63);
     switch (cause) {
     case INTERRUPT_TIMER:
-        handle_timer_interrupt();
+        if (get_current_cpu_info()->current_thread) {
+            handle_timer_interrupt();
+        }
         timer_set_timeout(PREEMPTION_INTERVAL_MS);
         ENABLE_INTERRUPTS();
         break;

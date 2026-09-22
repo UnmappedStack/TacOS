@@ -21,8 +21,8 @@ void mcs_lock_init(MCSSpinlock *lock) {
 void mcs_spinlock_acquire(MCSSpinlock *lock, MCSSpinlock *local_lock) {
 	assert(local_lock && lock);
 
-	mcs_lock_init(local_lock);
     DISABLE_INTERRUPTS();
+	mcs_lock_init(local_lock);
 
 	// load the new local lock into the global lock's next and get the original
 	// local lock we are now waiting on to finish first

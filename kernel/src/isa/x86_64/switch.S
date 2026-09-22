@@ -78,7 +78,7 @@ preempt:
     // will not find a thread to switch to so we'll still be in the same
     // timeslice.
     POP_MOST_REGS
-    ret
+    iretq
 
 /* saves the context of the current thread and enters the context of the next
  * thread. can be called by either yield or the timer for preemption.
@@ -88,8 +88,6 @@ preempt:
  *   -> rsi: next thread
  */ 
 context_switch:
-    cli
-
     // save state
     PUSH_SOME_REGS
 

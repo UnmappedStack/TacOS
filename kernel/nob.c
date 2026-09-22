@@ -46,7 +46,7 @@ const char *cflags[] = {
     "-pipe",
     "-Iinclude",
     "-c",
-    "-fsanitize=undefined",
+//    "-fsanitize=undefined",
 };
 
 const char *nasmflags[] = {
@@ -285,7 +285,5 @@ int main(int argc, char **argv) {
     if ((e=link_to_executable(target_arch)) < 0) return e;
 
     printf("[Kernel image built to %s successfully]\n", OUTPUT_PATH);
-
     arena_free(&arena);
-
 }

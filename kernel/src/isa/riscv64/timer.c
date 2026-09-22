@@ -27,4 +27,5 @@ void timer_global_init(void) {
 void timer_local_init(void) {
     timer_set_timeout(PREEMPTION_INTERVAL_MS);
     csr_write(CSR_REG_SIE, STIE | SSIP);
+    FORCE_DISABLE_INTERRUPTS();
 }

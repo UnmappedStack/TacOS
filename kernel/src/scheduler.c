@@ -308,10 +308,9 @@ void yield(void) {
     Thread *next_thread    = thread_select();
     assert(current_thread);
     if (!next_thread || !(next_thread->flags & THREAD_FLAG_PRESENT)) {
-        FORCE_ENABLE_INTERRUPTS();
         return; // nothing to switch to
     }
-   
+  
     this_cpu->current_thread = next_thread;
 
 #ifndef __riscv
@@ -322,6 +321,7 @@ void yield(void) {
 /* Initialises the scheduler on the current processor */
 void processor_scheduler_init(void) {
     CPU *processor = current_processor();
+    assert(processor);
     ProcessorQueue *new_queue = slab_alloc(kernel_info.schedulers.processor_queue_cache);
     memset(new_queue->calendar_queue, 0, sizeof(CalendarBucket) * NUM_BUCKETS);
     new_queue->current_bucket = 0;

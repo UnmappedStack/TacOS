@@ -171,9 +171,11 @@ void ap_stage2(void) {
     init_local_interrupt_controller(kernel_info.lapic_addr);
     DISABLE_INTERRUPTS();
     timer_local_init();
+    DISABLE_INTERRUPTS();
 
     num_aps_initialised++;
     while (!kernel_info.schedulers.ready) PAUSE();
+
     // maybe it'd be better to just make processor_scheduler_init()
     // thread-safe... the granularity could be wayyy better (TODO, but its a
     // microoptimisation anyways tbh since this isnt a hotpath)
