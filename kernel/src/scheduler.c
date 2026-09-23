@@ -159,15 +159,21 @@ Thread *create_thread(SchedClass sched_class, int nice, uint8_t flags, void *ent
     thread->kernel_stack = stack_bottom + KERNEL_STACK_PAGES * PAGE_BYTES - 16;
 
     uint64_t *stack_ptr = (uint64_t*) thread->kernel_stack;
-    
-    // add a return address to the stack...
-    stack_ptr--;
-    thread->kernel_stack -= sizeof(uint64_t);
-    *stack_ptr = (uint64_t)entry_point;
+   
+    // iretq frame...
+    stack_ptr -= 5;
+    thread->kernel_stack -= 5 * sizeof(uint64_t);
+    stack_ptr[0] = (uint64_t)entry_point; // entry point
+    stack_ptr[1] = 8; // cs
+    stack_ptr[2] = 0x200; // rflags, only interrupt enable
+    uint64_t* put_rsp_at = &stack_ptr[3];
+    stack_ptr[4] = 16; // ss
     // ... then add the 6 registers which should be cleared on the stack
     stack_ptr -= 6;
     thread->kernel_stack -= 6 * sizeof(uint64_t);
     memset(stack_ptr, 0, 6 * sizeof(uint64_t));
+
+    *put_rsp_at = (uint64_t) stack_ptr;
 
     return thread;
 }
@@ -299,19 +305,23 @@ Thread *thread_select(void) {
 }
 
 extern void context_switch(Thread *prev_thread, Thread *new_thread);
+static DumbLock lock = {0};
 void yield(void) {
-    FORCE_DISABLE_INTERRUPTS();
+    DISABLE_INTERRUPTS();
+    dumblock_acquire(&lock);
     CPU *this_cpu = get_current_cpu_info();
     assert(this_cpu && "yield before aps initialised");
     Thread *current_thread = this_cpu->current_thread;
     Thread *next_thread    = thread_select();
-    assert(current_thread);
-    if (!next_thread || !(next_thread->flags & THREAD_FLAG_PRESENT)) {
+    dumblock_release(&lock);
+    if (!current_thread || !next_thread ||
+            !(next_thread->flags & THREAD_FLAG_PRESENT)) {
+        this_cpu->interrupt_disable_level = 0;
         return; // nothing to switch to
     }
   
     this_cpu->current_thread = next_thread;
-
+    this_cpu->interrupt_disable_level = 0;
 #ifndef __riscv
     context_switch(current_thread, next_thread);
 #endif

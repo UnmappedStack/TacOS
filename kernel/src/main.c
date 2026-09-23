@@ -77,6 +77,7 @@ void boot_stage2(void) {
     );
 
     get_current_cpu_info()->interrupt_disable_level = 0;
+    yield();
     ENABLE_INTERRUPTS();
     for (;;);
 

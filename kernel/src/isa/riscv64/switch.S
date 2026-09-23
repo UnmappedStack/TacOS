@@ -79,3 +79,19 @@
     ld x31, 248(sp)
     addi sp, sp, 256
 .endm // POP_ALL_REGS
+
+/* saves the context of the current thread and enters the context of the next
+ * thread. can be called by either yield or the timer for preemption.
+ *
+ * arguments:
+ *   -> a0: current thread
+ *   -> a1: next thread
+ */ 
+//context_switch:
+//    PUSH_ALL_REGS
+//   
+//    sd sp, THREAD_KERNEL_STACK_OFFSET(a0) // save sp
+//    ld sp, THREAD_KERNEL_STACK_OFFSET(a1) // switch sp
+//
+//    POP_ALL_REGS
+//    ret
