@@ -75,11 +75,10 @@ void interrupt_handler(InterruptStackFrame *frame) {
     uint64_t cause = frame->cause & ~(1ULL << 63);
     switch (cause) {
     case INTERRUPT_TIMER:
-        if (get_current_cpu_info()->current_thread) {
+        timer_set_timeout(PREEMPTION_INTERVAL_MS);
+        if (get_current_cpu_info()->current_thread && get_current_cpu_info()) {
             yield();
         }
-        timer_set_timeout(PREEMPTION_INTERVAL_MS * 10);
-        ENABLE_INTERRUPTS();
         break;
     case INTERRUPT_IPI:
         ipi_handler();

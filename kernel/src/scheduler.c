@@ -145,6 +145,7 @@ Thread *add_thread_to_current_processor(Thread *thread) {
 
 Thread *create_thread(SchedClass sched_class, int nice, uint8_t flags, void *entry_point) {
     Thread *thread = slab_alloc(kernel_info.schedulers.thread_cache);
+    memset(thread, 0, sizeof(Thread));
 
     thread->flags = flags | THREAD_FLAG_FIRST_SWITCH;
     thread->nice = nice;
@@ -159,7 +160,8 @@ Thread *create_thread(SchedClass sched_class, int nice, uint8_t flags, void *ent
     thread->kernel_stack = stack_bottom + KERNEL_STACK_PAGES * PAGE_BYTES - 16;
 
     uint64_t *stack_ptr = (uint64_t*) thread->kernel_stack;
-   
+  
+#if defined(__x86_64__)
     // iretq frame...
     stack_ptr -= 5;
     thread->kernel_stack -= 5 * sizeof(uint64_t);
@@ -174,6 +176,16 @@ Thread *create_thread(SchedClass sched_class, int nice, uint8_t flags, void *ent
     memset(stack_ptr, 0, 6 * sizeof(uint64_t));
 
     *put_rsp_at = (uint64_t) stack_ptr;
+#elif defined(__riscv)
+    // ret addr
+    stack_ptr--;
+    thread->kernel_stack -= sizeof(uint64_t);
+    *stack_ptr = (uint64_t) entry_point;
+    // registers which should be cleared
+    stack_ptr -= 12;
+    thread->kernel_stack -= 12 * sizeof(uint64_t);
+    memset(stack_ptr, 0, 12 * sizeof(uint64_t));
+#endif
 
     return thread;
 }
@@ -305,26 +317,27 @@ Thread *thread_select(void) {
 }
 
 extern void context_switch(Thread *prev_thread, Thread *new_thread);
-static DumbLock lock = {0};
+static DumbLock yield_lock = {0};
 void yield(void) {
-    DISABLE_INTERRUPTS();
-    dumblock_acquire(&lock);
+    FORCE_DISABLE_INTERRUPTS();
+    dumblock_acquire(&yield_lock);
     CPU *this_cpu = get_current_cpu_info();
     assert(this_cpu && "yield before aps initialised");
     Thread *current_thread = this_cpu->current_thread;
     Thread *next_thread    = thread_select();
-    dumblock_release(&lock);
+    dumblock_release(&yield_lock);
     if (!current_thread || !next_thread ||
             !(next_thread->flags & THREAD_FLAG_PRESENT)) {
         this_cpu->interrupt_disable_level = 0;
+        FORCE_ENABLE_INTERRUPTS();
         return; // nothing to switch to
     }
   
     this_cpu->current_thread = next_thread;
     this_cpu->interrupt_disable_level = 0;
-#ifndef __riscv
+    FORCE_ENABLE_INTERRUPTS();
+
     context_switch(current_thread, next_thread);
-#endif
 }
 
 /* Initialises the scheduler on the current processor */
