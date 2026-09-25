@@ -63,3 +63,14 @@ void mcs_spinlock_release(MCSSpinlock *global_lock, MCSSpinlock *local_lock);
         atomic_flag_clear(lock); \
         ENABLE_INTERRUPTS(); \
     } while (0)
+
+/* scheduler blocking locks, implemented as just a dumb spinlock except yields instead
+ * of processor pause stuff, and doesn't disable interrupts. */
+#define Mutex DumbLock
+#define mutex_acquire(lock) \
+    do { \
+        while (atomic_flag_test_and_set(lock)) { \
+            yield(); \
+        } \
+    } while (0)
+#define mutex_release(lock) atomic_flag_clear(lock)

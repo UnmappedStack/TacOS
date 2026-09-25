@@ -46,15 +46,15 @@ void particle_thread(void) {
         for (int i = 0; i < 20000; i++) PAUSE();
     }
 
-//    current_explodable_coords.particles_left++;
+    current_explodable_coords.particles_left++;
 
     EXIT_THREAD();
 }
 
-DumbLock explodable_lock = {0};
+Mutex explodable_lock = {0};
 void explodable_thread(void) {
     // we pick just one framebuffer for now (TODO: all framebuffers)
-    dumblock_acquire(&explodable_lock);
+    mutex_acquire(&explodable_lock);
     uint64_t x = rand() % kernel_info.framebuffers[0].width;
     uint64_t y = rand() % kernel_info.framebuffers[0].height;
     int colour = random_colour();
@@ -74,12 +74,12 @@ void explodable_thread(void) {
                  &particle_thread
              )
         );
-        yield();
+        //yield();
     }
 
-//    while (current_explodable_coords.particles_left < 200);
+    while (current_explodable_coords.particles_left < 200);
 
-    dumblock_release(&explodable_lock);
+    mutex_release(&explodable_lock);
     EXIT_THREAD();
 }
 
