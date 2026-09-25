@@ -19,9 +19,9 @@ void mcs_lock_init(MCSSpinlock *lock) {
  * if it returns false on error then the state of whether the lock is acquired or
  * not is undefined. */
 void mcs_spinlock_acquire(MCSSpinlock *lock, MCSSpinlock *local_lock) {
-	assert(local_lock && lock);
-
     DISABLE_INTERRUPTS();
+	
+    assert(local_lock && lock);
 	mcs_lock_init(local_lock);
 
 	// load the new local lock into the global lock's next and get the original
@@ -50,7 +50,7 @@ void mcs_spinlock_release(MCSSpinlock *global_lock, MCSSpinlock *local_lock) {
 	 * is just set to null and will return. if it points to another local lock
 	 * then its contended and we need to let it know that it can have the lock now. */
 	bool was_contended = !__sync_bool_compare_and_swap(
-				&global_lock->next, local_lock, NULL);
+                            &global_lock->next, local_lock, NULL);
 	
 	if (!was_contended) {
 		__atomic_store_n(&global_lock->locked, false, __ATOMIC_SEQ_CST);

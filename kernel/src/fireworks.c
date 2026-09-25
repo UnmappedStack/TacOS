@@ -14,6 +14,7 @@
 typedef struct {
     uint64_t x, y;
     int colour;
+    int particles_left;
 } Explosion;
 
 int random_colour(void) {
@@ -45,21 +46,24 @@ void particle_thread(void) {
         for (int i = 0; i < 20000; i++) PAUSE();
     }
 
+//    current_explodable_coords.particles_left++;
+
     EXIT_THREAD();
 }
 
+DumbLock explodable_lock = {0};
 void explodable_thread(void) {
     // we pick just one framebuffer for now (TODO: all framebuffers)
+    dumblock_acquire(&explodable_lock);
     uint64_t x = rand() % kernel_info.framebuffers[0].width;
     uint64_t y = rand() % kernel_info.framebuffers[0].height;
     int colour = random_colour();
-//    kprintf("Explodable! (%u, %u)\n", x, y);
-    static DumbLock lock = {0};
-    dumblock_acquire(&lock);
+    kprintf("Explodable! (%u, %u)\n", x, y);
   
     current_explodable_coords.x = x;
     current_explodable_coords.y = y;
     current_explodable_coords.colour = colour;
+    current_explodable_coords.particles_left = 0;
 
     for (int i = 0; i < 200; i++) {
         add_thread_to_current_processor(
@@ -70,9 +74,12 @@ void explodable_thread(void) {
                  &particle_thread
              )
         );
+        yield();
     }
 
-    dumblock_release(&lock);
+//    while (current_explodable_coords.particles_left < 200);
+
+    dumblock_release(&explodable_lock);
     EXIT_THREAD();
 }
 
@@ -81,7 +88,6 @@ void fireworks_test_thread(void) {
     fill_framebuffer(0, 0 /* black */);
     for (;;) {
         yield();
-
         // spawn explodable thread
         DISABLE_INTERRUPTS();
         add_thread_to_current_processor(

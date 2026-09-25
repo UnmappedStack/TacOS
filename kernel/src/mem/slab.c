@@ -18,6 +18,7 @@ Cache *cache_create(uint64_t object_size) {
 
     cache->object_size = object_size;
     cache->objects_per_slab = (PAGE_BYTES - sizeof(Slab)) / object_size;
+    assert(cache->objects_per_slab);
 
     list_init(&cache->free);
     list_init(&cache->partial);
@@ -75,6 +76,7 @@ void *slab_alloc(Cache *cache) {
     } else kpanic("unreachable");
 
     dumblock_release(&cache->lock);
+    memset(object, 0, cache->object_size);
     return object;
 }
 

@@ -96,6 +96,7 @@ void recalculate_queue_priorities(ProcessorQueue *queue) {
 
 /* !! This requires the thread to already be set up with nice etc, but it calculates initial priority itself !! */
 Thread *add_thread_to_processor(Thread *thread, ProcessorQueue *queue) {
+    assert(thread && queue);
     dumblock_acquire(&queue->lock);
     if (thread->nice < queue->least_nice_thread || queue->least_nice_thread < 0)
         queue->least_nice_thread = thread->nice;
@@ -335,7 +336,6 @@ void yield(void) {
   
     this_cpu->current_thread = next_thread;
     this_cpu->interrupt_disable_level = 0;
-    FORCE_ENABLE_INTERRUPTS();
 
     context_switch(current_thread, next_thread);
 }
