@@ -1,5 +1,6 @@
 #include <serial.h>
 #include <assert.h>
+#include <tests.h>
 #include <pfndb.h>
 #include <vmem.h>
 #include <rbtree.h>
@@ -37,16 +38,6 @@ void __stack_chk_fail(void) {
     FREEZE_DEVICE();
 }
 
-void test_thread_entry_point1(void) {
-    klogf(LOG_DEBUG, "FIRST IN THREAD 1\n");
-    for (;;);
-}
-
-void test_thread_entry_point2(void) {
-    klogf(LOG_DEBUG, "FIRST IN THREAD 2\n");
-    for (;;);
-}
-
 extern void context_switch(Thread *prev_thread, Thread *new_thread);
 void boot_stage2(void) {
     klogf(LOG_STATUS, "Page structures set up successfully\n");
@@ -62,17 +53,9 @@ void boot_stage2(void) {
     add_thread_to_current_processor(
          create_thread(
              SCHED_KERNEL,        /* sched class */
-             10,                  /* nice */
+             20,                  /* nice */
              THREAD_FLAG_PRESENT, /* flags */
-             test_thread_entry_point1
-         )
-    );
-    add_thread_to_current_processor(
-         create_thread(
-             SCHED_KERNEL,        /* sched class */
-             15,                  /* nice */
-             THREAD_FLAG_PRESENT, /* flags */
-             test_thread_entry_point2
+             &fireworks_test_thread
          )
     );
 
