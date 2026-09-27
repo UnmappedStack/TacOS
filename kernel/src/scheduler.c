@@ -179,8 +179,8 @@ Thread *create_thread(SchedClass sched_class, int nice, uint8_t flags, void *ent
     *put_rsp_at = (uint64_t) stack_ptr;
 #elif defined(__riscv)
     // ret addr
-    stack_ptr--;
-    thread->kernel_stack -= sizeof(uint64_t);
+    stack_ptr -= 2;
+    thread->kernel_stack -= 2 * sizeof(uint64_t);
     *stack_ptr = (uint64_t) entry_point;
     // registers which should be cleared
     stack_ptr -= 12;
@@ -275,8 +275,8 @@ Thread *migrate_push(void) {
  *  (3) if there's nothing to run, do a PULL load balance operation */
 Thread *thread_select(void) {
     ProcessorQueue *current_queue = current_processor_queue();
+    if (!current_queue) kpanic("!current_queue");
     dumblock_acquire(&current_queue->lock);
-    assert(current_queue);
 
     // find the first bucket which is not empty (or at least try)
     if (current_queue->bucket_bitmap) {
@@ -320,9 +320,14 @@ Thread *thread_select(void) {
 extern void context_switch(Thread *prev_thread, Thread *new_thread);
 static DumbLock yield_lock = {0};
 void yield(void) {
-    FORCE_DISABLE_INTERRUPTS();
+    DISABLE_INTERRUPTS();
     dumblock_acquire(&yield_lock);
     CPU *this_cpu = get_current_cpu_info();
+    if (!this_cpu->scheduler) {
+        DISABLE_INTERRUPTS();
+        dumblock_release(&yield_lock);
+        return;
+    }
     assert(this_cpu && "yield before aps initialised");
     Thread *current_thread = this_cpu->current_thread;
     Thread *next_thread    = thread_select();
@@ -330,12 +335,13 @@ void yield(void) {
     if (!current_thread || !next_thread ||
             !(next_thread->flags & THREAD_FLAG_PRESENT)) {
         this_cpu->interrupt_disable_level = 0;
-        FORCE_ENABLE_INTERRUPTS();
+        FORCE_DISABLE_INTERRUPTS();
         return; // nothing to switch to
     }
-  
+ 
     this_cpu->current_thread = next_thread;
     this_cpu->interrupt_disable_level = 0;
+    FORCE_ENABLE_INTERRUPTS();
 
     context_switch(current_thread, next_thread);
 }

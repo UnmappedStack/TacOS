@@ -76,8 +76,15 @@ static char *exceptions[] = {
 /* if msg is null then it'll use whatever it finds from frame->type (mostly for exceptions),
    but if its set then it'll use it as the error message (for manual calls) */
 DumbLock panic_lock = {0};
+extern DumbLock kprintf_lock;
+extern DumbLock log_lock;
 void panic_handler(const char *msg, IDTEFrame frame) {
     DISABLE_INTERRUPTS();
+
+    // we need to make sure we can still print, in case its locked.
+    dumblock_release(&kprintf_lock);
+    dumblock_release(&log_lock);
+
     klogf(LOG_ERROR, " === KERNEL PANIC ENTERED === \n\n");
     dumblock_acquire(&panic_lock); // never released
 

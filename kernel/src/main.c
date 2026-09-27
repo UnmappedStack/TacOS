@@ -47,6 +47,7 @@ void boot_stage2(void) {
     timer_init();
     smp_init();
 
+    DISABLE_INTERRUPTS();
     global_scheduler_init();
     processor_scheduler_init();
 

@@ -87,6 +87,7 @@ uintptr_t pma_palloc(void) {
         list_insert(&kernel_info.pmm_nodes, &new_node->list);
     }
 
+    memset(node, 0, PAGE_BYTES);
     mcs_spinlock_release(&pma_lock, &local_pma_lock);
 
     return (uintptr_t)node - kernel_info.hhdm;

@@ -180,6 +180,7 @@ void ap_stage2(void) {
     // thread-safe... the granularity could be wayyy better (TODO, but its a
     // microoptimisation anyways tbh since this isnt a hotpath)
     MCSSpinlock local_init_lock;
+   
     mcs_spinlock_acquire(&init_lock, &local_init_lock);
     processor_scheduler_init();
     mcs_spinlock_release(&init_lock, &local_init_lock);
@@ -215,7 +216,6 @@ void smp_init(void) {
         cpu->goto_address = ap_entry;
     }
     while (num_aps_initialised < kernel_info.num_cores - 1) PAUSE();
-
     kernel_info.smp_enabled = true;
     klogf(LOG_STATUS, "All application processors initialised.\n");
 }

@@ -35,6 +35,7 @@ void handle_timer_interrupt(void) {
 }
 
 void handle_exception(InterruptStackFrame *frame) {
+    assert(frame && "Failed to handle exception, null frame");
     switch (frame->cause) {
     case INTERRUPT_EBREAK:
         kprintf("\n   > EBREAK -> scause=%x\n", frame->cause);
@@ -75,8 +76,10 @@ void interrupt_handler(InterruptStackFrame *frame) {
     uint64_t cause = frame->cause & ~(1ULL << 63);
     switch (cause) {
     case INTERRUPT_TIMER:
+        DISABLE_INTERRUPTS();
         timer_set_timeout(PREEMPTION_INTERVAL_MS);
-        if (get_current_cpu_info()->current_thread && get_current_cpu_info()) {
+        CPU *current_cpu;
+        if ((current_cpu=get_current_cpu_info()) && current_cpu->current_thread) {
             yield();
         }
         break;

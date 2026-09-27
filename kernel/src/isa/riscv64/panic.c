@@ -38,12 +38,18 @@ struct StackFrame {
 #define REGISTER_FRAME_POINTER  8
 
 DumbLock panic_lock = {0};
+extern DumbLock kprintf_lock;
+extern DumbLock log_lock;
 void panic_handler(const char *msg, InterruptStackFrame *frame) {
     DISABLE_INTERRUPTS();
-    klogf(LOG_ERROR, "\e[0m === KERNEL PANIC ENTERED === \n\n");
     dumblock_acquire(&panic_lock); // never released
-
+    
+    // we need to make sure we can still print, in case its locked.
+    dumblock_release(&kprintf_lock);
+    dumblock_release(&log_lock);
     if (kernel_info.smp_enabled) halt_all_processors();
+
+    klogf(LOG_ERROR, "\e[0m === KERNEL PANIC ENTERED === \n\n");
 
     int i = 0;
 #define ASCII_ART_LINE() write_serial(ascii_art[i++]);

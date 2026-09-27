@@ -7,9 +7,11 @@
 #include <kprintf.h>
 #include <kernel.h>
 #include <framebuffer.h>
+#include <tty.h>
 
 // not implemented yet (TODO)
 #define EXIT_THREAD() for (;;)
+#define yield() {}
 
 typedef struct {
     uint64_t x, y;
@@ -65,7 +67,7 @@ void explodable_thread(void) {
     current_explodable_coords.colour = colour;
     current_explodable_coords.particles_left = 0;
 
-    for (int i = 0; i < 200; i++) {
+    for (int i = 0; i < 10; i++) {
         add_thread_to_current_processor(
              create_thread(
                  SCHED_KERNEL,        /* sched class */
@@ -74,7 +76,6 @@ void explodable_thread(void) {
                  &particle_thread
              )
         );
-        //yield();
     }
 
     while (current_explodable_coords.particles_left < 200);
@@ -85,7 +86,7 @@ void explodable_thread(void) {
 
 void fireworks_test_thread(void) {
     // every now and then, create an explodable thread
-    fill_framebuffer(0, 0 /* black */);
+    fill_framebuffer(0, BG_DEFAULT);
     for (;;) {
         yield();
         // spawn explodable thread

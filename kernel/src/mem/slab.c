@@ -52,12 +52,13 @@ void *slab_alloc(Cache *cache) {
     /* first, find a slab to use (or create one if
      * there's none with free objects) */
     Slab *slab;
-    if (!list_empty(&cache->partial)) slab = CONTAINER_OF(cache->partial.next, Slab, list); 
+    if (!list_empty(&cache->partial)) slab = CONTAINER_OF(cache->partial.next, Slab, list);
     else if (!list_empty(&cache->free)) slab = CONTAINER_OF(cache->free.next, Slab, list);
     else slab = cache_grow(cache);
 
     // get the object to return the memory of & remove it from the freelist
     if (list_empty(&slab->objects)) {
+        klogf(LOG_ERROR, "partial = %u\n", (void*)slab == cache->partial.next);
         kpanic("Got empty list in slab_alloc");
     }
     LList *object = slab->objects.next;
@@ -67,8 +68,8 @@ void *slab_alloc(Cache *cache) {
     // move it to another list
     list_remove(&slab->list);
     if (!list_empty(&slab->objects)) {
-        // it can't be free anymore but it's definitely still got some avaliable memory
-        if (slab->num_objects_free == 0) kpanic("unreachable (slab_alloc)");
+        // it can't be free anymore but it's definitely still got some available memory
+        assert(slab->num_objects_free);
         list_insert(&cache->partial, &slab->list);
     } else if (slab->num_objects_free == 0) {
         // it's full
@@ -106,10 +107,8 @@ void slab_free(Cache *cache, void *object) {
     // find the slab that the object is on, checking partial and full
     Slab *slab;
     bool from_full = false;
-    /* yes I know the second one has an empty statement body but I feel like it's better for readability
-     * this way so I don't really care */
     if      ((slab=is_object_on_slab_list(&cache->filled,  object)) != NULL) from_full = true;
-    else if ((slab=is_object_on_slab_list(&cache->partial, object)) != NULL) {}
+    else if ((slab=is_object_on_slab_list(&cache->partial, object)) != NULL) from_full = false;
     else kpanic("invalid slab object free");
 
     list_insert(&slab->objects, object);

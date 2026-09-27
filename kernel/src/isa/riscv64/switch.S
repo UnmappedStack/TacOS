@@ -40,13 +40,13 @@
 .endm // POP_REGS
 
 .macro PUSH reg
-    addi sp, sp, -8
+    addi sp, sp, -16
     sd \reg, 0(sp)
 .endm
 
 .macro POP reg
     ld \reg, 0(sp)
-    addi sp, sp, 8
+    addi sp, sp, 16
 .endm
 
 /* saves the context of the current thread and enters the context of the next
@@ -65,4 +65,6 @@ context_switch:
 
     POP_REGS // restore regs for next task
     POP ra
+    
+    csrsi sstatus, 2
     ret // go back to where the next task left off (or entry point)

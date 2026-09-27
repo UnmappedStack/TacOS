@@ -63,7 +63,7 @@ fi
 echo "[QEMU] Running image in qemu"
 if [[ $1 == "x86_64" ]]; then
     qemu-system-x86_64 image.iso -serial stdio --no-reboot --no-shutdown \
-        -monitor telnet:127.0.0.1:8000,server,nowait -smp cpus=5 --accel kvm -m 4G \
+        -monitor telnet:127.0.0.1:8000,server,nowait -smp cpus=8 --accel kvm -m 4G \
 #        -object memory-backend-ram,size=2G,id=m0 \
 #        -object memory-backend-ram,size=2G,id=m1 \
 #        -numa node,memdev=m0,cpus=0-2,nodeid=0 \
@@ -73,7 +73,7 @@ if [[ $1 == "x86_64" ]]; then
 elif [[ $1 == "riscv64" ]]; then
     qemu-system-riscv64 -cdrom image.iso -device ramfb -boot menu=on,splash-time=0 \
         -drive if=pflash,unit=0,format=raw,file=edk2-ovmf-bins/ovmf-code-riscv64.fd,readonly=on \
-        -cpu rv64 -M virt,acpi=off -serial stdio \
-        -device qemu-xhci -device usb-kbd -device usb-tablet -smp 1 \
+        -cpu rv64 -M virt,acpi=off -serial stdio -m 4G \
+        -device qemu-xhci -device usb-kbd -device usb-tablet -smp 5 \
         -monitor telnet:127.0.0.1:8000,server,nowait
 fi
