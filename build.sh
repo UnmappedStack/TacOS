@@ -75,5 +75,5 @@ elif [[ $1 == "riscv64" ]]; then
         -drive if=pflash,unit=0,format=raw,file=edk2-ovmf-bins/ovmf-code-riscv64.fd,readonly=on \
         -cpu rv64 -M virt,acpi=off -serial stdio -m 4G \
         -device qemu-xhci -device usb-kbd -device usb-tablet -smp 5 \
-        -monitor telnet:127.0.0.1:8000,server,nowait -s -S
+        -monitor telnet:127.0.0.1:8000,server,nowait
 fi

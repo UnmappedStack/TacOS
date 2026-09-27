@@ -18,7 +18,7 @@ prepare_for_interrupt:
     // This ends up being 24 bytes (4 elements * 8 bytes)
     // + 248 bytes (32 registers * 8 bytes), then rounded up to
     // be 16 byte aligned.
-    addi sp, sp, -280
+    addi sp, sp, -288
     // save registers
     sd x0, 32(sp)
     sd x1, 40(sp)
@@ -61,16 +61,18 @@ prepare_for_interrupt:
     sd t1, 16(sp)
     csrr t1, 0x100 // sstatus
     sd t1, 24(sp)
-    // the stack pointer now needs to be loaded, which will be sp-280 (aka
+    // the stack pointer now needs to be loaded, which will be sp-288 (aka
     // where it was before we moved it down)
-    addi t1, sp, 280
+    addi t1, sp, 288
     sd t1, 48(sp)
     // actually call the main handler
     mv a0, sp // move the stack frame into call arguments
     call interrupt_handler
-    // put the potentially modified sepc return addr back
-    ld t1, (sp)      // t1 = stackframe.sepc
-    csrw 0x141, t1   // set sepc again
+    // put the potentially modified sepc return addr and stuff back
+    ld t1, 0(sp)     // t1 = stackframe.sepc
+    csrw sepc, t1    // set sepc again
+    ld t1, 24(sp)    // t1 = stackframe.sstatus
+    csrw sstatus, t1 // set sstatus again
     // restore registers
     ld x0, 32(sp)
     ld x1, 40(sp)
@@ -104,5 +106,5 @@ prepare_for_interrupt:
     ld x29, 264(sp)
     ld x30, 272(sp)
     ld x31, 280(sp)
-    addi sp, sp, 280 // registers frame + interrupt frame
+    addi sp, sp, 288 // registers frame + interrupt frame
     sret

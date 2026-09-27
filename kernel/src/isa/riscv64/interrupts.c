@@ -69,6 +69,7 @@ void handle_exception(InterruptStackFrame *frame) {
 }
 
 void interrupt_handler(InterruptStackFrame *frame) {
+    DISABLE_INTERRUPTS();
     bool exception = !((frame->cause >> 63) & 1);
     
     if (exception) return handle_exception(frame);
@@ -76,7 +77,6 @@ void interrupt_handler(InterruptStackFrame *frame) {
     uint64_t cause = frame->cause & ~(1ULL << 63);
     switch (cause) {
     case INTERRUPT_TIMER:
-        DISABLE_INTERRUPTS();
         timer_set_timeout(PREEMPTION_INTERVAL_MS);
         CPU *current_cpu;
         if ((current_cpu=get_current_cpu_info()) && current_cpu->current_thread) {

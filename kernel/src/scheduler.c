@@ -163,20 +163,14 @@ Thread *create_thread(SchedClass sched_class, int nice, uint8_t flags, void *ent
     uint64_t *stack_ptr = (uint64_t*) thread->kernel_stack;
   
 #if defined(__x86_64__)
-    // iretq frame...
-    stack_ptr -= 5;
-    thread->kernel_stack -= 5 * sizeof(uint64_t);
-    stack_ptr[0] = (uint64_t)entry_point; // entry point
-    stack_ptr[1] = 8; // cs
-    stack_ptr[2] = 0x200; // rflags, only interrupt enable
-    uint64_t* put_rsp_at = &stack_ptr[3];
-    stack_ptr[4] = 16; // ss
+    // ret addr...
+    stack_ptr--;
+    thread->kernel_stack -= sizeof(uint64_t);
+    *stack_ptr = (uint64_t)entry_point; // entry point
     // ... then add the 6 registers which should be cleared on the stack
     stack_ptr -= 6;
     thread->kernel_stack -= 6 * sizeof(uint64_t);
     memset(stack_ptr, 0, 6 * sizeof(uint64_t));
-
-    *put_rsp_at = (uint64_t) stack_ptr;
 #elif defined(__riscv)
     // ret addr
     stack_ptr -= 2;

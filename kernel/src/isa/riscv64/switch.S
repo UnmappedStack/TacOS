@@ -66,5 +66,5 @@ context_switch:
     POP_REGS // restore regs for next task
     POP ra
     
-    csrsi sstatus, 2
+    csrsi sstatus, 2 // enable interrupts
     ret // go back to where the next task left off (or entry point)
