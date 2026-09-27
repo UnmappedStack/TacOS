@@ -318,14 +318,14 @@ Thread *thread_select(void) {
 }
 
 extern void context_switch(Thread *prev_thread, Thread *new_thread);
-static DumbLock yield_lock = {0};
+DumbLock yield_lock = {0};
 void yield(void) {
-    DISABLE_INTERRUPTS();
+    FORCE_DISABLE_INTERRUPTS();
     dumblock_acquire(&yield_lock);
     CPU *this_cpu = get_current_cpu_info();
     if (!this_cpu->scheduler) {
-        DISABLE_INTERRUPTS();
         dumblock_release(&yield_lock);
+        FORCE_DISABLE_INTERRUPTS();
         return;
     }
     assert(this_cpu && "yield before aps initialised");
@@ -341,7 +341,6 @@ void yield(void) {
  
     this_cpu->current_thread = next_thread;
     this_cpu->interrupt_disable_level = 0;
-    FORCE_ENABLE_INTERRUPTS();
 
     context_switch(current_thread, next_thread);
 }

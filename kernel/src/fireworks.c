@@ -11,7 +11,6 @@
 
 // not implemented yet (TODO)
 #define EXIT_THREAD() for (;;)
-#define yield() {}
 
 typedef struct {
     uint64_t x, y;
@@ -60,14 +59,15 @@ void explodable_thread(void) {
     uint64_t x = rand() % kernel_info.framebuffers[0].width;
     uint64_t y = rand() % kernel_info.framebuffers[0].height;
     int colour = random_colour();
-    kprintf("Explodable! (%u, %u)\n", x, y);
+    klogf(LOG_DEBUG, "Explodable! (%u, %u)\n", x, y);
   
     current_explodable_coords.x = x;
     current_explodable_coords.y = y;
     current_explodable_coords.colour = colour;
     current_explodable_coords.particles_left = 0;
 
-    for (int i = 0; i < 10; i++) {
+    int num_threads = 50;
+    for (int i = 0; i < num_threads; i++) {
         add_thread_to_current_processor(
              create_thread(
                  SCHED_KERNEL,        /* sched class */
@@ -78,7 +78,7 @@ void explodable_thread(void) {
         );
     }
 
-    while (current_explodable_coords.particles_left < 200);
+    while (current_explodable_coords.particles_left < num_threads);
 
     mutex_release(&explodable_lock);
     EXIT_THREAD();
@@ -90,7 +90,6 @@ void fireworks_test_thread(void) {
     for (;;) {
         yield();
         // spawn explodable thread
-        DISABLE_INTERRUPTS();
         add_thread_to_current_processor(
              create_thread(
                  SCHED_KERNEL,        /* sched class */
@@ -99,6 +98,5 @@ void fireworks_test_thread(void) {
                  &explodable_thread
              )
         );
-        ENABLE_INTERRUPTS();
     }
 }

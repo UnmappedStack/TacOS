@@ -88,6 +88,7 @@ preempt:
  *   -> rsi: next thread
  */ 
 context_switch:
+    cli
     // save state
     PUSH_SOME_REGS
 
@@ -97,4 +98,5 @@ context_switch:
     POP_SOME_REGS // restore state
     
     // return frame is already on the stack, just return
+    sti
     ret
