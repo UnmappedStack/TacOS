@@ -4,6 +4,7 @@
 #include <list.h>
 #include <stdint.h>
 #include <stddef.h>
+#include <stdbool.h>
 
 typedef enum {
     SCHED_KERNEL,

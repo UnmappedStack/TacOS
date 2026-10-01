@@ -2,6 +2,7 @@
 #include <stdatomic.h>
 #include <assert.h>
 #include <stddef.h>
+#include <stdbool.h>
 
 /* we keep two main types of non-scheduler-blocking locks here:
  *      - dumb spinlocks: just dumb unfair spinlocks, which are small in memory but
